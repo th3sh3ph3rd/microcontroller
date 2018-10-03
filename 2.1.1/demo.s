@@ -69,7 +69,7 @@ main:
     ldi    temp, 0x00
     out    LED_PORT, temp
     ldi    temp, 0xff
-    opt    LED_DDR, temp
+    out    LED_DDR, temp
 
     ; activate LED0 (high-active LEDs)
     ldi    leds, 1<<PA0
