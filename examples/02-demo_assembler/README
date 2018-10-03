@@ -1,0 +1,5 @@
+Call "make" to generate the elf file.
+Call "make install" to download the program to the flash.
+
+Note: the demo contains a syntactical error, see Exercise 1.1
+
