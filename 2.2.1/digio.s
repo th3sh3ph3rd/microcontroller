@@ -37,35 +37,34 @@ main:
     
 led0:
     ; LED0 := (PA1 & PA2) | PA3
-    sbic    PIN, PIN3
-    rjump set_led0
-    sbis    PIN, PIN1
-    rjump clear_led0
-    sbis    PIN, PIN2
-    rjump clear_led0
+    sbic    PIN, PINA3
+    rjmp set_led0
+    sbis    PIN, PINA1
+    rjmp clear_led0
+    sbis    PIN, PINA2
+    rjmp clear_led0
 set_led0:
     sbi PORT, LED0
-    rjump led1
+    rjmp led1
 clear_led0:
     cbi PORT, LED0
 
 led1:
     ; LED1 := (PA1 | ~PA2) & PA3
-    sbis PIN, PIN3
-    rjump clear_led1
-    sbic PIN, PIN1
-    rjump set_led1
-    sbic PIN, PIN2
-    rjump clear_led1
+    sbis PIN, PINA3
+    rjmp clear_led1
+    sbic PIN, PINA1
+    rjmp set_led1
+    sbic PIN, PINA2
+    rjmp clear_led1
 set_led1:
     sbi PORT, LED1
-    rjump led2
+    rjmp led2
 clear_led1:
     cbi PORT, LED1
 
 led2:
     ; LED1 := PA1 ^ PA2
 
-
-    rjump led0
+    rjmp led0
 
