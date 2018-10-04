@@ -98,7 +98,7 @@ led3:
 alt:
     ldi     temp1, 0x00
     ldi     temp2, 0x00
-    ldi     temp0, PIN 
+    in      temp0, PIN 
     ; LED0 := (PA1 & PA2) | PA3
     bst     temp0, PINA1
     bld     temp1, LED0
