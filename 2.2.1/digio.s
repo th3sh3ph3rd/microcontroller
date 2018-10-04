@@ -17,6 +17,7 @@
 .equ temp0, 0x10
 .equ temp1, 0x11
 .equ temp2, 0x12
+.equ temp3, 0x13
 
 ; Flash memory
 .section .text
@@ -113,7 +114,8 @@ alt:
     ldi     temp2, 0x00 ; neutral init for or
     bst     temp0, PINA2
     bld     temp2, LED1
-    eor     temp2, (1<<LED2) ; toggle bit
+    ldi     temp3, (1<<LED3)
+    eor     temp2, temp3 ; toggle bit
     or      temp1, temp2
     ldi     temp2, 0xff ; neutral init for and
     bst     temp0, PINA3
@@ -129,10 +131,12 @@ alt:
     ; LED3 := PA1 = PA2
     bst     temp1, LED2
     bld     temp1, LED3
-    eor     temp1, (1<<LED3) ; just toggle the xor result
+    ldi     temp3, (1<<LED3)
+    eor     temp1, temp3 ; just toggle the xor result
     ; write to the output register
     ldi     temp0, PORT
     or      temp0, temp1
     out     PORT, temp0
 
     rjmp    alt
+
