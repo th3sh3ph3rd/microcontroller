@@ -37,6 +37,7 @@ main:
 
 led0:
     ; LED0 := (PA1 & PA2) | PA3
+<<<<<<< HEAD
     sbic    PIN, PIN3
     rjump   set_led0
     sbis    PIN, PIN1
@@ -46,11 +47,23 @@ led0:
 set_led0:
     sbi PORT, LED0
     rjump   led1
+=======
+    sbic    PIN, PINA3
+    rjmp set_led0
+    sbis    PIN, PINA1
+    rjmp clear_led0
+    sbis    PIN, PINA2
+    rjmp clear_led0
+set_led0:
+    sbi PORT, LED0
+    rjmp led1
+>>>>>>> 28307a0acdfbd740e9ae1303dcdc7b5bc243880d
 clear_led0:
     cbi     PORT, LED0
 
 led1:
     ; LED1 := (PA1 | ~PA2) & PA3
+<<<<<<< HEAD
     sbis    PIN, PIN3
     rjump   clear_led1
     sbic    PIN, PIN1
@@ -60,10 +73,22 @@ led1:
 set_led1:
     sbi     PORT, LED1
     rjump   led2
+=======
+    sbis PIN, PINA3
+    rjmp clear_led1
+    sbic PIN, PINA1
+    rjmp set_led1
+    sbic PIN, PINA2
+    rjmp clear_led1
+set_led1:
+    sbi PORT, LED1
+    rjmp led2
+>>>>>>> 28307a0acdfbd740e9ae1303dcdc7b5bc243880d
 clear_led1:
     cbi     PORT, LED1
 
 led2:
+<<<<<<< HEAD
     ; LED2 := PA1 ^ PA2
     ldi     temp0, PIN
     bst     temp0, PIN2
@@ -78,4 +103,9 @@ led2:
     out     PORT, temp0
 
     rjump led0
+=======
+    ; LED1 := PA1 ^ PA2
+
+    rjmp led0
+>>>>>>> 28307a0acdfbd740e9ae1303dcdc7b5bc243880d
 
