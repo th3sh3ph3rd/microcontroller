@@ -114,7 +114,7 @@ alt:
     ldi     temp2, 0x00 ; neutral init for or
     bst     temp0, PINA2
     bld     temp2, LED1
-    ldi     temp3, (1<<LED3)
+    ldi     temp3, (1<<LED1)
     eor     temp2, temp3 ; toggle bit
     or      temp1, temp2
     ldi     temp2, 0xff ; neutral init for and
@@ -124,9 +124,9 @@ alt:
     ; LED2 := PA1 ^ PA2
     bst     temp0, PINA1
     bld     temp1, LED2
+    ldi     temp2, 0x00 ; neutral init for xor
     bst     temp0, PINA2
     bst     temp2, LED2
-    ldi     temp2, 0x00 ; neutral init for xor
     eor     temp1, temp2
     ; LED3 := PA1 = PA2
     bst     temp1, LED2
