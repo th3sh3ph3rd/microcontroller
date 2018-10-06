@@ -14,17 +14,23 @@
 .equ temp3, 0x13
 .equ state, 0x14
 
-; Flash memory
-.section .text
+.text
 
-.global main
 .org 0x0000
     rjmp    main
 .org INT6addr*2
     rjmp    isr
 
+.text
+
 ; This is the main program.
 main: 
+    ; init stack pointer
+    ldi     temp0, lo8(RAMEND)
+    out     SPL, temp0
+    ldi     temp0, hi8(RAMEND)
+    out     SPH, temp0
+   
     ; disable pull-up for inputs and set outputs low
     ldi     temp0, 0x00
     out     DDRE, temp0 ; set E as input 
