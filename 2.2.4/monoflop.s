@@ -47,13 +47,117 @@ main:
     sts     PORTK, temp0
     sts     PORTL, temp0
 
-loop:
-    ; display PORTA on PORTB
-    ldi     temp0, PORTA
+    ldi     temp1, 0xff
+
+porta:
+    in      PINA, temp0
+    out     PORTA, temp0
+    out     DDRA, temp0
+    cpse    temp0, temp1
+    rjmp    portb
+    ldi     temp0, 0x00
+    out     DDRA, temp0
+    out     PORTA, temp0
+
+portb:
+    in      PINB, temp0
     out     PORTB, temp0
-    ; display PINA on PORTC
-    ldi     temp0, PINA
+    out     DDRB, temp0
+    cpse    temp0, temp1
+    rjmp    portc
+    ldi     temp0, 0x00
+    out     DDRB, temp0
+    out     PORTB, temp0
+
+portc:
+    in      PINC, temp0
+    out     PORTC, temp0
+    out     DDRC, temp0
+    cpse    temp0, temp1
+    rjmp    portd
+    ldi     temp0, 0x00
+    out     DDRC, temp0
     out     PORTC, temp0
 
-    rjmp    loop
+portd:
+    in      PIND, temp0
+    out     PORTD, temp0
+    out     DDRD, temp0
+    cpse    temp0, temp1
+    rjmp    porte
+    ldi     temp0, 0x00
+    out     DDRD, temp0
+    out     PORTD, temp0
+
+porte:
+    in      PINE, temp0
+    out     PORTE, temp0
+    out     DDRE, temp0
+    cpse    temp0, temp1
+    rjmp    portf
+    ldi     temp0, 0x00
+    out     DDRE, temp0
+    out     PORTE, temp0
+    
+portf:
+    in      PINF, temp0
+    out     PORTF, temp0
+    out     DDRF, temp0
+    cpse    temp0, temp1
+    rjmp    portg
+    ldi     temp0, 0x00
+    out     DDRF, temp0
+    out     PORTF, temp0
+    
+portg:
+    in      PING, temp0
+    out     PORTG, temp0
+    out     DDRG, temp0
+    cpse    temp0, temp1
+    rjmp    porth
+    ldi     temp0, 0x00
+    out     DDRG, temp0
+    out     PORTG, temp0
+    
+porth:
+    lds     temp0, PINH
+    sts     PORTH, temp0
+    sts     DDRH, temp0
+    cpse    temp0, temp1
+    rjmp    portj
+    ldi     temp0, 0x00
+    sts     DDRH, temp0
+    sts     PORTH, temp0
+
+portj:
+    lds     temp0, PINJ
+    sts     PORTJ, temp0
+    sts     DDRJ, temp0
+    cpse    temp0, temp1
+    rjmp    portk
+    ldi     temp0, 0x00
+    sts     DDRJ, temp0
+    sts     PORTJ, temp0
+
+portk:
+    lds     temp0, PINK
+    sts     PORTK, temp0
+    sts     DDRK, temp0
+    cpse    temp0, temp1
+    rjmp    portl
+    ldi     temp0, 0x00
+    sts     DDRK, temp0
+    sts     PORTK, temp0
+
+portl:
+    lds     temp0, PINL
+    sts     PORTL, temp0
+    sts     DDRL, temp0
+    cpse    temp0, temp1
+    rjmp    porta
+    ldi     temp0, 0x00
+    sts     DDRL, temp0
+    sts     PORTL, temp0
+
+    rjmp    porta
 
