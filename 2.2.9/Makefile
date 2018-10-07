@@ -1,4 +1,4 @@
-FILENAME = led_rotator
+FILENAME = led_curtain
 
 MCU = atmega1280
 ARCH = avr51

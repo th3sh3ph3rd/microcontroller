@@ -1,0 +1,14 @@
+Get familiar with the tool chain and write a simple makefile for
+compiling the demo.s Don't use the makefile from demo_assembler!
+
+Some infos that might be useful
+     our mcu:          atmega1280
+     our architecture: avr51
+
+You will need following commands:
+     assembling:  avr-as
+     linking:     avr-ld
+     programming: avrprog2
+
+
+
