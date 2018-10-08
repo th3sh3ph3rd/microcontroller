@@ -9,6 +9,14 @@
 .equ port, 0x11
 .equ state, 0x12
 
+.macro update_port
+    in      @0, @2
+    lsl     @0
+    cpse    @1, 0x01
+    inc     @0
+    out     @2, @0
+.endm
+
 .org 0x0000
     rjmp    main
 .org OC1Aaddr*2
@@ -87,7 +95,7 @@ tmrisr:
     cpi     port, 1
     breq    portb
 porta:
-    in      PORTA, temp
+    in      temp, PORTA
     lsl     temp
     cpse    state, 0x01
     inc     temp
@@ -96,55 +104,55 @@ porta:
     breq    reset_state
     cpi     temp, 0xff
     breq    set_state
-    rjmp    update_port
+    rjmp    next_port
 reset_state:
     ldi     state, 0x00
-    rjmp    update_port
+    rjmp    next_port
 set_state:
     ldi     state, 0x01
-    rjmp    update_port
+    rjmp    next_port
 portb:
-    in      PORTB, temp
+    in      temp, PORTB
     lsl     temp
     cpse    state, 0x01
     inc     temp
     out     PORTB, temp
-    rjmp    update_port
+    rjmp    next_port
 portc:
-    in      PORTC, temp
+    in      temp, PORTC
     lsl     temp
     cpse    state, 0x01
     inc     temp
     out     PORTC, temp
-    rjmp    update_port
+    rjmp    next_port
 portd:
-    in      PORTD, temp
+    in      temp, PORTD
     lsl     temp
     cpse    state, 0x01
     inc     temp
     out     PORTD, temp
-    rjmp    update_port
+    rjmp    next_port
 porte:
-    in      PORTE, temp
+    in      temp, PORTE
     lsl     temp
     cpse    state, 0x01
     inc     temp
     out     PORTE, temp
-    rjmp    update_port
+    rjmp    next_port
 portf:
-    in      PORTF, temp
+    in      temp, PORTF
     lsl     temp
     cpse    state, 0x01
     inc     temp
     out     PORTF, temp
-    rjmp    update_port
+    rjmp    next_port
 portg:
-    in      PORTG, temp
+    in      temp, PORTG
     lsl     temp
     cpse    state, 0x01
     inc     temp
     out     PORTG, temp
-update_port:
+next_port:
     cpi     port, 6
     breq    reset_port
     inc     port
