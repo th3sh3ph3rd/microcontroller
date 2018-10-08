@@ -18,11 +18,11 @@
 
 ; This is the main program.
 main: 
-    ldi     temp0, (1<<3)
+    ldi     temp0, 0x04
     out     DDRA, temp0
     out     DDRB, temp0
     out     DDRC, temp0
-    out     DDRB, temp0
+    out     DDRD, temp0
 
     sbi     PORTA, 3
     in      temp0, PINA
@@ -30,8 +30,8 @@ main:
     in      temp2, PINA
 
     out     PORTB, temp0
-    out     PORTC, temp0
-    out     PORTD, temp0
+    out     PORTC, temp1
+    out     PORTD, temp2
 
 loop:
     rjmp    loop

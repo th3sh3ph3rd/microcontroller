@@ -47,7 +47,7 @@ main:
 
     ; enable interrupt 0 and 1
     in      temp0, EIMSK
-    ori     temp0, (1<<INT0)|(1<<IN1)
+    ori     temp0, (1<<INT0)|(1<<INT1)
     out     EIMSK, temp0
 
     ; put leds in initial state
@@ -71,18 +71,23 @@ isrint0:
     cpi     leden, 0x08
     breq    rst0
     lsl     leden
-    reti
+    rjmp    out
 rst0:
-    ldi     state, 0x01
-    reti
+    ldi     leden, 0x01
+    rjmp    out
 
 isrint1:
     cpi     leden, 0x01
     breq    rst1
     lsr     leden
-    reti
+    rjmp    out
 rst1:
-    ldi     state, 0x08
+    ldi     leden, 0x08
+    rjmp    out
+
+out: 
+    out     PORTA, leden
+    out     PORTB, leden
+    out     PORTC, leden
     reti
-    
 
