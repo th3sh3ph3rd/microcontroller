@@ -10,6 +10,17 @@
 .equ temp2, 0x12
 .equ temp3, 0x13
 
+.macro monoflop1 port, next_port
+    in      temp0, PIN\port
+    out     PORT\port, temp0
+    out     DDR\port, temp0
+    cpse    temp0, temp1
+    rjmp    port\next_port
+    ldi     temp0, 0x00
+    out     DDR\port, temp0
+    out     PORT\port, temp0
+.endm
+
 ; Flash memory
 .section .text
 
