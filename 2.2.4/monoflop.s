@@ -50,7 +50,7 @@ main:
     ldi     temp1, 0xff
 
 porta:
-    in      PINA, temp0
+    in      temp0, PINA
     out     PORTA, temp0
     out     DDRA, temp0
     cpse    temp0, temp1
@@ -60,7 +60,7 @@ porta:
     out     PORTA, temp0
 
 portb:
-    in      PINB, temp0
+    in      temp0, PINB
     out     PORTB, temp0
     out     DDRB, temp0
     cpse    temp0, temp1
@@ -70,7 +70,7 @@ portb:
     out     PORTB, temp0
 
 portc:
-    in      PINC, temp0
+    in      temp0, PINC
     out     PORTC, temp0
     out     DDRC, temp0
     cpse    temp0, temp1
@@ -80,7 +80,7 @@ portc:
     out     PORTC, temp0
 
 portd:
-    in      PIND, temp0
+    in      temp0, PIND
     out     PORTD, temp0
     out     DDRD, temp0
     cpse    temp0, temp1
@@ -90,6 +90,7 @@ portd:
     out     PORTD, temp0
 
 porte:
+    in      temp0, PINE
     in      PINE, temp0
     out     PORTE, temp0
     out     DDRE, temp0
@@ -100,7 +101,7 @@ porte:
     out     PORTE, temp0
     
 portf:
-    in      PINF, temp0
+    in      temp0, PINF
     out     PORTF, temp0
     out     DDRF, temp0
     cpse    temp0, temp1
@@ -110,8 +111,7 @@ portf:
     out     PORTF, temp0
     
 portg:
-    in      PING, temp0
-    out     PORTG, temp0
+    in      temp0, PING
     out     DDRG, temp0
     cpse    temp0, temp1
     rjmp    porth
