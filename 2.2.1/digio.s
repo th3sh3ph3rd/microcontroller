@@ -37,6 +37,8 @@ main:
     ldi     temp0, 0xf0
     out     DDR, temp0
 
+    rjmp    alt
+
 led0:
     ; LED0 := (PA1 & PA2) | PA3
     sbic    PIN, PINA3
@@ -65,6 +67,7 @@ set_led1:
 clear_led1:
     cbi     PORT, LED1
 
+; LED 2/3 not working!
 led2:
     ; LED2 := PA1 ^ PA2
     ldi     temp0, PIN
@@ -95,6 +98,7 @@ led3:
     rjmp led0
 
 ; alternative implementation with less instructions
+; WORKING
 alt:
     ldi     temp1, 0x00
     ldi     temp2, 0x00
@@ -126,7 +130,7 @@ alt:
     bld     temp1, LED2
     ldi     temp2, 0x00 ; neutral init for xor
     bst     temp0, PINA2
-    bst     temp2, LED2
+    bld     temp2, LED2
     eor     temp1, temp2
     ; LED3 := PA1 = PA2
     bst     temp1, LED2
