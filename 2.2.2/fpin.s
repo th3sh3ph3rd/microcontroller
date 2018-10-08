@@ -35,10 +35,10 @@ main:
 
 loop:
     ; display PORTA on PORTB
-    ldi     temp0, PORTA
+    in      temp0, PORTA
     out     PORTB, temp0
     ; display PINA on PORTC
-    ldi     temp0, PINA
+    in      temp0, PINA
     out     PORTC, temp0
 
     rjmp    loop
