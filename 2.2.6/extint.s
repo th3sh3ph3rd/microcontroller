@@ -103,11 +103,17 @@ state2:                     ; LED0 := PA1 ^ PA2
     bld     temp1, LED0
     ldi     temp2, 0x00     ; neutral init for xor
     bst     temp0, PINA2
-    bst     temp2, LED0
+    bld     temp2, LED0
     eor     temp1, temp2
     rjmp    output
 
-state3:                     ; LED3 := PA1 = PA2
+state3:                     ; LED3 := PA1 = PA2, TODO maybe implement more efficiently
+    bst     temp0, PINA1
+    bld     temp1, LED0
+    ldi     temp2, 0x00     ; neutral init for xor
+    bst     temp0, PINA2
+    bld     temp2, LED0
+    eor     temp1, temp2
     ldi     temp2, (1<<LED0)
     eor     temp1, temp2    ; just toggle the xor result
     
