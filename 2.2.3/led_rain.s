@@ -56,6 +56,10 @@ busy_wait_inner:
     push    temp
     ldi     temp, 0x00
 busy_loop_inner:
+    nop
+    nop
+    nop
+    nop
     inc     temp
     brne    busy_loop_inner
     pop     temp
@@ -127,6 +131,10 @@ infinite_loop:
     or      temp, temp1
     out     PORTG, temp
 
+    rcall   busy_wait
+    rcall   busy_wait
+    rcall   busy_wait
+    rcall   busy_wait
     rcall   busy_wait
 
     inc     cnt0
