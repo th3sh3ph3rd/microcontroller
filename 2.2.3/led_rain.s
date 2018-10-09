@@ -22,28 +22,44 @@ rjmp   main
 ; For simplicity (!), we use a simple busy wait loop for the delay.
 ; NB: If this were an actual program (like one of your lab exercises),
 ; we would of course use one of the AVR's timers.
-busy_wait:
+busy_wait_vl:
     ldi    temp, 0x00
-    rcall  busy_wait_0
-    rcall  busy_wait_0
-    rcall  busy_wait_0
-    ret
-    
-busy_wait_0:
+    rcall  busy_wait_vl_0
+    rcall  busy_wait_vl_0
+    rcall  busy_wait_vl_0
+    ret 
+busy_wait_vl_0:
     push   temp
     ldi    temp, 0x00
-busy_wait_1:
+busy_wait_vl_1:
     nop
     nop
     nop
     nop
     dec    temp
-    brne   busy_wait_1
+    brne   busy_wait_vl_1
     pop    temp
     dec    temp
-    brne   busy_wait_0
+    brne   busy_wait_vl_0
     ret
 
+busy_wait:
+    push    temp
+    ldi     temp, 0x00
+busy_loop:
+    rcall   busy_wait_inner
+    inc     temp
+    brne    busy_loop
+    pop     temp
+    ret
+busy_wait_inner:
+    push    temp
+    ldi     temp, 0x00
+busy_loop_inner:
+    inc     temp
+    brne    busy_loop_inner
+    pop     temp
+    ret
 
 ; This is the main program.
 main:
