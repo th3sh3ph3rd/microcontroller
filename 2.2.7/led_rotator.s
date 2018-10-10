@@ -60,10 +60,7 @@ main:
     sei
 
 loop:
-    ; TODO modify to use sleep
-    out     PORTA, leden
-    out     PORTB, leden
-    out     PORTC, leden
+    sleep
     rjmp    loop
 
 
