@@ -1,4 +1,4 @@
-FILENAME = led_curtain
+FILENAME = led_curtain_v2
 
 MCU = atmega1280
 ARCH = avr51
