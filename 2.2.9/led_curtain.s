@@ -15,10 +15,11 @@
 
 ; Temp registers
 .equ temp, 0x10
-.equ port, 0x11
-.equ state, 0x12
-.equ port_state, 0x13
-.equ save, 0x14
+.equ port_lo, 0x11
+.equ port_hi, 0x12
+.equ state, 0x13
+.equ port_state, 0x14
+.equ save, 0x15
 
 .section .text
 
@@ -81,6 +82,10 @@ main:
     sts     PORTE, temp
     sts     PORTF, temp
     sts     PORTG, temp
+    sts     PORTH, temp
+    sts     PORTJ, temp
+    sts     PORTK, temp
+    sts     PORTL, temp
     
     ; set A-G as output
     ldi     temp, 0xff
@@ -91,6 +96,10 @@ main:
     out     DDRE, temp
     out     DDRF, temp
     out     DDRG, temp
+    sts     DDRH, temp
+    sts     DDRJ, temp
+    sts     DDRK, temp
+    sts     DDRL, temp
 
     ; configure timer 1
     ; set output compare register A
@@ -112,7 +121,8 @@ main:
     sts     TCCR1B, temp
 
     ; init variables
-    ldi     port, PORTA
+    ldi     port_lo, lo8(PORTA)
+    ldi     port_hi, hi8(PORTA)
     ldi     state, 0x00
 
     ; enable interrupts
@@ -125,14 +135,13 @@ loop:
 tmrisr:
     in      save, SREG
 
-    push    port
-    clr     temp
-    push    temp
+    push    port_lo
+    push    port_hi
     rcall   update_port
     pop     temp
     pop     temp
     
-    cpi     port, PORTA
+    cpi     port_lo, PORTA
     brne    next_port
     cpi     port_state, 0x00
     breq    reset_state
@@ -147,13 +156,24 @@ set_state:
     ldi     state, 0x01
 
 next_port:
-    cpi     port, PORTF
+    cpi     port_lo, PORTG
+    breq    ext_io
+    cpi     port_lo, lo8(PORTL)
+    brne    inc_port
+    cpi     port_hi, hi8(PORTL)
     breq    rst_port
-    subi    port, -3
-    out     SREG, save
-    reti
+inc_port:    
+    subi    port_lo, -3
+    rjmp    end_isr
+ext_io:
+    ldi     port_lo, lo8(PORTH)
+    ldi     port_hi, hi8(PORTH)
+    rjmp    end_isr
 rst_port:
-    ldi     port, PORTA
+    ldi     port_lo, lo8(PORTA)
+    ldi     port_hi, hi8(PORTA)
+
+end_isr:
     out     SREG, save
     reti
 
