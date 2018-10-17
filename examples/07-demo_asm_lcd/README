@@ -1,0 +1,7 @@
+
+This example shows how to use the precompiled LCD module.
+The delivered LCD module is used in some of the assembler exercises.
+
+Attention: The LCD module is precompiled for the lab setting expecting
+an ATmega1280 @ 16Mhz.
+
