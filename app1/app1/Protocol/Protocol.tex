@@ -1,0 +1,213 @@
+%***************************************************************************
+% MCLab Protocol Template
+%
+% Embedded Computing Systems Group
+% Institute of Computer Engineering
+% TU Vienna
+%
+%---------------------------------------------------------------------------
+% Vers. Author Date     Changes
+% 1.0   bw     10.03.06 first version
+% 1.1   bw     25.04.06 listing is in a different directory
+% 1.2   bw     24.05.06 tutor has to be listed on title page
+% 1.3   bw     16.06.06 statement about no plagiarism on title page (sign it!)
+% 1.4   mp     21.07.15 changed coversheet, rewording
+%---------------------------------------------------------------------------
+% Author names:
+%       bw      Bettina Weiss
+%       mp      Martin Perner
+%***************************************************************************
+
+\documentclass[12pt,a4paper,titlepage,oneside]{article}
+\usepackage{graphicx}            % fuer Bilder
+\usepackage{listings}            % fuer Programmlistings
+%\usepackage{german}              % fuer deutsche Umbrueche
+\usepackage[latin1]{inputenc}    % fuer Umlaute
+\usepackage{times}               % PDF files look good on screen
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{fullpage}
+\usepackage{tikz}
+\usepackage[capitalize,nameinlink,noabbrev]{cleveref}
+
+\lstset{language=C,
+	frame=single,
+	captionpos=b,
+}
+
+
+%***************************************************************************
+% note: the template is in English, but you can use German for your
+% protocol as well; in that case, remove the comment from the
+% \usepackage{german} line above
+%***************************************************************************
+
+
+%***************************************************************************
+% enter your data into the following fields
+%***************************************************************************
+\newcommand{\Vorname}{IhrVorname/Your First Name}
+\newcommand{\Nachname}{IhrNachname/YourSurname}
+\newcommand{\MatrNr}{3333333}
+\newcommand{\Email}{e3333333@student.tuwien.ac.at}
+\newcommand{\Part}{I}
+%***************************************************************************
+
+
+%***************************************************************************
+% generating the document from Protocol.tex:
+%       "pdflatex Protocol"        generates a .pdf file
+%       "pdflatex Protocol"        repeat to get correct table of contents
+%       "evince Protocol.pdf &"    shows the .pdf file on viewer
+%
+%***************************************************************************
+
+%---------------------------------------------------------------------------
+% include all the stuff that is the same for all protocols and students
+\input ProtocolHeader.tex
+%---------------------------------------------------------------------------
+
+\begin{document}
+
+%---------------------------------------------------------------------------
+% create titlepage and table of contents
+\MakeTitleAndTOC
+%---------------------------------------------------------------------------
+
+
+%***************************************************************************
+% This is where your protocol starts
+%***************************************************************************
+
+%***************************************************************************
+% remove the following lines from your own protocol file!
+%***************************************************************************
+\noindent
+\textbf{Note:} This template is provided to show you how \LaTeX{} works and may
+not contain all subsections your protocol should contain.\\
+\textbf{Note:} You can, and in fact should, reuse appropriate parts
+from the implementation proposal in the protocol.
+
+
+%***************************************************************************
+\section{Overview}
+%***************************************************************************
+
+%---------------------------------------------------------------------------
+\subsection{Connections,  External Pullups/Pulldowns}
+%---------------------------------------------------------------------------
+
+\bConnections{What}{}
+J12 & Connected to VCC \\
+\eConnections
+
+Write down all things we need to know to get your program running on our board.
+All non-standard external connections, all switches your program needs, \dots
+If we cannot figure out how we get your program running, we can not give you
+	points for it.
+
+
+%---------------------------------------------------------------------------
+\subsection{Design Decisions}
+%---------------------------------------------------------------------------
+
+Here comes the design decisions that you made during programming.
+
+%---------------------------------------------------------------------------
+\subsection{Specialities}
+%---------------------------------------------------------------------------
+
+Does you solution have something special (positive or negative)?
+
+
+%***************************************************************************
+\section{Main Application}
+%***************************************************************************
+
+Describe your application.
+
+
+
+
+
+%***************************************************************************
+\section{Music Playback}
+%***************************************************************************
+
+%---------------------------------------------------------------------------
+\subsection{SPI}
+%---------------------------------------------------------------------------
+
+Explain your modules.
+
+%---------------------------------------------------------------------------
+\subsection{Playback}
+%---------------------------------------------------------------------------
+
+
+%***************************************************************************
+\section{LC--Display}
+%***************************************************************************
+
+%---------------------------------------------------------------------------
+\subsection{GLCD}
+%---------------------------------------------------------------------------
+
+Explain your modules.
+
+%---------------------------------------------------------------------------
+\subsection{HAL GLCD}
+%---------------------------------------------------------------------------
+
+
+
+%***************************************************************************
+\section{...explain your application modules ...}
+%***************************************************************************
+
+%***************************************************************************
+\section{...the above were only examples}
+%***************************************************************************
+
+
+
+%***************************************************************************
+\section{Problems}
+%***************************************************************************
+
+In this section you can write about the problems you encoutered while
+	implementation your application.
+This can range from misunderstanding of the hardware, to plain, simple, typos
+	in your program.
+
+This is important information for us, which allows us to determine if there
+	were common problems and act accordingly.
+Don't worry, we don't deduct points for problems mention here which are
+	already fixed.
+
+
+%***************************************************************************
+\section{Work}
+%***************************************************************************
+
+Estimate the work you put into solving the Application.
+You can add additional points, if you like.
+
+\begin{tabular}{|l|c|c|}\hline
+	Task & Assumption (IP) & Reality \\ \hline
+
+	reading manuals, datasheets &  5 h &  5 h\\
+	program design              &  5 h &  5 h\\
+	programming                 & 10 h & 10 h\\
+	debugging                   & 45 h & 50 h\\
+	questions, protocol         & 10 h &  5 h\\ \hline
+
+	\textbf{Total}              & 75 h & 75 h\\ \hline
+\end{tabular}
+
+
+%***************************************************************************
+\newpage
+\end{document}
+

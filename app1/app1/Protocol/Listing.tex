@@ -1,0 +1,59 @@
+%***************************************************************************
+% MCLab Listing Template
+%
+% Embedded Computing Systems Group
+% Institute of Computer Engineering
+% TU Vienna
+%
+%---------------------------------------------------------------------------
+% Vers. Author Date     Changes
+% 1.0   mp	   23.03.15	first version based on protocol template
+% 1.1   mp     11.05.15  changes to style of code listings
+% 1.2   mp     21.07.15 fix indentation for very long lines, add list of
+%                       listings
+%---------------------------------------------------------------------------
+% Author names:
+%       mp      Martin Perner
+%***************************************************************************
+
+\documentclass[12pt,a4paper,titlepage,oneside]{article}
+\usepackage{graphicx}            % fuer Bilder
+\usepackage[formats]{listings}            % fuer Programmlistings
+%\usepackage{german}              % fuer deutsche Umbrueche
+\usepackage[latin1]{inputenc}    % fuer Umlaute
+\usepackage{times}               % PDF files look good on screen
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{fullpage}
+
+\lstdefineformat{C}{%
+\{=\newline\string\newline\indent,%
+\}=[;]\newline\noindent\string\newline,%
+\};=\newline\noindent\string\newline,%
+;=[\ ]\string\space}
+
+% Please do not add color highlighting. For the correction, we print the
+% listings with a black&white printer. Thus the readability of your code
+% suffers if there are colors used! (We know that color-highlighting is
+% awesome, but for printing b&w is enough ;) )
+\lstset{language=C,
+	% format=C, % if you enable this, check that the formating is still okay!
+	frame=single,
+	captionpos=b,
+	breaklines=true,
+	breakautoindent=false,
+	postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow\space}},
+	basicstyle=\scriptsize,
+	caption=\lstname,
+	captionpos=t,
+}
+
+\renewcommand*{\thepage}{A-\arabic{page}}
+
+\begin{document}
+\appendix
+\lstlistoflistings
+\include{listings}
+\end{document}
+
