@@ -35,8 +35,6 @@ uint8_t rand_shift(uint8_t in)
 
     asm volatile
     (
-        //"in     __tmp_reg__, __SREG__"  "\n\t" /* save interrupt flag */
-        //"cli"                           "\n\t" /* disable interrupts */
         "bst    %A1, 0"                 "\n\t" /* LSB(out) := LSB(lfsr) */
         "bld    %0, 0"                  "\n\t"
         "lsr    %B1"                    "\n\t" /* lsfr >> 1 */
@@ -48,7 +46,6 @@ uint8_t rand_shift(uint8_t in)
         "eor    %A1, %A3"               "\n\t" /* lfsr := lfsr xor poly  */
         "eor    %B1, %B3"               "\n\t"
         "L_end%=:"                      "\n\t"
-        //"out    __SREG__, __tmp_reg__"  "\n\t" /* restore interrupt flag */
         : "=r" (out), "=r" (lfsr)
         : "r" (in), "r" (poly), "0" (out), "1" (lfsr)
     );
@@ -71,7 +68,6 @@ void rand_feed(uint8_t in)
  * @brief       Get one bit of random data from the LFSR.
  * @return      A random bit.
  */
-//TODO which value to feed???
 uint8_t rand1()
 {
     return rand_shift(0);

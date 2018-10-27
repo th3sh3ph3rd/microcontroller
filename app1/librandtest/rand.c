@@ -53,6 +53,12 @@ uint8_t rand_shift(uint8_t in)
         : "r" (in), "r" (poly), "0" (out), "1" (lfsr)
     );
 
+    /*out = ((uint8_t) lfsr) & 1;
+    lfsr >>= 1;
+    lfsr |= ((uint16_t) in) << 15;
+    if (out)
+        lfsr ^= poly;*/
+
     SREG = tmp_SREG;
 
     return out;
