@@ -9,12 +9,13 @@
  */
 
 #include <avr/io.h>
+#include <avr/interrupt.h>
 #include <stdint.h>
 
 #include "rand.h"
 
 /**
- * @brief       The LFSR used for computing random numbers.
+ * @brief       The LFSR used for computing pseudo-random numbers.
  */
 static uint16_t lfsr = 1;
 
@@ -26,27 +27,33 @@ static uint16_t lfsr = 1;
 uint8_t rand_shift(uint8_t in)
 {
     uint8_t out = 0;
+    uint8_t tmp_SREG;
     uint16_t poly = POLYNOMIAL;
     
+    tmp_SREG = SREG;
+    cli();
+
     asm volatile
     (
-        "in     __temp_reg__, __SREG__" "\n\t" /* save interrupt flag */
-        "cli"                           "\n\t" /* disable interrupts */
-        "bst    %A3, 0"                 "\n\t" /* LSB(out) := LSB(lfsr) */
+        //"in     __tmp_reg__, __SREG__"  "\n\t" /* save interrupt flag */
+        //"cli"                           "\n\t" /* disable interrupts */
+        "bst    %A1, 0"                 "\n\t" /* LSB(out) := LSB(lfsr) */
         "bld    %0, 0"                  "\n\t"
-        "lsr    %B3"                    "\n\t" /* lsfr >> 1 */
-        "ror    %A3"                    "\n\t"
-        "bst    %1, 0"                  "\n\t" /* MSB(lfsr) := LSB(in) */
-        "bld    %B3, 7"                 "\n\t"
-        "out    __SREG__, __temp_reg__" "\n\t" /* restore interrupt flag */
+        "lsr    %B1"                    "\n\t" /* lsfr >> 1 */
+        "ror    %A1"                    "\n\t"
+        "bst    %2, 0"                  "\n\t" /* MSB(lfsr) := LSB(in) */
+        "bld    %B1, 7"                 "\n\t"
         "sbrs   %0, 0"                  "\n\t" /* if out */
         "rjmp   L_end%="                "\n\t"
-        "eor    %A3, %A2"               "\n\t" /* lfsr := lfsr xor poly  */
-        "eor    %B3, %B2"               "\n\t"
+        "eor    %A1, %A3"               "\n\t" /* lfsr := lfsr xor poly  */
+        "eor    %B1, %B3"               "\n\t"
         "L_end%=:"                      "\n\t"
-        : "=r" (out)
-        : "r" (in), "r" (poly), "r" (lfsr), "0" (out)
+        //"out    __SREG__, __tmp_reg__"  "\n\t" /* restore interrupt flag */
+        : "=r" (out), "=r" (lfsr)
+        : "r" (in), "r" (poly), "0" (out), "1" (lfsr)
     );
+
+    SREG = tmp_SREG;
 
     return out;
 }
