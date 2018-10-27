@@ -2,7 +2,7 @@
  *
  * @file rand.c
  * @author Jan Nausner <e01614835@student.tuwien.ac.at>
- * @date 2018-10-16
+ * @date 2018-10-26
  *
  * Implementation of the PRNG module.
  *

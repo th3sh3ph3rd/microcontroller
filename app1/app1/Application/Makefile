@@ -1,6 +1,7 @@
 #
-# Makefile for the C LCD demo
-#
+# Makefile for the "Falling Down Ball" - game
+# Author: Jan Nausner <e01614835@student.tuwien.ac.at>
+# 
 # Targets:
 #   all         generates flash file
 #   install     downloads elf file to mcu
