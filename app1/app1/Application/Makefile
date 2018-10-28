@@ -8,14 +8,14 @@
 #
 
 FILENAME    = main
-ADD_OBJECTS = drivers/lcd/lcd.o
-OBJECTS     = rand.o main.o
+ADD_OBJECTS = #drivers/lcd/lcd.o
+OBJECTS     = adc.o rand.o main.o
 
 MCU         = atmega1280
 
 CCLD        = avr-gcc
-CCFLAGS     = -mmcu=$(MCU) -Wall -Wstrict-prototypes -Os -frename-registers
-CCFLAGS    += -fshort-enums -fpack-struct -Idrivers/
+CCFLAGS     = -mmcu=$(MCU) -std=gnu99 -Wall -Wstrict-prototypes -Os -frename-registers
+CCFLAGS    += -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct -Idrivers/
 LDFLAGS     = -mmcu=$(MCU) -Wl,-u,vfprintf -lprintf_min
 
 PROG        = avrprog2

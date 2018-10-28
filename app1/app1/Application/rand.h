@@ -8,7 +8,6 @@
  *
  */
 
-
 #ifndef __RAND__
 #define __RAND__
 

@@ -29,7 +29,8 @@ uint8_t rand_shift(uint8_t in)
     uint8_t out = 0;
     uint8_t tmp_SREG;
     uint16_t poly = POLYNOMIAL;
-    
+   
+    //TODO maybe move this also to inline asm
     tmp_SREG = SREG;
     cli();
 
