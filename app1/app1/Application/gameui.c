@@ -11,15 +11,16 @@
 #include <stdint.h>
 #include <glcd.h>
 
-#define WALL_GAP   12
+#define Y_HEIGHT    64
+#define WALL_GAP    12
 
-enum gt_state {IDLE, SCROLL, LEVEL};
+enum gt_state {GAME, SCROLL, LEVEL};
 
 static uint8_t walls = {{0, 26, 50, 57, 82, 109}};
 
 /* State variables */
 static uint8_t y_shift = 0;
-static enum gt_state gametick_state = DONE;
+static enum gt_state gametick_state = GAME;
 
 /* Counter variables */
 static uint8_t gameTicksScroll = 0;
@@ -66,7 +67,7 @@ uint8_t gameui_setup(game_state_t *game_state)
 //TODO for tasking return in every block
 uint8_t gameui_tick(game_state_t *game_state)
 {
-    if (IDLE == gametick_state)
+    if (GAME == gametick_state)
     {
         if (gameTicksScroll == gameTicksPerScroll)
         {
@@ -91,16 +92,17 @@ uint8_t gameui_tick(game_state_t *game_state)
             scrollTicks++;
         }
 
-        glcdSetYShift(++y_shift);
+        y_shift = (y_shift + 1) & (Y_HEIGHT-1);
+        glcdSetYShift(y_shift);
     }
 
     if (LEVEL == gametick_state)
     {
-        gametick_state = IDLE;
+        gametick_state = GAME;
         displayNewWall(0);
     }
 
-    return IDLE == gametick_state ? 0 : 1;
+    return !(GAME == gametick_state);
 }
 
 //uint8_t gameui_pause(game_state_t *game_state);
