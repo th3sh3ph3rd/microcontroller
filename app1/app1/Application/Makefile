@@ -8,15 +8,15 @@
 #
 
 FILENAME    = main
-ADD_OBJECTS = #drivers/lcd/lcd.o
-OBJECTS     = gameui.o main.o
+ADD_OBJECTS = adc/adc.o gameui/gameui.o hal_wt41_fc_uart/hal_wt41_fc_uart.o rand/rand.o
+OBJECTS     = main.o
 
 MCU         = atmega1280
 
 CCLD        = avr-gcc
 CCFLAGS     = -mmcu=$(MCU) -std=gnu99 -Wall -Wstrict-prototypes -Os -frename-registers
-CCFLAGS    += -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct -I. -Idrivers/ -Ilibglcd/
-LDFLAGS     = -mmcu=$(MCU) -Wl,-u,vfprintf -lprintf_min -lglcd -L. 
+CCFLAGS    += -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct -I. -Iadc/ -Igameui/ -Ihalwt41_fc_uart/ -Ilibglcd/ -Irand/
+LDFLAGS     = -mmcu=$(MCU) -Wl,-u,vfprintf -lprintf_min -Llibglcd -lglcd
 
 PROG        = avrprog2
 PRFLAGS     = -m$(MCU)
@@ -24,7 +24,7 @@ PRFLAGS     = -m$(MCU)
 all: $(FILENAME).elf
 
 $(FILENAME).elf: $(OBJECTS) $(ADD_OBJECTS)
-	$(CCLD) $(LDFLAGS) -o $@ $(OBJECTS) $(ADD_OBJECTS)
+	$(CCLD) -o $@ $(OBJECTS) $(ADD_OBJECTS) $(LDFLAGS)
 
 %.o: %.c
 	$(CCLD) $(CCFLAGS) -c -o $@ $<
@@ -36,5 +36,5 @@ verify: $(FILENAME).elf
 	$(PROG) $(PRFLAGS) --flash v:$<
 
 clean:
-	rm -f $(FILENAME).elf $(OBJECTS)
+	rm -f $(FILENAME).elf $(OBJECTS) $(ADD_OBJECTS)
 

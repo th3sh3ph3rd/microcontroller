@@ -6,7 +6,7 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 
-#include "gameui.h"
+#include <gameui.h>
 
 #define MS_STEP         (15)            /* 15 ms, results in a display update interval of about 2Hz */
 #define CONV_MS(x)      (x / MS_STEP)
