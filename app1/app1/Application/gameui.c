@@ -11,12 +11,14 @@
 #include <stdint.h>
 #include <glcd.h>
 
+#include <gameui.h>
+
 #define Y_HEIGHT    64
 #define WALL_GAP    12
 
 enum gt_state {GAME, SCROLL, LEVEL};
 
-static uint8_t walls = {{0, 26, 50, 57, 82, 109}};
+static uint8_t walls[1][6] = {{0, 26, 50, 57, 82, 109}};
 
 /* State variables */
 static uint8_t y_shift = 0;
@@ -28,7 +30,7 @@ static uint8_t gameTicksPerScroll = 10;
 static uint8_t scrollTicks = 0;
 
 /* Local functions */
-static void displayNewWall(void);
+static void displayNewWall(uint8_t y_off);
 
 /**
  * @brief       Initialize the game user interface.
@@ -50,7 +52,7 @@ uint8_t gameui_setup(game_state_t *game_state)
         y_off += WALL_GAP+1;
     }
 
-    y_shift = glcdSetYShift();
+    y_shift = glcdGetYShift();
 
     *game_state = RUNNING;
 
@@ -111,17 +113,17 @@ uint8_t gameui_tick(game_state_t *game_state)
 
 static void displayNewWall(uint8_t y_off)
 {
-    xy_point_t point0, point1;
+    xy_point point0, point1;
 
-    point0.y = WALL_DIST;
-    point1.y = WALL_DIST;
+    point0.y = WALL_GAP;
+    point1.y = WALL_GAP;
 
     for (uint8_t i = 0; i < 6; i += 2)
     {
         point0.x = walls[0][i];
         point1.x = walls[0][i+1];
         
-        glcdDrawLine(point0, point1);
+        glcdDrawLine(point0, point1, &glcdSetPixel);
     }
 }
 

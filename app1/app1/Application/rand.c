@@ -10,14 +10,16 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <util/atomic.h>
 #include <stdint.h>
 
 #include "rand.h"
 
-/**
- * @brief       The LFSR used for computing pseudo-random numbers.
- */
+/* The LFSR used for computing pseudo-random numbers. */
 static uint16_t lfsr = 1;
+
+/* The polynomial for the PRNG */
+static const uint16_t poly = POLYNOMIAL;
 
 /**
  * @brief       Shift the LFSR to the right, shifting in the LSB of the parameter. Usually not called directly.
@@ -27,31 +29,26 @@ static uint16_t lfsr = 1;
 uint8_t rand_shift(uint8_t in)
 {
     uint8_t out = 0;
-    uint8_t tmp_SREG;
-    uint16_t poly = POLYNOMIAL;
-   
-    //TODO maybe move this also to inline asm
-    tmp_SREG = SREG;
-    cli();
 
-    asm volatile
-    (
-        "bst    %A1, 0"                 "\n\t" /* LSB(out) := LSB(lfsr) */
-        "bld    %0, 0"                  "\n\t"
-        "lsr    %B1"                    "\n\t" /* lsfr >> 1 */
-        "ror    %A1"                    "\n\t"
-        "bst    %2, 0"                  "\n\t" /* MSB(lfsr) := LSB(in) */
-        "bld    %B1, 7"                 "\n\t"
-        "sbrs   %0, 0"                  "\n\t" /* if out */
-        "rjmp   L_end%="                "\n\t"
-        "eor    %A1, %A3"               "\n\t" /* lfsr := lfsr xor poly  */
-        "eor    %B1, %B3"               "\n\t"
-        "L_end%=:"                      "\n\t"
-        : "=r" (out), "=r" (lfsr)
-        : "r" (in), "r" (poly), "0" (out), "1" (lfsr)
-    );
-
-    SREG = tmp_SREG;
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    {
+        asm volatile
+        (
+            "bst    %A1, 0"                 "\n\t" /* LSB(out) := LSB(lfsr) */
+            "bld    %0, 0"                  "\n\t"
+            "lsr    %B1"                    "\n\t" /* lsfr >> 1 */
+            "ror    %A1"                    "\n\t"
+            "bst    %2, 0"                  "\n\t" /* MSB(lfsr) := LSB(in) */
+            "bld    %B1, 7"                 "\n\t"
+            "sbrs   %0, 0"                  "\n\t" /* if out */
+            "rjmp   L_end%="                "\n\t"
+            "eor    %A1, %A3"               "\n\t" /* lfsr := lfsr xor poly  */
+            "eor    %B1, %B3"               "\n\t"
+            "L_end%=:"                      "\n\t"
+            : "=r" (out), "=r" (lfsr)
+            : "r" (in), "r" (poly), "0" (out), "1" (lfsr)
+        );
+    }
 
     return out;
 }

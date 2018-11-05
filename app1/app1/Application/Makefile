@@ -9,14 +9,14 @@
 
 FILENAME    = main
 ADD_OBJECTS = #drivers/lcd/lcd.o
-OBJECTS     = adc.o rand.o main.o
+OBJECTS     = gameui.o main.o
 
 MCU         = atmega1280
 
 CCLD        = avr-gcc
 CCFLAGS     = -mmcu=$(MCU) -std=gnu99 -Wall -Wstrict-prototypes -Os -frename-registers
-CCFLAGS    += -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct -Idrivers/
-LDFLAGS     = -mmcu=$(MCU) -Wl,-u,vfprintf -lprintf_min
+CCFLAGS    += -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct -I. -Idrivers/ -Ilibglcd/
+LDFLAGS     = -mmcu=$(MCU) -Wl,-u,vfprintf -lprintf_min -lglcd -L. 
 
 PROG        = avrprog2
 PRFLAGS     = -m$(MCU)

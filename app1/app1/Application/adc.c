@@ -15,7 +15,7 @@
 /* Sample ADC0 with AVCC as VREF - connected to onboard potentiometer */
 #define ADMUX_POT   (1<<REFS0)
 /* Sample ADC3 and ADC2 in differential mode with 200x amplification and 2.56V VREF */
-#define ADMUX_DIF  (1<<REFS0)|(1<<MUX3)|(1<<MUX2)|(1<<MUX1)|(1<<MUX0)
+#define ADMUX_DIF   (1<<REFS0)|(1<<MUX3)|(1<<MUX2)|(1<<MUX1)|(1<<MUX0)
 /* Set timer frequency to ~200Hz if used with a prescaler of 1024, so every channel gets read every ~10ms */
 #define OCV         38
 
@@ -40,7 +40,8 @@ void adc_init(void)
     /* Enable output compare interrupt B */
     TIMSK0 |= (1<<OCIE0A);
     /* Set timer to CTC mode and set prescaler to 1024 */
-    TCCR0B |= (1<<WGM02)|(1<<CS02)|(1<<CS00);
+    TCCR0A |= (1<<WGM01);
+    TCCR0B |= (1<<CS02)|(1<<CS00);
  
     /*****************
      * Setup the ADC *
@@ -72,17 +73,18 @@ void adc_setCallbacks(void (*_difCB)(uint16_t adc), void (*_potCB)(uint16_t adc)
 //TODO maybe disable ADC bfeore reading
 ISR(ADC_vect, ISR_BLOCK)
 {
+    uint16_t adc_res = ADC;
+    ADCSRA &= ~(1<<ADEN);
+
     if (state == DIF)
     {
         difCB(ADC);
-        ADCSRA &= ~(1<<ADEN);
         ADMUX = ADMUX_POT;
         state = POT;
     }
     else
     {
         potCB(ADC);
-        ADCSRA &= ~(1<<ADEN);
         ADMUX = ADMUX_DIF;
         state = DIF;
     }
