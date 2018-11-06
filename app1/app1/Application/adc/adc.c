@@ -12,10 +12,10 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 
-/* Sample ADC0 with AVCC as VREF - connected to onboard potentiometer */
-#define ADMUX_POT   (1<<REFS0)
-/* Sample ADC3 and ADC2 in differential mode with 200x amplification and 2.56V VREF */
-#define ADMUX_DIF   (1<<REFS0)|(1<<MUX3)|(1<<MUX2)|(1<<MUX1)|(1<<MUX0)
+#include <adc.h>
+
+/* Sample ADC3 and ADC2 in differential mode with 200x amplification */
+#define ADMUX_DIF   (1<<MUX3)|(1<<MUX2)|(1<<MUX1)|(1<<MUX0)
 /* Set timer frequency to ~200Hz if used with a prescaler of 1024, so every channel gets read every ~10ms */
 #define OCV         38
 
@@ -28,7 +28,6 @@ static void (*potCB)(uint16_t adc);
 /**
  * @brief       Initialize the ADC driver.
  */
-//TODO maybe set timer period via argument
 void adc_init(void)
 { 
     /*******************
@@ -47,7 +46,8 @@ void adc_init(void)
      * Setup the ADC *
      *****************/
 
-    ADMUX |= ADMUX_DIF;
+    /* Set voltage reference to AVCC */
+    ADMUX |= (1<<REFS0);
     /* Enable auto triggering, enable ADC interrupt and use 128 as prescaler */
     ADCSRA |= (1<<ADATE)|(1<<ADIE)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
     /* Select timer0 compare match A as auto trigger source  */
@@ -68,25 +68,26 @@ void adc_setCallbacks(void (*_difCB)(uint16_t adc), void (*_potCB)(uint16_t adc)
 }
 
 /**
- * @brief   Read the ADC value, pass it to the approbriate callback, disable the ADC and switch to the next channel.
+ * @brief   Read the ADC value, pass it to the appropriate callback, disable the ADC and switch to the next channel.
  */
-//TODO toggle ADMUX bits
 ISR(ADC_vect, ISR_BLOCK)
 {
     uint16_t adc_res = ADC;
     ADCSRA &= ~(1<<ADEN);
 
-    if (state == DIF)
+    if (DIF == state)
     {
-        difCB(ADC);
-        ADMUX = ADMUX_POT;
+        ADMUX &= ~(ADMUX_DIF);
         state = POT;
+        sei();
+        difCB(adc_res);
     }
-    else
+    else if (POT == state)
     {
-        potCB(ADC);
-        ADMUX = ADMUX_DIF;
+        ADMUX |= ADMUX_DIF;
         state = DIF;
+        sei();
+        potCB(adc_res);
     }
 }
 

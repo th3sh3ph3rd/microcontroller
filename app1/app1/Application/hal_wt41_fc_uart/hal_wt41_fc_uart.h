@@ -12,7 +12,7 @@
 #define __HAL_WT41_FC_UART__
 
 #include <stdint.h>
-#include "wii_user.h"
+#include <util.h>
 
 /**
  * @brief               Initialize the WT41 HAL module.
@@ -20,7 +20,7 @@
  * @param rcvCallback   This callback gets called for every character received from the WT41.
  */
 error_t halWT41FcUartInit(
-        void (*sndCallback)(),
+        void (*sndCallback)(void),
         void (*rcvCallback)(uint8_t)
     );
 

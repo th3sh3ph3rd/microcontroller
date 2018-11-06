@@ -25,7 +25,7 @@ int main(void)
 
     sei();
     
-    gameui_setup();
+    gameui_setup(NULL);
     
     set_sleep_mode(SLEEP_MODE_IDLE);
     sleep_enable();

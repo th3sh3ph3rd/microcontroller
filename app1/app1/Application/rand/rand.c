@@ -13,7 +13,7 @@
 #include <util/atomic.h>
 #include <stdint.h>
 
-#include "rand.h"
+#include <rand.h>
 
 /* The LFSR used for computing pseudo-random numbers. */
 static uint16_t lfsr = 1;

@@ -13,14 +13,14 @@
 
 #include <stdint.h>
 
-typedef enum game_state {GAME_OVER, RUNNING, PAUSED, CONNECTING} game_state_t;
+typedef enum game_state {START, RUNNING, GAME_OVER, PAUSED, CONNECTING} game_state_t;
 
 /**
  * @brief       Initialize the game user interface.
  */
 void gameui_init(void);
 
-uint8_t gameui_start(game_state_t *game_state);
+uint8_t gameui_setup(game_state_t *game_state);
 
 /**
  * @brief               Completes one tick of the game user interface, consisting of fetching user input

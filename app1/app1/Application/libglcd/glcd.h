@@ -161,7 +161,7 @@ void glcdSetYShift(uint8_t yshift);
     \param return   Y position in RAM that becomes the top line of the display
 
 */
-uint8_t glcdGetYShift();
+uint8_t glcdGetYShift(void);
 
 #endif
 

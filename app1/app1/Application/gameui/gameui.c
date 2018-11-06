@@ -69,7 +69,7 @@ uint8_t gameui_setup(game_state_t *game_state)
 /**
  * @brief               Completes one tick of the game user interface, consisting of fetching user input
  *                      and updating the picture on the screen accordingly.
- * @param game_state    The games state after calling the function is stored here. Must not be NULL.
+ * @param game_state    The game state after calling the function is stored here. Must not be NULL.
  * @return              The function returns a non-zero value if there is still something to do and 0 if
  *                      all tasks of one tick have been completed.
  */

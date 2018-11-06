@@ -15,9 +15,9 @@
 #include <stdint.h>
 
 /* Needed for error_t definition */
-#include "util.h"
+#include <util.h>
+#include <hal_wt41_fc_uart.h>
 
-//TODO change these according to real board configuration
 #define CTS_PIN PJ3
 #define RTS_PIN PJ2
 #define RST_PIN PJ5
@@ -178,7 +178,6 @@ static void processRingbuffer(void)
         recvCallback(rbuf.data[rbuf.end]);
         rbuf.end = (rbuf.end + 1) & (RBUF_SZ - 1);
         
-        //TODO maybe make atomic part smaller
         ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
         {
             rbuf.len--;

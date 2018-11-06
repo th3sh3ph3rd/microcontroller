@@ -10,6 +10,7 @@
 
 #include <avr/io.h>
 #include <stdint.h>
+
 #include <spi.h>
 
 /* SPI pin definitions */
@@ -50,8 +51,11 @@ void spiSend(uint8_t data)
  */
 uint8_t spiReceive(void)
 {
-    /* Busy-wait for reception to complete */
-    while (!(SPSR & (1<<SPIF)));
+    /* Busy-wait for reception to complete and send dummy value */
+    while (!(SPSR & (1<<SPIF)))
+    {
+        spiSend(0xff);
+    }
     /* Read received byte */
     return SPDR;
 }

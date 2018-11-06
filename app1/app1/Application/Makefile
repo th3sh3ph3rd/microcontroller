@@ -7,24 +7,24 @@
 #   install     downloads elf file to mcu
 #
 
-FILENAME    = main
-ADD_OBJECTS = adc/adc.o gameui/gameui.o hal_wt41_fc_uart/hal_wt41_fc_uart.o rand/rand.o
-OBJECTS     = main.o
+FILENAME    = timertest
+OBJECTS     = $(FILENAME).o
+OBJECTS	   += adc/adc.o gameui/gameui.o hal_wt41_fc_uart/hal_wt41_fc_uart.o rand/rand.o timer/timer.o
 
 MCU         = atmega1280
 
 CCLD        = avr-gcc
-CCFLAGS     = -mmcu=$(MCU) -std=gnu99 -Wall -Wstrict-prototypes -Os -frename-registers
-CCFLAGS    += -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct -I. -Iadc/ -Igameui/ -Ihalwt41_fc_uart/ -Ilibglcd/ -Irand/
-LDFLAGS     = -mmcu=$(MCU) -Wl,-u,vfprintf -lprintf_min -Llibglcd -lglcd
+CCFLAGS     = -mmcu=$(MCU) -std=gnu99 -Wall -Wextra -Wstrict-prototypes -Os -frename-registers
+CCFLAGS    += -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct -I. -Iadc -Igameui -Ihal_wt41_fc_uart -Ilibglcd -Ilibwiimote -Irand -Itimer
+LDFLAGS     = -mmcu=$(MCU) -Wl,-u,vfprintf -lprintf_min -Llibglcd -Llibwiimote -lglcd -lwiimote
 
 PROG        = avrprog2
 PRFLAGS     = -m$(MCU)
 
 all: $(FILENAME).elf
 
-$(FILENAME).elf: $(OBJECTS) $(ADD_OBJECTS)
-	$(CCLD) -o $@ $(OBJECTS) $(ADD_OBJECTS) $(LDFLAGS)
+$(FILENAME).elf: $(OBJECTS)
+	$(CCLD) -o $@ $(OBJECTS) $(LDFLAGS)
 
 %.o: %.c
 	$(CCLD) $(CCFLAGS) -c -o $@ $<
@@ -36,5 +36,5 @@ verify: $(FILENAME).elf
 	$(PROG) $(PRFLAGS) --flash v:$<
 
 clean:
-	rm -f $(FILENAME).elf $(OBJECTS) $(ADD_OBJECTS)
+	rm -f $(FILENAME).elf $(OBJECTS)
 
