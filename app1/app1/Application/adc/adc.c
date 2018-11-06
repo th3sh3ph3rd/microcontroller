@@ -70,7 +70,7 @@ void adc_setCallbacks(void (*_difCB)(uint16_t adc), void (*_potCB)(uint16_t adc)
 /**
  * @brief   Read the ADC value, pass it to the approbriate callback, disable the ADC and switch to the next channel.
  */
-//TODO maybe disable ADC bfeore reading
+//TODO toggle ADMUX bits
 ISR(ADC_vect, ISR_BLOCK)
 {
     uint16_t adc_res = ADC;

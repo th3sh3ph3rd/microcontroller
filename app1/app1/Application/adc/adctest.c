@@ -14,10 +14,12 @@
 //OCR1A = (((MS_STEP * F_CPU) / (64 * 1000U)) - 1);
 
 static uint8_t volume;
+static uint8_t adc_dif;
 
 void feedRand(uint16_t n)
 {
     rand_feed((uint8_t)n);
+    adc_dif = (uint8_t)n;
 }
 
 void setVolume(uint16_t n)
@@ -40,6 +42,7 @@ int main(void)
     while(1)
     {
         PORTA = (uint8_t)rand16();
+        //PORTA = adc_dif;
         PORTB = volume;
         _delay_ms(50);
     }

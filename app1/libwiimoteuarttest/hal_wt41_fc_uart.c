@@ -218,7 +218,7 @@ ISR(USART3_RX_vect, ISR_BLOCK)
 }
 
 /**
- * @brief   Empty the ringbuffer by calling the specified callback on every byte.
+ * @brief   After transmitting a byte, call the send callback.
  */
 ISR(USART3_TX_vect, ISR_BLOCK)
 {
