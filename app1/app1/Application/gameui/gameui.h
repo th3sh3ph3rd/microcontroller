@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 
-typedef enum game_state {START, RUNNING, GAME_OVER, PAUSED, CONNECTING} game_state_t;
+typedef enum game_state {START, CONNECT, PLAY, GAME_OVER, HIGHSCORE, PAUSED, RECONNECT} game_state_t;
 
 /**
  * @brief       Initialize the game user interface.
@@ -22,6 +22,10 @@ void gameui_init(void);
 
 uint8_t gameui_setup(game_state_t *game_state);
 
+uint8_t gameui_start(game_state_t *game_state);
+
+uint8_t gameui_connect(game_state_t *game_state);
+
 /**
  * @brief               Completes one tick of the game user interface, consisting of fetching user input
  *                      and updating the picture on the screen accordingly.
@@ -29,7 +33,7 @@ uint8_t gameui_setup(game_state_t *game_state);
  * @return              The function returns a non-zero value if there is still something to do and 0 if
  *                      all tasks of one tick have been completed.
  */
-uint8_t gameui_tick(game_state_t *game_state);
+uint8_t gameui_play(game_state_t *game_state);
 
 uint8_t gameui_pause(game_state_t *game_state);
 

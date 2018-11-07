@@ -34,7 +34,7 @@ int main(void)
     {
         if (tmr_int == 1)
         {
-            gameui_tick(NULL);
+            gameui_play(NULL);
             tmr_int = 0;
         }
         sleep_cpu();

@@ -11,12 +11,16 @@
 #include <stdint.h>
 #include <glcd.h>
 
+#include <wii_user.h>
 #include <gameui.h>
 
 #define Y_HEIGHT    64
 #define RAM_SIZE    8192
 #define RAM_ROWS    RAM_SIZE/Y_HEIGHT
 #define WALL_GAP    13
+
+/* Wii button encoding */
+#define BUTTON_A    0x08 << 8
 
 enum gt_state {GAME, SCROLL, LEVEL};
 
@@ -26,6 +30,7 @@ static const uint8_t walls[2][6] = {{0, 26, 50, 57, 82, 109},
 /* State variables */
 static uint8_t y_shift = 0;
 static enum gt_state gametick_state = GAME;
+static connection_status_t wiimote_status = DISCONNECTED;
 
 /* Counter variables */
 static uint8_t gameTicksScroll = 0;
@@ -33,6 +38,14 @@ static uint8_t gameTicksPerScroll = 10;
 static uint8_t scrollTicks = 0;
 
 static uint8_t toggle_wall = 0;
+
+/* Wii callback functions */
+static void buttonCB(uint8_t wii, uint16_t buttonStates);
+static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z);
+static void connectCB(uint8_t wii, connection_status_t status);
+
+static uint16_t buttons;
+static uint8_t button_A;
 
 /* Local functions */
 static void displayNewWall(uint8_t y_off);
@@ -43,7 +56,11 @@ static void clearWall(uint8_t y_off);
  */
 void gameui_init(void)
 {
-   glcdInit();
+    glcdInit();
+
+    wiiUserInit(&buttonCB, &accelCB);
+    
+    y_shift = glcdGetYShift();
 }
 
 //TODO alt name: levelInit
@@ -66,6 +83,55 @@ uint8_t gameui_setup(game_state_t *game_state)
     return 0;
 }
 
+
+uint8_t gameui_start(game_state_t *game_state)
+{
+    xy_point point0, point1;
+    point0.x = 0;
+    point0.y = 0;
+    point1.x = 127;
+    point1.y = 0;
+    glcdDrawLine(point0, point1, &glcdSetPixel);
+    
+    if (wiimote_status == DISCONNECTED)
+    {
+        *game_state = CONNECT;
+        glcdFillScreen(GLCD_CLEAR);
+        return 0;
+    }
+
+    if (button_A)
+    {
+        *game_state = PLAY;
+        glcdFillScreen(GLCD_CLEAR);
+        button_A = 0;
+    }
+
+    return 0;
+}
+
+//TODO move to states eg. call_connect, wait_connect...
+static uint8_t connect_called = 0;
+uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xe8, 0x28 };
+uint8_t gameui_connect(game_state_t *game_state)
+{
+    if (connect_called == 0)
+    {
+        wiiUserConnect(0, mac);
+        connect_called = 1;
+        return 0;
+    }
+
+    if (CONNECTED == wiimote_status)
+    {
+        *game_state = START;
+        connect_called = 0;
+        glcdFillScreen(GLCD_CLEAR);
+    }
+
+    return 0;
+}
+
 /**
  * @brief               Completes one tick of the game user interface, consisting of fetching user input
  *                      and updating the picture on the screen accordingly.
@@ -74,7 +140,7 @@ uint8_t gameui_setup(game_state_t *game_state)
  *                      all tasks of one tick have been completed.
  */
 //TODO for tasking return in every block
-uint8_t gameui_tick(game_state_t *game_state)
+uint8_t gameui_play(game_state_t *game_state)
 {
     if (GAME == gametick_state)
     {
@@ -120,12 +186,32 @@ uint8_t gameui_tick(game_state_t *game_state)
         toggle_wall = !toggle_wall;
     }
 
+    if (button_A)
+    {
+        *game_state = START;
+        glcdFillScreen(GLCD_CLEAR);
+        button_A = 0;
+    }
+
     return !(GAME == gametick_state);
 }
 
 //uint8_t gameui_pause(game_state_t *game_state);
 
 //uint8_t gameui_reconnect(game_state_t *game_state);
+
+static void buttonCB(uint8_t wii, uint16_t buttonStates)
+{
+    buttons = buttonStates;
+
+    if (button_A == 0)
+        button_A = ((buttonStates & BUTTON_A) != 0);
+}
+
+static void connectCB(uint8_t wii, connection_status_t status)
+{
+    wiimote_status = status;
+}
 
 static void displayNewWall(uint8_t y_off)
 {
