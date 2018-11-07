@@ -84,7 +84,7 @@ timer_error_t timer_startTimer1(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(v
 
     TIMSK1 |= (1<<OCIE1A);
 
-    return SUCC;
+    return SUCCESS;
 }
 
 timer_error_t timer_startTimer3(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(void))
@@ -121,7 +121,7 @@ timer_error_t timer_startTimer3(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(v
 
     TIMSK3 |= (1<<OCIE3A);
 
-    return SUCC;
+    return SUCCESS;
 }
 
 timer_error_t timer_startTimer4(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(void))
@@ -158,7 +158,7 @@ timer_error_t timer_startTimer4(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(v
 
     TIMSK4 |= (1<<OCIE4A);
 
-    return SUCC;
+    return SUCCESS;
 }
 
 timer_error_t timer_startTimer5(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(void))
@@ -195,7 +195,7 @@ timer_error_t timer_startTimer5(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(v
 
     TIMSK5 |= (1<<OCIE5A);
 
-    return SUCC;
+    return SUCCESS;
 }
 
 /*

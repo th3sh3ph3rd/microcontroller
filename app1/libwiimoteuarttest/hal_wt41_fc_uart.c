@@ -15,9 +15,12 @@
 #include <stdint.h>
 
 /* Needed for error_t definition */
-#include "util.h"
+#include <util.h>
+#include <timer.h>
+#include <hal_wt41_fc_uart.h>
 
-//TODO change these according to real board configuration
+#define RESET_TIME  5
+
 #define CTS_PIN PJ3
 #define RTS_PIN PJ2
 #define RST_PIN PJ5
@@ -45,24 +48,23 @@ static void (*sendCallback)(void);
 static void (*recvCallback)(uint8_t);
 
 /* State variables */
-enum sendstate {INIT, SEND, BLOCK};
+enum sendstate {IDLE, SEND, RES_BLOCK, UDR_BLOCK, HW_BLOCK};
 
 //TODO optimization: put in bitfield
 static volatile uint8_t wt41_reset_complete = 0;
 static volatile uint8_t ringbuffer_being_processed = 0;
 static volatile uint8_t CTS_state = 0;
-//TODO volatile needed?
-static volatile enum sendstate send_state = INIT;
+static volatile enum sendstate send_state = IDLE;
 
 /* Local functions */
 static void processRingbuffer(void);
+static void resetCompleted(void);
 
 /**
  * @brief               Initialize the WT41 HAL module.
  * @param sndCallback   This callback gets called when a character is sent to the WT41.
  * @param rcvCallback   This callback gets called for every character received from the WT41.
  */
-//TODO enable some sort of error handling
 error_t halWT41FcUartInit(
         void (*sndCallback)(void),
         void (*rcvCallback)(uint8_t)
@@ -80,8 +82,8 @@ error_t halWT41FcUartInit(
     /* Double transmission speed */
     UCSR3A |= (1<<U2X3);
     /* Enable RX & TX interrupts and enable RX & TX */
-    UCSR3B |= (1<<RXCIE3)|(1<<TXCIE3)|(1<<RXEN3)|(1<<TXEN3);
-    /* Disable user data register interrupt */
+	UCSR3B |= (1<<RXCIE3)|(1<<RXEN3)|(1<<TXEN3);	    
+	/* Disable user data register interrupt */
     UCSR3B &= ~(1<<UDRIE3);
     /* Frame format: 8 databits, 1 stopbit, no parity */
     UCSR3C |= (1<<UCSZ31)|(1<<UCSZ30);
@@ -105,25 +107,8 @@ error_t halWT41FcUartInit(
      * Reset the WT41 *
      *****************/
 
-    /* Configure timer 5A to wait for 5 ms */
-    OCR5A = 780;
-    TCNT5 = 0;
-    TCCR5B |= (1<<WGM52)|(1<<CS52)|(1<<CS50);
-    TIMSK5 |= (1<<OCIE5A);
-
-    NONATOMIC_BLOCK(NONATOMIC_RESTORESTATE)
-    {
-        set_sleep_mode(SLEEP_MODE_IDLE);
-        sleep_enable();
-        while (wt41_reset_complete != 1)
-        {
-            sleep_cpu();
-        }
-    }
-    TIMSK5 &= ~(1<<OCIE5A);
-
-    /* Pull RST high */
-    PORTJ |= (1<<RST_PIN);
+    /* Configure timer 5 for the reset interval */
+    timer_startTimer5(RESET_TIME, TIMER_SINGLE, &resetCompleted);
 
     return SUCCESS;
 }
@@ -134,34 +119,37 @@ error_t halWT41FcUartInit(
  */
 error_t halWT41FcUartSend(uint8_t byte)
 {
-    if (BLOCK != send_state)
+    if (IDLE == send_state)
         tx_byte_buf = byte;
 
     /* Buffer the byte until the wt41 reset has finished */
     if (wt41_reset_complete == 0)
     {
-        send_state = BLOCK;
+        send_state = RES_BLOCK;
         return ERROR;
     }
     /* High RTS inidcates flow control by WT41 */
     if ((PINJ & (1<<RTS_PIN)) != 0)
     {
         /* Enable pin change interrupt for RTS */
-        send_state = BLOCK;
+        send_state = HW_BLOCK;
         PCMSK1 |= (1<<RTS_INT);
         return ERROR;
     }
-    /* TX buffer not empty */
+    /* UDR not empty */
     if ((UCSR3A & (1<<UDRE3)) == 0)
     {
         /* Enable user data register interrupt */
-        send_state = BLOCK;
+        send_state = UDR_BLOCK;
         UCSR3B |= (1<<UDRIE3);
         return ERROR;
     }
 
+	send_state = SEND;
+	/* Copy byte into UART register */
     UDR3 = tx_byte_buf;
-    send_state = SEND;
+	/* Enable user data register interrupt */
+	UCSR3B |= (1<<UDRIE3);
 
     return SUCCESS;
 }
@@ -171,16 +159,17 @@ error_t halWT41FcUartSend(uint8_t byte)
  */
 static void processRingbuffer(void)
 {
-    ringbuffer_being_processed = 1;
-
-    while (rbuf.len > 0)
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-        recvCallback(rbuf.data[rbuf.end]);
-        rbuf.end = (rbuf.end + 1) & (RBUF_SZ - 1);
-        
-        //TODO maybe make atomic part smaller
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        ringbuffer_being_processed = 1;
+
+        do
         {
+            sei();
+            recvCallback(rbuf.data[rbuf.end]);
+            rbuf.end = (rbuf.end + 1) & (RBUF_SZ - 1);
+            cli();
+
             rbuf.len--;
             if (CTS_state == 1 &&
                 rbuf.len < RBUF_LOW)
@@ -188,10 +177,28 @@ static void processRingbuffer(void)
                 PORTJ &= ~(1<<CTS_PIN);
                 CTS_state = 0;
             }
-        }
+        } while (rbuf.len > 0);
+        
+        ringbuffer_being_processed = 0;
     }
+}
 
-    ringbuffer_being_processed = 0;
+/**
+ * @brief   Signify the end of the wt41 reset period and send one byte via
+ *          if the send function has been called during reset.
+ */
+static void resetCompleted(void)
+{
+    cli();
+	PORTJ |= (1<<RST_PIN);
+    wt41_reset_complete = 1;
+    if (RES_BLOCK == send_state)
+    {
+        sei();
+        halWT41FcUartSend(0);
+        return;
+    }
+    sei();
 }
 
 /**
@@ -211,21 +218,10 @@ ISR(USART3_RX_vect, ISR_BLOCK)
         CTS_state = 1;
     }
 
-    sei();
-
     if (ringbuffer_being_processed == 0)
-        processRingbuffer();
-}
-
-/**
- * @brief   After transmitting a byte, call the send callback.
- */
-ISR(USART3_TX_vect, ISR_BLOCK)
-{
-    if (SEND == send_state)
     {
         sei();
-        sendCallback();
+        processRingbuffer();
     }
 }
 
@@ -236,8 +232,17 @@ ISR(USART3_UDRE_vect, ISR_BLOCK)
 {
     /* Disable the interrupt */
     UCSR3B &= ~(1<<UDRIE3);
-    sei();
-    halWT41FcUartSend(0);
+	if (SEND == send_state)
+	{
+		send_state = IDLE;
+		sei();
+		sendCallback();
+	}	
+	else if (UDR_BLOCK == send_state)
+	{
+    	sei();
+    	halWT41FcUartSend(0);
+	}
 }
 
 /**
@@ -249,19 +254,5 @@ ISR(PCINT1_vect, ISR_BLOCK)
     PCMSK1 &= ~(1<<RTS_INT);
     sei();
     halWT41FcUartSend(0);
-}
-
-/**
- * @brief   Signify the end of the wt41 reset period and send one byte via
- *          if the send function has been called during reset.
- */
-ISR(TIMER5_COMPA_vect, ISR_BLOCK)
-{
-    wt41_reset_complete = 1;
-    if (BLOCK == send_state)
-    {
-        sei();
-        halWT41FcUartSend(0);
-    }
 }
 

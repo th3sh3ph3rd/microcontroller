@@ -19,7 +19,7 @@
 #include <timer.h>
 #include <hal_wt41_fc_uart.h>
 
-#define RESET_TIME  5
+#define RESET_MS	5
 
 #define CTS_PIN PJ3
 #define RTS_PIN PJ2
@@ -54,6 +54,7 @@ enum sendstate {IDLE, SEND, RES_BLOCK, UDR_BLOCK, HW_BLOCK};
 static volatile uint8_t wt41_reset_complete = 0;
 static volatile uint8_t ringbuffer_being_processed = 0;
 static volatile uint8_t CTS_state = 0;
+//TODO volatile needed?
 static volatile enum sendstate send_state = IDLE;
 
 /* Local functions */
@@ -65,6 +66,7 @@ static void resetCompleted(void);
  * @param sndCallback   This callback gets called when a character is sent to the WT41.
  * @param rcvCallback   This callback gets called for every character received from the WT41.
  */
+//TODO enable some sort of error handling
 error_t halWT41FcUartInit(
         void (*sndCallback)(void),
         void (*rcvCallback)(uint8_t)
@@ -82,12 +84,14 @@ error_t halWT41FcUartInit(
     /* Double transmission speed */
     UCSR3A |= (1<<U2X3);
     /* Enable RX & TX interrupts and enable RX & TX */
-    UCSR3B |= (1<<RXCIE3)|(1<<RXEN3)|(1<<TXEN3);	    
+    UCSR3B |= (1<<RXCIE3)|(1<<TXCIE3)|(1<<RXEN3)|(1<<TXEN3);
     /* Disable user data register interrupt */
     UCSR3B &= ~(1<<UDRIE3);
     /* Frame format: 8 databits, 1 stopbit, no parity */
     UCSR3C |= (1<<UCSZ31)|(1<<UCSZ30);
  
+	UCSR3B |= (1<<UDRIE3);
+
     /*************************
      * Setup HW flow control *
      *************************/
@@ -108,7 +112,16 @@ error_t halWT41FcUartInit(
      *****************/
 
     /* Configure timer 5 for the reset interval */
-    timer_startTimer5(RESET_TIME, TIMER_SINGLE, &resetCompleted);
+    timer_startTimer5(RESET_MS, TIMER_SINGLE, &resetCompleted);
+    NONATOMIC_BLOCK(NONATOMIC_RESTORESTATE)
+    {
+        set_sleep_mode(SLEEP_MODE_IDLE);
+        sleep_enable();
+        while (wt41_reset_complete != 1)
+        {
+            sleep_cpu();
+        }
+    }
 
     return SUCCESS;
 }
@@ -117,6 +130,7 @@ error_t halWT41FcUartInit(
  * @brief       Sends a byte to the WT41 bluetooth module.
  * @param byte  The byte to be sent.
  */
+//TODO determine if state update has to be atomic
 error_t halWT41FcUartSend(uint8_t byte)
 {
     if (IDLE == send_state)
@@ -136,20 +150,17 @@ error_t halWT41FcUartSend(uint8_t byte)
         PCMSK1 |= (1<<RTS_INT);
         return ERROR;
     }
-    /* UDR not empty */
+    /* TX buffer not empty */
     if ((UCSR3A & (1<<UDRE3)) == 0)
     {
         /* Enable user data register interrupt */
         send_state = UDR_BLOCK;
-        UCSR3B |= (1<<UDRIE3);
+        //UCSR3B |= (1<<UDRIE3);
         return ERROR;
     }
 
-    send_state = SEND;
-    /* Copy byte into UART register */
+	send_state = SEND;
     UDR3 = tx_byte_buf;
-    /* Enable user data register interrupt */
-    UCSR3B |= (1<<UDRIE3);
 
     return SUCCESS;
 }
@@ -157,6 +168,36 @@ error_t halWT41FcUartSend(uint8_t byte)
 /**
  * @brief   Empty the ringbuffer by calling the specified callback on every byte.
  */
+//static void processRingbuffer(void)
+//{
+//    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+//    {
+//        ringbuffer_being_processed = 1;
+//    }
+//
+//    do
+//    {
+//        recvCallback(rbuf.data[rbuf.end]);
+//        rbuf.end = (rbuf.end + 1) & (RBUF_SZ - 1);
+//        
+//        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+//        {
+//            rbuf.len--;
+//            if (CTS_state == 1 &&
+//                rbuf.len < RBUF_LOW)
+//            {
+//                PORTJ &= ~(1<<CTS_PIN);
+//                CTS_state = 0;
+//            }
+//        }
+//    } while (rbuf.len > 0);
+//
+//    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+//    {
+//        ringbuffer_being_processed = 0;
+//    }
+//}
+
 static void processRingbuffer(void)
 {
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
@@ -190,7 +231,7 @@ static void processRingbuffer(void)
 static void resetCompleted(void)
 {
     cli();
-    /* Disable reset */
+	/* Disable RST */
     PORTJ |= (1<<RST_PIN);
     wt41_reset_complete = 1;
     if (RES_BLOCK == send_state)
@@ -227,23 +268,39 @@ ISR(USART3_RX_vect, ISR_BLOCK)
 }
 
 /**
+ * @brief   After transmitting a byte, call the send callback.
+ */
+ISR(USART3_TX_vect, ISR_BLOCK)
+{
+/*    if (SEND == send_state)
+    {
+        sei();
+        sendCallback();
+    }*/
+}
+
+/**
  * @brief   Try sending the byte which has been held back by a full buffer.
  */
 ISR(USART3_UDRE_vect, ISR_BLOCK)
 {
-    /* Disable the UDR interrupt */
-    UCSR3B &= ~(1<<UDRIE3);
+    /* Disable the interrupt */
+    //UCSR3B &= ~(1<<UDRIE3);
+    //sei();
+    //halWT41FcUartSend(0);
     if (SEND == send_state)
     {
-        send_state = IDLE;
+		send_state = IDLE;
         sei();
         sendCallback();
-    }	
-    else if (UDR_BLOCK == send_state)
-    {
-        sei();
-        halWT41FcUartSend(0);
     }
+	else if (UDR_BLOCK == send_state ||
+			 HW_BLOCK == send_state ||
+			 RES_BLOCK == send_state)
+	{
+ 		sei();
+    	halWT41FcUartSend(0);
+	}
 }
 
 /**
@@ -251,7 +308,7 @@ ISR(USART3_UDRE_vect, ISR_BLOCK)
  */
 ISR(PCINT1_vect, ISR_BLOCK)
 {
-    /* Disable the PC interrupt */
+    /* Disable the interrupt */
     PCMSK1 &= ~(1<<RTS_INT);
     sei();
     halWT41FcUartSend(0);
