@@ -132,6 +132,7 @@ error_t halWT41FcUartInit(
  * @brief       Sends a byte to the WT41 bluetooth module.
  * @param byte  The byte to be sent.
  */
+//TODO determine if state update has to be atomic
 error_t halWT41FcUartSend(uint8_t byte)
 {
     if (BLOCK != send_state)
@@ -169,17 +170,49 @@ error_t halWT41FcUartSend(uint8_t byte)
 /**
  * @brief   Empty the ringbuffer by calling the specified callback on every byte.
  */
+//static void processRingbuffer(void)
+//{
+//    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+//    {
+//        ringbuffer_being_processed = 1;
+//    }
+//
+//    do
+//    {
+//        recvCallback(rbuf.data[rbuf.end]);
+//        rbuf.end = (rbuf.end + 1) & (RBUF_SZ - 1);
+//        
+//        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+//        {
+//            rbuf.len--;
+//            if (CTS_state == 1 &&
+//                rbuf.len < RBUF_LOW)
+//            {
+//                PORTJ &= ~(1<<CTS_PIN);
+//                CTS_state = 0;
+//            }
+//        }
+//    } while (rbuf.len > 0);
+//
+//    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+//    {
+//        ringbuffer_being_processed = 0;
+//    }
+//}
+
 static void processRingbuffer(void)
 {
-    ringbuffer_being_processed = 1;
-
-    while (rbuf.len > 0)
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-        recvCallback(rbuf.data[rbuf.end]);
-        rbuf.end = (rbuf.end + 1) & (RBUF_SZ - 1);
-        
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        ringbuffer_being_processed = 1;
+
+        do
         {
+            sei();
+            recvCallback(rbuf.data[rbuf.end]);
+            rbuf.end = (rbuf.end + 1) & (RBUF_SZ - 1);
+            cli();
+
             rbuf.len--;
             if (CTS_state == 1 &&
                 rbuf.len < RBUF_LOW)
@@ -187,10 +220,10 @@ static void processRingbuffer(void)
                 PORTJ &= ~(1<<CTS_PIN);
                 CTS_state = 0;
             }
-        }
+        } while (rbuf.len > 0);
+        
+        ringbuffer_being_processed = 0;
     }
-
-    ringbuffer_being_processed = 0;
 }
 
 /**
@@ -210,10 +243,11 @@ ISR(USART3_RX_vect, ISR_BLOCK)
         CTS_state = 1;
     }
 
-    sei();
-
     if (ringbuffer_being_processed == 0)
+    {
+        sei();
         processRingbuffer();
+    }
 }
 
 /**
