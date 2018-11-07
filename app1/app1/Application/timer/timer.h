@@ -14,11 +14,11 @@
 #include <stdint.h>
 
 typedef enum timer_mode {TIMER_SINGLE, TIMER_REPEAT} timer_mode_t;
-typedef enum timer_error {SUCCESS, NOT_AVAIL} timer_error_t;
+typedef enum timer_error {SUCCESS, NOT_AVAIL, INVAL} timer_error_t;
 
 /**
  * @brief           Start a timer to run for the specified amount of ms.
- * @param ms        How many milliseconds the timer should run.
+ * @param ms        How many milliseconds the timer should run. Must not be bigger than 4194, otherwise INVAL is returned.
  * @param mode      The mode of the timer, wheter it should run once ore periodically.
  * @param _tmrCB    The callback function to be called in the timer ISR. Set to NULL if not needed. This callback can be interrupted at any time.
  * @return          The return value reflects if the setup was successful or if the timer is not available.

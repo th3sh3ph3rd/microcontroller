@@ -16,18 +16,24 @@
 
 #include <timer.h>
 
-#define COUNT_1MS   62
-#define PRESCALER   3
+#define F_CPU       (16000000UL)
 
-//TODO add some sort of error correction for the ms value, as exactly 1ms would ne 62.5 counts
+#define COUNT_1MS   62
+#define PRESC_64    3
+#define PRESC_256   4
+#define PRESC_1024  5
+
+#define MAX_64      262
+#define MAX_256     1048
+#define MAX_1024    4194
+
+#define OCR(T, P)   (((F_CPU/1000)*T)/(P))-1
 
 typedef enum timer_state {AVAILABLE, NOT_AVAILABLE} timer_state_t;
 
 typedef struct timer {
     volatile timer_state_t state;
     timer_mode_t mode;
-    uint16_t period;
-    volatile uint16_t ms;
     void (*callback)(void);
 } timer_t;
 
@@ -39,7 +45,7 @@ static timer_t timer5;
 
 /**
  * @brief           Start a timer to run for the specified amount of ms.
- * @param ms        How many milliseconds the timer should run.
+ * @param ms        How many milliseconds the timer should run. Must not be bigger than 4194, otherwise INVAL is returned.
  * @param mode      The mode of the timer, wheter it should run once ore periodically.
  * @param _tmrCB    The callback function to be called in the timer ISR. Set to NULL if not needed. This callback can be interrupted at any time.
  * @return          The return value reflects if the setup was successful or if the timer is not available.
@@ -52,20 +58,145 @@ timer_error_t timer_startTimer1(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(v
     timer1.state = NOT_AVAILABLE;
     timer1.callback = _tmrCB;
     timer1.mode = mode;
-    timer1.period = ms;
-    timer1.ms = 0;
 
     TCNT1 = 0;
-    OCR1A = COUNT_1MS;
-    TCCR1B = (1<<WGM12)|PRESCALER;
+
+    if (ms <= MAX_64)
+    {  
+        OCR1A = OCR(ms, 64);
+        TCCR1B = (1<<WGM12)|PRESC_64;
+    }
+    else if (ms <= MAX_256)
+    {
+        OCR1A = OCR(ms, 256);
+        TCCR1B = (1<<WGM12)|PRESC_256;
+    }
+    else if (ms <= MAX_1024)
+    {
+        OCR1A = OCR(ms, 1024);
+        TCCR1B = (1<<WGM12)|PRESC_1024;
+    }
+    else
+    {
+        timer1.state = AVAILABLE;
+        return INVAL;
+    }
+
     TIMSK1 |= (1<<OCIE1A);
 
     return SUCCESS;
 }
 
-timer_error_t timer_startTimer3(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(void)){}
-timer_error_t timer_startTimer4(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(void)){}
-timer_error_t timer_startTimer5(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(void)){}
+timer_error_t timer_startTimer3(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(void))
+{
+    if (NOT_AVAILABLE == timer3.state)
+        return NOT_AVAIL;
+
+    timer3.state = NOT_AVAILABLE;
+    timer3.callback = _tmrCB;
+    timer3.mode = mode;
+
+    TCNT3 = 0;
+
+    if (ms <= MAX_64)
+    {  
+        OCR3A = OCR(ms, 64);
+        TCCR3B = (1<<WGM32)|PRESC_64;
+    }
+    else if (ms <= MAX_256)
+    {
+        OCR3A = OCR(ms, 256);
+        TCCR3B = (1<<WGM32)|PRESC_256;
+    }
+    else if (ms <= MAX_1024)
+    {
+        OCR3A = OCR(ms, 1024);
+        TCCR3B = (1<<WGM32)|PRESC_1024;
+    }
+    else
+    {
+        timer3.state = AVAILABLE;
+        return INVAL;
+    }
+
+    TIMSK3 |= (1<<OCIE3A);
+
+    return SUCCESS;
+}
+
+timer_error_t timer_startTimer4(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(void))
+{
+    if (NOT_AVAILABLE == timer4.state)
+        return NOT_AVAIL;
+
+    timer4.state = NOT_AVAILABLE;
+    timer4.callback = _tmrCB;
+    timer4.mode = mode;
+
+    TCNT4 = 0;
+
+    if (ms <= MAX_64)
+    {  
+        OCR4A = OCR(ms, 64);
+        TCCR4B = (1<<WGM42)|PRESC_64;
+    }
+    else if (ms <= MAX_256)
+    {
+        OCR4A = OCR(ms, 256);
+        TCCR4B = (1<<WGM42)|PRESC_256;
+    }
+    else if (ms <= MAX_1024)
+    {
+        OCR4A = OCR(ms, 1024);
+        TCCR4B = (1<<WGM42)|PRESC_1024;
+    }
+    else
+    {
+        timer4.state = AVAILABLE;
+        return INVAL;
+    }
+
+    TIMSK4 |= (1<<OCIE4A);
+
+    return SUCCESS;
+}
+
+timer_error_t timer_startTimer5(uint16_t ms, timer_mode_t mode, void (*_tmrCB)(void))
+{
+    if (NOT_AVAILABLE == timer5.state)
+        return NOT_AVAIL;
+
+    timer5.state = NOT_AVAILABLE;
+    timer5.callback = _tmrCB;
+    timer5.mode = mode;
+
+    TCNT5 = 0;
+
+    if (ms <= MAX_64)
+    {  
+        OCR5A = OCR(ms, 64);
+        TCCR5B = (1<<WGM52)|PRESC_64;
+    }
+    else if (ms <= MAX_256)
+    {
+        OCR5A = OCR(ms, 256);
+        TCCR5B = (1<<WGM52)|PRESC_256;
+    }
+    else if (ms <= MAX_1024)
+    {
+        OCR5A = OCR(ms, 1024);
+        TCCR5B = (1<<WGM52)|PRESC_1024;
+    }
+    else
+    {
+        timer5.state = AVAILABLE;
+        return INVAL;
+    }
+
+    TIMSK5 |= (1<<OCIE5A);
+
+    return SUCCESS;
+}
 
 /*
  * @brief Stops the specified timer to make it available again. If the timer mode was TIMER_SINGLE, it does not have to be stopped.
@@ -76,22 +207,60 @@ void timer_stopTimer1(void)
     timer1.state = AVAILABLE;
 }
 
-void timer_stopTimer3(void){}
-void timer_stopTimer4(void){}
-void timer_stopTimer5(void){}
+void timer_stopTimer3(void)
+{
+    TIMSK3 &= ~(1<<OCIE3A);
+    timer3.state = AVAILABLE;
+}
+
+void timer_stopTimer4(void)
+{
+    TIMSK4 &= ~(1<<OCIE4A);
+    timer4.state = AVAILABLE;
+}
+
+void timer_stopTimer5(void)
+{
+    TIMSK5 &= ~(1<<OCIE5A);
+    timer5.state = AVAILABLE;
+}
 
 ISR(TIMER1_COMPA_vect, ISR_BLOCK)
 {
-    timer1.ms++;
-    if (timer1.ms == timer1.period)
-    {
-        timer1.ms = 0;
-        if (TIMER_SINGLE == timer1.mode)
-            timer_stopTimer1();
+    if (TIMER_SINGLE == timer1.mode)
+        timer_stopTimer1();
 
-        sei();
-        if (timer1.callback != NULL)
-            timer1.callback();
-    }
+    sei();
+    if (timer1.callback != NULL)
+        timer1.callback();
 }
 
+ISR(TIMER3_COMPA_vect, ISR_BLOCK)
+{
+    if (TIMER_SINGLE == timer3.mode)
+        timer_stopTimer3();
+
+    sei();
+    if (timer3.callback != NULL)
+        timer3.callback();
+}
+
+ISR(TIMER4_COMPA_vect, ISR_BLOCK)
+{
+    if (TIMER_SINGLE == timer4.mode)
+        timer_stopTimer4();
+
+    sei();
+    if (timer4.callback != NULL)
+        timer4.callback();
+}
+
+ISR(TIMER5_COMPA_vect, ISR_BLOCK)
+{
+    if (TIMER_SINGLE == timer5.mode)
+        timer_stopTimer5();
+
+    sei();
+    if (timer5.callback != NULL)
+        timer5.callback();
+}
