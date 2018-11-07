@@ -16,7 +16,10 @@
 
 /* Needed for error_t definition */
 #include <util.h>
+#include <timer.h>
 #include <hal_wt41_fc_uart.h>
+
+#define RESET_TIME  5
 
 #define CTS_PIN PJ3
 #define RTS_PIN PJ2
@@ -56,6 +59,7 @@ static volatile enum sendstate send_state = INIT;
 
 /* Local functions */
 static void processRingbuffer(void);
+static void resetCompleted(void);
 
 /**
  * @brief               Initialize the WT41 HAL module.
@@ -105,11 +109,8 @@ error_t halWT41FcUartInit(
      * Reset the WT41 *
      *****************/
 
-    /* Configure timer 5A to wait for 5 ms */
-    OCR5A = 780;
-    TCNT5 = 0;
-    TCCR5B |= (1<<WGM52)|(1<<CS52)|(1<<CS50);
-    TIMSK5 |= (1<<OCIE5A);
+    /* Configure timer 5 for the reset interval */
+    timer_setTimer5(RESET_TIME, TIMER_SINGLE, &resetCompleted)
 
     NONATOMIC_BLOCK(NONATOMIC_RESTORESTATE)
     {
@@ -227,6 +228,23 @@ static void processRingbuffer(void)
 }
 
 /**
+ * @brief   Signify the end of the wt41 reset period and send one byte via
+ *          if the send function has been called during reset.
+ */
+static void resetCompleted(void)
+{
+    cli();
+    wt41_reset_complete = 1;
+    if (BLOCK == send_state)
+    {
+        sei();
+        halWT41FcUartSend(0);
+        return;
+    }
+    sei();
+}
+
+/**
  * @brief   Handle an incoming byte on the UART by putting it in the ringbuffer.
  */
 ISR(USART3_RX_vect, ISR_BLOCK)
@@ -282,19 +300,5 @@ ISR(PCINT1_vect, ISR_BLOCK)
     PCMSK1 &= ~(1<<RTS_INT);
     sei();
     halWT41FcUartSend(0);
-}
-
-/**
- * @brief   Signify the end of the wt41 reset period and send one byte via
- *          if the send function has been called during reset.
- */
-ISR(TIMER5_COMPA_vect, ISR_BLOCK)
-{
-    wt41_reset_complete = 1;
-    if (BLOCK == send_state)
-    {
-        sei();
-        halWT41FcUartSend(0);
-    }
 }
 
