@@ -8,6 +8,8 @@
  *
  */
 
+#include <avr/io.h>
+
 #include <stdint.h>
 #include <glcd.h>
 
@@ -20,7 +22,7 @@
 #define WALL_GAP    13
 
 /* Wii button encoding */
-#define BUTTON_A    0x08 << 8
+#define BUTTON_A    0x08
 
 enum gt_state {GAME, SCROLL, LEVEL};
 
@@ -45,7 +47,7 @@ static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z);
 static void connectCB(uint8_t wii, connection_status_t status);
 
 static uint16_t buttons;
-static uint8_t button_A;
+static uint8_t button_A = 0;
 
 /* Local functions */
 static void displayNewWall(uint8_t y_off);
@@ -61,6 +63,11 @@ void gameui_init(void)
     wiiUserInit(&buttonCB, &accelCB);
     
     y_shift = glcdGetYShift();
+
+    PORTK = 0;
+    DDRK = 0xff; 
+    PORTL = 0;
+    DDRL = 0xff; 
 }
 
 //TODO alt name: levelInit
@@ -78,7 +85,7 @@ uint8_t gameui_setup(game_state_t *game_state)
 
     y_shift = glcdGetYShift();
 
-    *game_state = RUNNING;
+    *game_state = PLAY;
 
     return 0;
 }
@@ -92,7 +99,10 @@ uint8_t gameui_start(game_state_t *game_state)
     point1.x = 127;
     point1.y = 0;
     glcdDrawLine(point0, point1, &glcdSetPixel);
-    
+   
+    PORTK = 1;
+    PORTL = button_A;
+
     if (wiimote_status == DISCONNECTED)
     {
         *game_state = CONNECT;
@@ -115,9 +125,21 @@ static uint8_t connect_called = 0;
 uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xe8, 0x28 };
 uint8_t gameui_connect(game_state_t *game_state)
 {
+    xy_point point0, point1;
+    point0.x = 0;
+    point0.y = 55;
+    point1.x = 127;
+    point1.y = 55;
+    glcdDrawLine(point0, point1, &glcdSetPixel);
+    
+    PORTK = 2;
+    PORTL = button_A;
+
+    wiiUserConnect(0, mac, &connectCB);
+    
     if (connect_called == 0)
     {
-        wiiUserConnect(0, mac);
+        //wiiUserConnect(0, mac, &connectCB);
         connect_called = 1;
         return 0;
     }
@@ -142,6 +164,9 @@ uint8_t gameui_connect(game_state_t *game_state)
 //TODO for tasking return in every block
 uint8_t gameui_play(game_state_t *game_state)
 {
+    PORTK = 4;
+    PORTL = button_A;
+
     if (GAME == gametick_state)
     {
         if (gameTicksScroll == gameTicksPerScroll-1)
@@ -202,14 +227,18 @@ uint8_t gameui_play(game_state_t *game_state)
 
 static void buttonCB(uint8_t wii, uint16_t buttonStates)
 {
+    PORTK |= 64;
     buttons = buttonStates;
 
     if (button_A == 0)
         button_A = ((buttonStates & BUTTON_A) != 0);
 }
 
+static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z){};
+
 static void connectCB(uint8_t wii, connection_status_t status)
 {
+    PORTK |= 128;
     wiimote_status = status;
 }
 
