@@ -31,6 +31,8 @@ void spiInit(void)
     DDR_SPI &= ~((1<<DD_MISO)|(1<<DD_SS));
     /* Enable SPI and set master mode */
     SPCR |= (1<<SPE)|(1<<MSTR);
+    PORTK = 0;
+    DDRK = 0xff;
 }
 
 /**
@@ -41,8 +43,9 @@ void spiSend(uint8_t data)
 {
     /* Start sending the byte */
     SPDR = data;
-    /* Busy-wait until sending has beem finished */
+    /* Busy-wait until sending has been finished */
     while (!(SPSR & (1<<SPIF)));
+    PORTK = 1;
 }
 
 /**
@@ -56,6 +59,8 @@ uint8_t spiReceive(void)
     {
         spiSend(0xff);
     }
+    
+    PORTK = 2;
     /* Read received byte */
     return SPDR;
 }

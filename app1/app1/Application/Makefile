@@ -7,16 +7,16 @@
 #   install     downloads elf file to mcu
 #
 
-FILENAME    = main
+FILENAME    = spitest
 OBJECTS     = $(FILENAME).o
-OBJECTS	   += adc/adc.o gameui/gameui.o hal_wt41_fc_uart/hal_wt41_fc_uart.o rand/rand.o timer/timer.o
+OBJECTS	   += adc/adc.o gameui/gameui.o hal_wt41_fc_uart/hal_wt41_fc_uart.o rand/rand.o spi/spi.o timer/timer.o
 
 MCU         = atmega1280
 
 CCLD        = avr-gcc
 CCFLAGS     = -mmcu=$(MCU) -std=gnu99 -Wall -Wextra -Wstrict-prototypes -Os -frename-registers
-CCFLAGS    += -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct -I. -Iadc -Igameui -Ihal_wt41_fc_uart -Ilibglcd -Ilibwiimote -Irand -Itimer
-LDFLAGS     = -mmcu=$(MCU) -Wl,-u,vfprintf -lprintf_min -Llibglcd -Llibwiimote -lglcd -lwiimote
+CCFLAGS    += -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct -I. -Iadc -Igameui -Ihal_wt41_fc_uart -Ilibglcd -Ilibmp3 -Ilibwiimote -Irand -Ispi -Itimer
+LDFLAGS     = -mmcu=$(MCU) -Wl,-u,vfprintf -lprintf_min -Llibglcd -Llibmp3 -Llibwiimote -lglcd -lmp3 -lwiimote
 
 PROG        = avrprog2
 PRFLAGS     = -m$(MCU)
