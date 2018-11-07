@@ -26,6 +26,7 @@ static const uint16_t poly = POLYNOMIAL;
  * @param in    The bit to shift into the LFSR.
  * @return      The bit shifted out of the LFSR.
  */
+//TODO use brcc for branching
 uint8_t rand_shift(uint8_t in)
 {
     uint8_t out = 0;

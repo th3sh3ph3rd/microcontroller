@@ -117,6 +117,7 @@ error_t halWT41FcUartInit(
  * @brief       Sends a byte to the WT41 bluetooth module.
  * @param byte  The byte to be sent.
  */
+//TODO send byte argument and pass puffer in block case
 error_t halWT41FcUartSend(uint8_t byte)
 {
     if (IDLE == send_state)
@@ -229,6 +230,7 @@ ISR(USART3_RX_vect, ISR_BLOCK)
 /**
  * @brief   Try sending the byte which has been held back by a full buffer.
  */
+//TODO move send cb to TX interrupt
 ISR(USART3_UDRE_vect, ISR_BLOCK)
 {
     /* Disable the UDR interrupt */

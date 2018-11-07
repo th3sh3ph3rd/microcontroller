@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 
-typedef enum game_state {START, CONNECT, PLAY, GAME_OVER, HIGHSCORE, PAUSED, RECONNECT} game_state_t;
+typedef enum game_state {START, CONNECT, PLAY, GAME_OVER, HIGHSCORE, PAUSE} game_state_t;
 
 /**
  * @brief       Initialize the game user interface.
@@ -37,7 +37,7 @@ uint8_t gameui_play(game_state_t *game_state);
 
 uint8_t gameui_pause(game_state_t *game_state);
 
-uint8_t gameui_reconnect(game_state_t *game_state);
+uint8_t gameui_gameOver(game_state_t *game_state);
 
 #endif
 

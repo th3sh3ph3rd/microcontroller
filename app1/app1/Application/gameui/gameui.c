@@ -22,7 +22,24 @@
 #define WALL_GAP    13
 
 /* Wii button encoding */
-#define BUTTON_A    0x08
+#define BUTTON_2_WII    0x01
+#define BUTTON_1_WII    0x02
+#define BUTTON_B_WII    0x04
+#define BUTTON_A_WII    0x08
+#define BUTTON_L_WII    (0x01<<8)
+#define BUTTON_R_WII    (0x02<<8)
+#define BUTTON_D_WII    (0x04<<8)
+#define BUTTON_U_WII    (0x08<<8)
+
+/* Local button encoding */
+#define BUTTON_1    0x01
+#define BUTTON_2    0x02
+#define BUTTON_A    0x04
+#define BUTTON_B    0x08
+#define BUTTON_L    0x10
+#define BUTTON_R    0x20
+#define BUTTON_D    0x40
+#define BUTTON_U    0x80
 
 enum gt_state {GAME, SCROLL, LEVEL};
 
@@ -30,9 +47,11 @@ static const uint8_t walls[2][6] = {{0, 26, 50, 57, 82, 109},
                               {18, 45, 70, 97, 117, 127}};
 
 /* State variables */
+static game_state_t last_game_state;
 static uint8_t y_shift = 0;
 static enum gt_state gametick_state = GAME;
 static connection_status_t wiimote_status = DISCONNECTED;
+static uint8_t buttons = 0;
 
 /* Counter variables */
 static uint8_t gameTicksScroll = 0;
@@ -45,9 +64,6 @@ static uint8_t toggle_wall = 0;
 static void buttonCB(uint8_t wii, uint16_t buttonStates);
 static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z);
 static void connectCB(uint8_t wii, connection_status_t status);
-
-static uint16_t buttons;
-static uint8_t button_A = 0;
 
 /* Local functions */
 static void displayNewWall(uint8_t y_off);
@@ -93,28 +109,26 @@ uint8_t gameui_setup(game_state_t *game_state)
 
 uint8_t gameui_start(game_state_t *game_state)
 {
-    xy_point point0, point1;
-    point0.x = 0;
-    point0.y = 0;
-    point1.x = 127;
-    point1.y = 0;
-    glcdDrawLine(point0, point1, &glcdSetPixel);
-   
     PORTK = 1;
-    PORTL = button_A;
 
-    if (wiimote_status == DISCONNECTED)
+    last_game_state = START;
+
+    if (DISCONNECTED == wiimote_status)
     {
         *game_state = CONNECT;
-        glcdFillScreen(GLCD_CLEAR);
         return 0;
     }
-
-    if (button_A)
+    else if (BUTTON_A & buttons)
     {
         *game_state = PLAY;
         glcdFillScreen(GLCD_CLEAR);
-        button_A = 0;
+        buttons &= ~BUTTON_A;
+    }
+    else if (BUTTON_B & buttons)
+    {
+        *game_state = HIGHSCORE;
+        glcdFillScreen(GLCD_CLEAR);
+        buttons &= ~BUTTON_B;
     }
 
     return 0;
@@ -125,30 +139,18 @@ static uint8_t connect_called = 0;
 uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xe8, 0x28 };
 uint8_t gameui_connect(game_state_t *game_state)
 {
-    xy_point point0, point1;
-    point0.x = 0;
-    point0.y = 55;
-    point1.x = 127;
-    point1.y = 55;
-    glcdDrawLine(point0, point1, &glcdSetPixel);
-    
     PORTK = 2;
-    PORTL = button_A;
-
-    wiiUserConnect(0, mac, &connectCB);
     
-    if (connect_called == 0)
+    if (tried_to_connect == 0)
     {
-        //wiiUserConnect(0, mac, &connectCB);
-        connect_called = 1;
-        return 0;
+        wiiUserConnect(0, mac, &connectCB);
+        tried_to_connect = 1;
     }
 
     if (CONNECTED == wiimote_status)
     {
-        *game_state = START;
+        *game_state = last_game_state;
         connect_called = 0;
-        glcdFillScreen(GLCD_CLEAR);
     }
 
     return 0;
@@ -165,8 +167,9 @@ uint8_t gameui_connect(game_state_t *game_state)
 uint8_t gameui_play(game_state_t *game_state)
 {
     PORTK = 4;
-    PORTL = button_A;
-
+   
+    last_game_state = PLAY;
+    
     if (GAME == gametick_state)
     {
         if (gameTicksScroll == gameTicksPerScroll-1)
@@ -211,35 +214,95 @@ uint8_t gameui_play(game_state_t *game_state)
         toggle_wall = !toggle_wall;
     }
 
-    if (button_A)
+    if (DISCONNECTED == wiimote_status)
+    {
+        *game_state = CONNECT;
+        return 0;
+    }
+    else if (BUTTON_A & buttons)
     {
         *game_state = START;
-        glcdFillScreen(GLCD_CLEAR);
-        button_A = 0;
+        buttons &= ~BUTTON_A;
+    }
+    else if (BUTTON_B & buttons)
+    {
+        *game_state = PAUSE;
+        buttons &= ~BUTTON_B;
     }
 
     return !(GAME == gametick_state);
 }
 
-//uint8_t gameui_pause(game_state_t *game_state);
+uint8_t gameui_pause(game_state_t *game_state)
+{
+    PORTK = 8;
+    
+    last_game_state = PAUSE;
 
-//uint8_t gameui_reconnect(game_state_t *game_state);
+    if (DISCONNECTED == wiimote_status)
+    {
+        *game_state = CONNECT;
+        return 0;
+    }
+    else if (BUTTON_A & buttons)
+    {
+        *game_state = PLAY;
+        buttons &= ~BUTTON_A;
+    }
+
+    return 0;
+}
+
+uint8_t gameui_gameOver(game_state_t *game_state)
+{
+    PORTK = 16;
+    
+    last_game_state = PLAY;
+ 
+    if (DISCONNECTED == wiimote_status)
+    {
+        *game_state = CONNECT;
+    }
+    else if (BUTTON_A & buttons)
+    {
+        *game_state = PLAY;
+        buttons &= ~BUTTON_A;
+    }
+    else if (BUTTON_B & buttons)
+    {
+        *game_state = HIGHSCORE;
+        buttons &= ~BUTTON_B;
+    }
+
+    return 0;
+}
 
 static void buttonCB(uint8_t wii, uint16_t buttonStates)
 {
-    PORTK |= 64;
-    buttons = buttonStates;
-
-    if (button_A == 0)
-        button_A = ((buttonStates & BUTTON_A) != 0);
+    if ((buttonStates & BUTTON_1_WII) && !(buttons & BUTTON_1))
+        buttons |= BUTTON_1;
+    if ((buttonStates & BUTTON_2_WII) && !(buttons & BUTTON_2))
+        buttons |= BUTTON_2;
+    if ((buttonStates & BUTTON_A_WII) && !(buttons & BUTTON_A))
+        buttons |= BUTTON_A;
+    if ((buttonStates & BUTTON_B_WII) && !(buttons & BUTTON_B))
+        buttons |= BUTTON_B;
+    if ((buttonStates & BUTTON_L_WII) && !(buttons & BUTTON_L))
+        buttons |= BUTTON_L;
+    if ((buttonStates & BUTTON_R_WII) && !(buttons & BUTTON_R))
+        buttons |= BUTTON_R;
+    if ((buttonStates & BUTTON_D_WII) && !(buttons & BUTTON_D))
+        buttons |= BUTTON_D;
+    if ((buttonStates & BUTTON_U_WII) && !(buttons & BUTTON_U))
+        buttons |= BUTTON_U;
 }
 
 static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z){};
 
 static void connectCB(uint8_t wii, connection_status_t status)
 {
-    PORTK |= 128;
     wiimote_status = status;
+    tried_to_connect = 0;
 }
 
 static void displayNewWall(uint8_t y_off)
