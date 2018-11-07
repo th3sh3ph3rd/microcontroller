@@ -26,7 +26,6 @@ static const uint16_t poly = POLYNOMIAL;
  * @param in    The bit to shift into the LFSR.
  * @return      The bit shifted out of the LFSR.
  */
-//TODO use brcc for branching
 uint8_t rand_shift(uint8_t in)
 {
     uint8_t out = 0;
@@ -35,19 +34,16 @@ uint8_t rand_shift(uint8_t in)
     {
         asm volatile
         (
-            "bst    %A1, 0"                 "\n\t" /* LSB(out) := LSB(lfsr) */
-            "bld    %0, 0"                  "\n\t"
-            "lsr    %B1"                    "\n\t" /* lsfr >> 1 */
+            "lsr    %2"                     "\n\t" /* MSB(lfsr) := LSB(in) */
+            "ror    %B1"                    "\n\t" /* lsfr >> 1 */
             "ror    %A1"                    "\n\t"
-            "bst    %2, 0"                  "\n\t" /* MSB(lfsr) := LSB(in) */
-            "bld    %B1, 7"                 "\n\t"
-            "sbrs   %0, 0"                  "\n\t" /* if out */
-            "rjmp   L_end%="                "\n\t"
+            "brcc   L_end%="                "\n\t" /* if out */
             "eor    %A1, %A3"               "\n\t" /* lfsr := lfsr xor poly  */
             "eor    %B1, %B3"               "\n\t"
             "L_end%=:"                      "\n\t"
-            : "=r" (out), "=r" (lfsr)
-            : "r" (in), "r" (poly), "0" (out), "1" (lfsr)
+            "rol    %0"                     "\n\t" /* LSB(out) := LSB(lfsr) */
+            : "+r" (out), "+r" (lfsr)
+            : "r" (in), "r" (poly)
         );
     }
 
