@@ -7,7 +7,7 @@
 #   install     downloads elf file to mcu
 #
 
-FILENAME    = spitest
+FILENAME    = main
 OBJECTS     = $(FILENAME).o
 OBJECTS	   += adc/adc.o gameui/gameui.o hal_wt41_fc_uart/hal_wt41_fc_uart.o rand/rand.o spi/spi.o timer/timer.o
 

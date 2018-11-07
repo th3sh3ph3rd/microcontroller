@@ -14,6 +14,7 @@
 #include <glcd.h>
 
 #include <wii_user.h>
+#include <data.h>
 #include <gameui.h>
 
 #define Y_HEIGHT    64
@@ -135,7 +136,7 @@ uint8_t gameui_start(game_state_t *game_state)
 }
 
 //TODO move to states eg. call_connect, wait_connect...
-static uint8_t connect_called = 0;
+static uint8_t tried_to_connect = 0;
 uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xe8, 0x28 };
 uint8_t gameui_connect(game_state_t *game_state)
 {
@@ -148,10 +149,7 @@ uint8_t gameui_connect(game_state_t *game_state)
     }
 
     if (CONNECTED == wiimote_status)
-    {
         *game_state = last_game_state;
-        connect_called = 0;
-    }
 
     return 0;
 }
@@ -257,7 +255,7 @@ uint8_t gameui_gameOver(game_state_t *game_state)
 {
     PORTK = 16;
     
-    last_game_state = PLAY;
+    last_game_state = GAMEOVER;
  
     if (DISCONNECTED == wiimote_status)
     {
