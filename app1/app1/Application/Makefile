@@ -9,14 +9,15 @@
 
 FILENAME    = main
 OBJECTS     = $(FILENAME).o
-OBJECTS	   += adc/adc.o gameui/gameui.o hal_wt41_fc_uart/hal_wt41_fc_uart.o rand/rand.o spi/spi.o timer/timer.o
+OBJECTS	   += adc/adc.o font/Standard5x7.o gameui/gameui.o hal_wt41_fc_uart/hal_wt41_fc_uart.o rand/rand.o spi/spi.o timer/timer.o
 
 MCU         = atmega1280
 
 CCLD        = avr-gcc
 CCFLAGS     = -mmcu=$(MCU) -std=gnu99 -Wall -Wextra -Wstrict-prototypes -Os -frename-registers
-CCFLAGS    += -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct -I. -Iadc -Igameui -Ihal_wt41_fc_uart -Ilibglcd -Ilibmp3 -Ilibwiimote -Irand -Ispi -Itimer
-LDFLAGS     = -mmcu=$(MCU) -Wl,-u,vfprintf -lprintf_min -Llibglcd -Llibmp3 -Llibwiimote -lglcd -lmp3 -lwiimote
+CCFLAGS    += -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct -I. -Iadc -Ifont -Igameui -Ihal_wt41_fc_uart -Ilibglcd -Ilibmp3 -Ilibwiimote -Irand -Ispi -Itimer
+#LDFLAGS     = -mmcu=$(MCU) -Wl,-u,vfprintf -lprintf_min -Llibglcd -Llibmp3 -Llibwiimote -lglcd -lmp3 -lwiimote
+LDFLAGS     = -mmcu=$(MCU) -Llibglcd -Llibmp3 -Llibwiimote -lglcd -lmp3 -lwiimote
 
 PROG        = avrprog2
 PRFLAGS     = -m$(MCU)

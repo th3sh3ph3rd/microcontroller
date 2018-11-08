@@ -117,7 +117,6 @@ error_t halWT41FcUartInit(
  * @brief       Sends a byte to the WT41 bluetooth module.
  * @param byte  The byte to be sent.
  */
-//TODO send byte argument and pass puffer in block case
 error_t halWT41FcUartSend(uint8_t byte)
 {
     if (IDLE == send_state)
@@ -148,7 +147,7 @@ error_t halWT41FcUartSend(uint8_t byte)
 
     send_state = SEND;
     /* Copy byte into UART register */
-    UDR3 = tx_byte_buf;
+    UDR3 = byte;
     /* Enable user data register interrupt */
     UCSR3B |= (1<<UDRIE3);
 
@@ -197,7 +196,7 @@ static void resetCompleted(void)
     if (RES_BLOCK == send_state)
     {
         sei();
-        halWT41FcUartSend(0);
+        halWT41FcUartSend(tx_byte_buf);
         return;
     }
     sei();
@@ -244,7 +243,7 @@ ISR(USART3_UDRE_vect, ISR_BLOCK)
     else if (UDR_BLOCK == send_state)
     {
         sei();
-        halWT41FcUartSend(0);
+        halWT41FcUartSend(tx_byte_buf);
     }
 }
 
@@ -256,6 +255,6 @@ ISR(PCINT1_vect, ISR_BLOCK)
     /* Disable the PC interrupt */
     PCMSK1 &= ~(1<<RTS_INT);
     sei();
-    halWT41FcUartSend(0);
+    halWT41FcUartSend(tx_byte_buf);
 }
 

@@ -39,5 +39,7 @@ uint8_t gameui_pause(game_state_t *game_state);
 
 uint8_t gameui_gameOver(game_state_t *game_state);
 
+uint8_t gameui_highScore(game_state_t *game_state);
+
 #endif
 

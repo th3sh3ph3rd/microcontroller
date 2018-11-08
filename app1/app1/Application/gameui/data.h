@@ -15,8 +15,8 @@
 #include <stdint.h>
 
 /* Common strings*/
-const char menu[] PROGMEM = "A: Menu";
-const char highscore[] PROGMEM = "B: Highscore";
+const char menu_b[] PROGMEM = "A: Menu";
+//const char highscore_b[] PROGMEM = "B: Highscore";
 const char player_1[] PROGMEM = "Player 1";
 const char player_2[] PROGMEM = "Player 2";
 const char player_3[] PROGMEM = "Player 3";
@@ -24,32 +24,38 @@ const char player_4[] PROGMEM = "Player 4";
 const char player_5[] PROGMEM = "Player 5";
 
 /* Start screen */
-#define START_LINES 7
-const char play[] PROGMEM = "A: Play";
+#define START_LINES 3
+const char game_name[] PROGMEM = "Falling down ball";
+const char play_b[] PROGMEM = "A: Play";
+const char highscore_b[] PROGMEM = "B: Highscore";
+const char start_b[] PROGMEM = "A:Play B:Highscore";
 PGM_P const data_startText[] PROGMEM =
 {
-    player_1,
-    player_2,
-    player_3,
-    player_4,
-    player_5,
-    play,
-    highscore
+    game_name,
+    play_b,
+    highscore_b
 };
 
 /* Connect screen */
-const char data_connectText[] PROGMEM = "Connecting to wiimote...";
+#define CONNECT_LINES 2
+const char connecting[] PROGMEM = "Connecting";
+const char towiimote[] PROGMEM = "to wiimote...";
+PGM_P const data_connectText[] PROGMEM =
+{
+    connecting,
+    towiimote,
+};
 
 /* Pause screen */
 #define PAUSE_LINES 3
 const char pause[] PROGMEM = "Game paused";
-const char resume[] PROGMEM = "A: Resume";
-const char end[] PROGMEM = "B: End game";
+const char end_b[] PROGMEM = "A: End game";
+const char resume_b[] PROGMEM = "B: Resume";
 PGM_P const data_pauseText[] PROGMEM =
 {
     pause,
-    resume,
-    end
+    resume_b,
+    end_b
 };
 
 /* Game over screen */
@@ -58,12 +64,12 @@ const char gameover[] PROGMEM = "Game over!";
 PGM_P const data_gameoverText[] PROGMEM =
 {
     gameover,
-    menu,
-    highscore
+    menu_b,
+    highscore_b
 };
 
 /* Highscore screen */
-#define HIGHSCORE_LINES 7
+#define HIGHSCORE_LINES 6
 PGM_P const data_highscoreText[] PROGMEM =
 {
     player_1,
@@ -71,8 +77,7 @@ PGM_P const data_highscoreText[] PROGMEM =
     player_3,
     player_4,
     player_5,
-    menu,
-    highscore
+    menu_b,
 };
 
 #endif

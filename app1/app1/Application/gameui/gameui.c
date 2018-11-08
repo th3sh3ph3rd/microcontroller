@@ -9,10 +9,12 @@
  */
 
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 
 #include <stdint.h>
-#include <glcd.h>
 
+#include <glcd.h>
+#include <Standard5x7.h>
 #include <wii_user.h>
 #include <data.h>
 #include <gameui.h>
@@ -20,7 +22,6 @@
 #define Y_HEIGHT    64
 #define RAM_SIZE    8192
 #define RAM_ROWS    RAM_SIZE/Y_HEIGHT
-#define WALL_GAP    13
 
 /* Wii button encoding */
 #define BUTTON_2_WII    0x01
@@ -42,22 +43,41 @@
 #define BUTTON_D    0x40
 #define BUTTON_U    0x80
 
-enum gt_state {GAME, SCROLL, LEVEL};
+/* Game parameters */
+#define TICKS_PER_SCROLL    10
+#define WALL_GAP            13
+
+enum static_state {INIT, WAIT};
+enum tick_state {SETUP, UPDATE, SCROLL, LEVEL};
 
 static const uint8_t walls[2][6] = {{0, 26, 50, 57, 82, 109},
                               {18, 45, 70, 97, 117, 127}};
 
+/* WIImote MAC address */
+const uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xe8, 0x28 };
+
 /* State variables */
 static game_state_t last_game_state;
+static game_state_t next_game_state;
+static enum static_state start_state = INIT;
+static enum static_state connect_state = INIT;
+static enum tick_state play_state = SETUP;
+
 static uint8_t y_shift = 0;
-static enum gt_state gametick_state = GAME;
+static uint8_t tried_to_connect = 0;
 static connection_status_t wiimote_status = DISCONNECTED;
+static uint8_t accel_en = 0;
+static uint8_t accel_status = 0;
+
 static uint8_t buttons = 0;
+static uint16_t accel_x;
+static uint16_t accel_y;
+static uint16_t accel_z;
 
 /* Counter variables */
-static uint8_t gameTicksScroll = 0;
-static uint8_t gameTicksPerScroll = 10;
-static uint8_t scrollTicks = 0;
+static uint8_t gameTicksPerScroll = TICKS_PER_SCROLL;
+static uint8_t gameTicksScroll = TICKS_PER_SCROLL-1;
+static uint8_t scrollTicks = WALL_GAP-1;
 
 static uint8_t toggle_wall = 0;
 
@@ -65,8 +85,12 @@ static uint8_t toggle_wall = 0;
 static void buttonCB(uint8_t wii, uint16_t buttonStates);
 static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z);
 static void connectCB(uint8_t wii, connection_status_t status);
+static void setAccelCB(uint8_t wii, error_t status);
 
 /* Local functions */
+static void displayText(PGM_P const *text, uint8_t lines, uint8_t y_top);
+static void displayStartText(uint8_t y_top);
+static void displayConnectText(uint8_t y_top);
 static void displayNewWall(uint8_t y_off);
 static void clearWall(uint8_t y_off);
 
@@ -81,6 +105,8 @@ void gameui_init(void)
     
     y_shift = glcdGetYShift();
 
+    PORTH = 0;
+    DDRH = 0xff; 
     PORTK = 0;
     DDRK = 0xff; 
     PORTL = 0;
@@ -107,49 +133,66 @@ uint8_t gameui_setup(game_state_t *game_state)
     return 0;
 }
 
-
 uint8_t gameui_start(game_state_t *game_state)
 {
     PORTK = 1;
+    //PORTL &= 0xc0;
+    //PORTL = (accel_status<<7)|(accel_en<<6);
+    PORTH = accel_x;
 
-    last_game_state = START;
+    if (INIT == start_state)
+    {
+        last_game_state = START;
+        displayStartText(10);
+        start_state = WAIT;
+    }
+    if (WAIT == start_state)
+    {
+        if (DISCONNECTED == wiimote_status)
+            *game_state = CONNECT;
+        else if (BUTTON_A & buttons)
+            *game_state = PLAY;
+        else if (BUTTON_B & buttons)
+            *game_state = HIGHSCORE;
 
-    if (DISCONNECTED == wiimote_status)
-    {
-        *game_state = CONNECT;
-        return 0;
-    }
-    else if (BUTTON_A & buttons)
-    {
-        *game_state = PLAY;
-        glcdFillScreen(GLCD_CLEAR);
-        buttons &= ~BUTTON_A;
-    }
-    else if (BUTTON_B & buttons)
-    {
-        *game_state = HIGHSCORE;
-        glcdFillScreen(GLCD_CLEAR);
-        buttons &= ~BUTTON_B;
+        if (START != *game_state)
+        {
+            glcdFillScreen(GLCD_CLEAR);
+            start_state = INIT;
+            buttons = 0;
+        }
     }
 
     return 0;
 }
 
-//TODO move to states eg. call_connect, wait_connect...
-static uint8_t tried_to_connect = 0;
-uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xe8, 0x28 };
 uint8_t gameui_connect(game_state_t *game_state)
 {
     PORTK = 2;
+    //PORTL &= 0xc0;
+    PORTH = accel_x;
     
-    if (tried_to_connect == 0)
+    if (INIT == connect_state)
     {
-        wiiUserConnect(0, mac, &connectCB);
-        tried_to_connect = 1;
+        displayConnectText(10);
+        connect_state = WAIT;
     }
+    if (WAIT == connect_state)
+    {
+        if (tried_to_connect == 0)
+        {
+            wiiUserConnect(0, mac, &connectCB);
+            tried_to_connect = 1;
+        }
 
-    if (CONNECTED == wiimote_status)
-        *game_state = last_game_state;
+        if (CONNECTED == wiimote_status)
+        {
+            glcdFillScreen(GLCD_CLEAR);
+            *game_state = last_game_state;
+            connect_state = INIT;
+            buttons = 0;
+        }
+    }
 
     return 0;
 }
@@ -163,90 +206,111 @@ uint8_t gameui_connect(game_state_t *game_state)
  */
 //TODO for tasking return in every block
 uint8_t gameui_play(game_state_t *game_state)
-{
+{   
     PORTK = 4;
-   
-    last_game_state = PLAY;
-    
-    if (GAME == gametick_state)
+    //PORTL &= 0xc0;
+    //PORTL |= accel_x>>2;
+
+    //PORTL = (accel_status<<7)|(accel_en<<6);
+    PORTH = accel_z;
+    //PORTK = accel_y;
+    //PORTL = accel_x;
+
+    if (SETUP == play_state)
     {
+        PORTL = 1;
+        last_game_state = PLAY;
+        next_game_state = PLAY;
+        accel_en = 1;
+        wiiUserSetAccel(0, 1, &setAccelCB);   
+        if (accel_status == 1)
+            play_state = UPDATE;
+    }
+    if (UPDATE == play_state)
+    {
+        PORTL = 2;
+
         if (gameTicksScroll == gameTicksPerScroll-1)
         {
-            gametick_state = SCROLL;
+            play_state = SCROLL;
             gameTicksScroll = 0;
         }
         else
-        {
             gameTicksScroll++;
-        }
-    }
-    
-    if (SCROLL == gametick_state)
+    } 
+    if (SCROLL == play_state)
     {
+        PORTL = 4;
         if (scrollTicks == WALL_GAP-1)
         {
-            gametick_state = LEVEL;
+            play_state = LEVEL;
             scrollTicks = 0;
         }
         else
         {
-            gametick_state = GAME;
+            play_state = UPDATE;
             scrollTicks++;
         }
 
-        //y_shift = (y_shift + 1) & (RAM_ROWS-1);
         if (y_shift == Y_HEIGHT)
             y_shift = 0;
         else
             y_shift++;
 
         glcdSetYShift(y_shift);
-        //y_shift = glcdGetYShift();
     }
-
-    if (LEVEL == gametick_state)
+    if (LEVEL == play_state)
     {
-        gametick_state = GAME;
-        clearWall(y_shift);
-        displayNewWall(y_shift);
+        PORTL = 8;
+        play_state = UPDATE;
+        clearWall(Y_HEIGHT+y_shift-1);
+        displayNewWall(Y_HEIGHT+y_shift-1);
         toggle_wall = !toggle_wall;
     }
 
-    if (DISCONNECTED == wiimote_status)
+    if (PLAY != next_game_state)
     {
-        *game_state = CONNECT;
-        return 0;
+        PORTL = 32;
+        accel_en = 0;
+        wiiUserSetAccel(0, 0, &setAccelCB);   
+        if (accel_status == 0)
+        {
+            *game_state = next_game_state;
+            glcdFillScreen(GLCD_CLEAR);
+            play_state = SETUP;
+            buttons = 0;
+        }
     }
-    else if (BUTTON_A & buttons)
+    else
     {
-        *game_state = START;
-        buttons &= ~BUTTON_A;
+        PORTL = 16;
+        if (DISCONNECTED == wiimote_status)
+            next_game_state = CONNECT;
+        else if (BUTTON_A & buttons)
+            next_game_state = START;
+        else if (BUTTON_B & buttons)
+            next_game_state = PAUSE;
     }
-    else if (BUTTON_B & buttons)
-    {
-        *game_state = PAUSE;
-        buttons &= ~BUTTON_B;
-    }
-
-    return !(GAME == gametick_state);
+    
+    return 0;
 }
 
 uint8_t gameui_pause(game_state_t *game_state)
 {
     PORTK = 8;
+    //PORTL &= 0xc0;
+    PORTH = accel_x;
     
     last_game_state = PAUSE;
 
     if (DISCONNECTED == wiimote_status)
-    {
         *game_state = CONNECT;
-        return 0;
-    }
     else if (BUTTON_A & buttons)
-    {
+        *game_state = START;
+    else if (BUTTON_B & buttons)
         *game_state = PLAY;
-        buttons &= ~BUTTON_A;
-    }
+
+    buttons = 0;
 
     return 0;
 }
@@ -258,19 +322,31 @@ uint8_t gameui_gameOver(game_state_t *game_state)
     last_game_state = GAMEOVER;
  
     if (DISCONNECTED == wiimote_status)
-    {
         *game_state = CONNECT;
-    }
     else if (BUTTON_A & buttons)
-    {
-        *game_state = PLAY;
-        buttons &= ~BUTTON_A;
-    }
+        *game_state = START;
     else if (BUTTON_B & buttons)
-    {
         *game_state = HIGHSCORE;
-        buttons &= ~BUTTON_B;
-    }
+
+    buttons = 0;
+
+    return 0;
+}
+
+uint8_t gameui_highScore(game_state_t *game_state)
+{
+    PORTK = 32;
+    //PORTL &= 0xc0;
+    PORTH = accel_x;
+
+    last_game_state = HIGHSCORE;
+    
+    if (DISCONNECTED == wiimote_status)
+        *game_state = CONNECT;
+    else if (BUTTON_A & buttons)
+        *game_state = START;
+
+    buttons = 0;
 
     return 0;
 }
@@ -295,12 +371,64 @@ static void buttonCB(uint8_t wii, uint16_t buttonStates)
         buttons |= BUTTON_U;
 }
 
-static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z){};
+static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z)
+{
+    accel_x = x>>2;
+    accel_y = y>>1;
+    accel_z = z>>1;
+}
 
 static void connectCB(uint8_t wii, connection_status_t status)
 {
     wiimote_status = status;
     tried_to_connect = 0;
+}
+
+static void setAccelCB(uint8_t wii, error_t status)
+{
+    if (accel_en == 1)
+        accel_status = 1;
+    if (accel_en == 0)
+        accel_status = 0;
+}
+
+static void displayText(PGM_P const *text, uint8_t lines, uint8_t y_top)
+{
+        xy_point startPoint;
+        //startPoint.y = (y_shift+y_top) & (Y_HEIGHT-1);
+        startPoint.y = 10;
+        startPoint.x = 10;
+
+        for (int i = 0; i < lines; i++)
+        {
+            //glcdDrawTextPgm(text[i], startPoint, &Standard5x7, &glcdSetPixel);
+            glcdDrawText((const char *)pgm_read_word(&text[i]), startPoint, &Standard5x7, &glcdSetPixel);
+            startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+        }
+}
+
+static void displayStartText(uint8_t y_top)
+{
+        xy_point startPoint;
+        startPoint.y = (y_shift+y_top) & (Y_HEIGHT-1);
+        startPoint.x = 10;
+
+        glcdDrawTextPgm(game_name, startPoint, &Standard5x7, &glcdSetPixel);
+        startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+        glcdDrawTextPgm(play_b, startPoint, &Standard5x7, &glcdSetPixel);
+        startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+        glcdDrawTextPgm(highscore_b, startPoint, &Standard5x7, &glcdSetPixel);
+}
+
+static void displayConnectText(uint8_t y_top)
+{
+        xy_point startPoint;
+        startPoint.y = (y_shift+y_top) & (Y_HEIGHT-1);
+        startPoint.x = 10;
+
+        glcdDrawTextPgm(connecting, startPoint, &Standard5x7, &glcdSetPixel);
+        startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+        glcdDrawTextPgm(towiimote, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
 static void displayNewWall(uint8_t y_off)
