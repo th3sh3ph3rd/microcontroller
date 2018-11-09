@@ -11,6 +11,7 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 
+#include <math.h>
 #include <stdint.h>
 
 #include <glcd.h>
@@ -212,7 +213,6 @@ uint8_t gameui_play(game_state_t *game_state)
     //PORTL |= accel_x>>2;
 
     //PORTL = (accel_status<<7)|(accel_en<<6);
-    PORTH = accel_z;
     //PORTK = accel_y;
     //PORTL = accel_x;
 
@@ -229,6 +229,8 @@ uint8_t gameui_play(game_state_t *game_state)
     if (UPDATE == play_state)
     {
         PORTL = 2;
+
+        PORTH = ((uint32_t)((atan2(accel_y, accel_z)*180.0)/M_PI)>>20);
 
         if (gameTicksScroll == gameTicksPerScroll-1)
         {
