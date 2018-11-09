@@ -3,6 +3,11 @@
 This driver accesses SDCards in SPI mode.
 
 Notes for application 1 (changes):
+- sdcardAvailable() got depreacated, sdcardInit() will now return E_NOCARD if
+it could not reset any card - as a heurisic to detect if a card is inserted.
+This has the advanage that it works with both, revision 1.10 and revision
+1.21 boards
+
 - The spi driver interface was extended to control the spi prescaler.
 
 - The error_t definition was extended with E_UNKNOWN_CARD.

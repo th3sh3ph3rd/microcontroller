@@ -40,7 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 typedef uint8_t sdcard_block_t[BLOCK_SIZE];
 
-extern bool sdcardAvailable(void);
+extern bool sdcardAvailable(void); // depreacated, returns always true
 extern error_t sdcardInit(void);
 extern error_t sdcardReadBlock(uint32_t byteAddress, sdcard_block_t buffer);
 

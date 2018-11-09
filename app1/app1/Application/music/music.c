@@ -10,22 +10,30 @@
 
 #include <stdint.h>
 
+#include <spi.h>
 #include <mp3.h>
 #include <sdcard.h>
 
-static uint8_t volumeRaw = 0;
-static uint32_t sdcardBlockAddress = 0;
+/* dt_himalayas.mp3 */
+#define SONG_START  4385760
+#define SONG_LENGTH 289872
 
-uint8_t scaleVolume(uint8_t volume); 
+#define DELTA_VOLUME    50
+
+static uint32_t sdcardBlockAddress = SONG_START;
+static uint8_t oldVolume = 0;
+static uint8_t spiLock = 0;
+
+static uint8_t scaleVolume(uint8_t volume); 
 
 /**
  * @brief   Initialize the music module.
  */
 void music_init(void (*mp3DataReqCB)(void))
 {
-    sdcardInit(); //TODO check for error?
-    mp3Init(&mp3DataReqCB);
-    mp3SetVolume(50);
+    spiInit();
+    while (sdcardInit() != SUCCESS);
+    mp3Init(mp3DataReqCB);
 }
 
 /**
@@ -34,15 +42,22 @@ void music_init(void (*mp3DataReqCB)(void))
  */
 uint8_t music_play(void)
 {
-    uint8_t musicBuffer[BLOCK_SIZE];
+    sdcard_block_t musicBuffer;
 
+    //if (!mp3Busy() && sdcardBlockAddress < (SONG_START + SONG_LENGTH))
     if (!mp3Busy())
     {
-        if (sdcardReadBlock(sdcardBlockAddress, music_buffer) == SUCCESS)
+        spiLock = 1;
+        if (sdcardReadBlock(sdcardBlockAddress, musicBuffer) == SUCCESS)
         {
             mp3SendMusic(musicBuffer);
-            sdcardBlockAddress += BLOCK_SIZE; //TODO make atomic?
+            spiLock = 0;
+            if (sdcardBlockAddress < SONG_START + SONG_LENGTH)
+                sdcardBlockAddress += BLOCK_SIZE;
+            else
+                sdcardBlockAddress = SONG_START;
         }
+        spiLock = 0;
         return 1;
     }
     return 0;
@@ -52,18 +67,28 @@ uint8_t music_play(void)
  * @brief           Pass a raw volume value (e.g from a pot) to the module.
  * @param volumeRaw The raw volume value, straight from the ADC.
  */
-void music_setVolumeRaw(uint8_t _volumeRaw)
+void music_setVolume(uint8_t volumeRaw)
 {
-    volumeRaw = _volumeRaw;
+    uint8_t newVolume = scaleVolume(volumeRaw);
+    /* Only set the volume if the spi is not used by other functions */
+    if (spiLock == 0)
+    {
+        mp3SetVolume(newVolume);
+        oldVolume = newVolume;
+    }
 }
 
-//TODO decide whether volume is updatet when a new value is received or autonomously
-uint8_t scaleVolume(uint8_t volume)
+/**
+ * @brief           Scale the volume value to an approximate logarithmic scale.
+ * @param volume    The raw volume value to scale.
+ * @return          The scaled volume value.
+ */
+static uint8_t scaleVolume(uint8_t volume)
 {
     /* Implementation of the log-approximation 1-(1-x)^4 */
-    volume = 255 - volume;
+    volume = 0xff - volume;
     volume = (volume * volume) >> 8;
     volume = (volume * volume) >> 8;
-    return 255 - volume;
+    return 0xff - volume;
 }
 

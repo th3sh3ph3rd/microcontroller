@@ -28,7 +28,7 @@ uint8_t music_play(void);
  * @brief           Pass a raw volume value (e.g from a pot) to the module.
  * @param volumeRaw The raw volume value, straight from the ADC.
  */
-void music_setVolumeRaw(uint8_t _volumeRaw); 
+void music_setVolume(uint8_t volumeRaw); 
 
 #endif
 
