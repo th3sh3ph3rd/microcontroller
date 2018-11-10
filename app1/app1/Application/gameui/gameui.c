@@ -8,6 +8,8 @@
  *
  */
 
+//TODO remove debug leds!!!
+
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 
@@ -17,9 +19,11 @@
 #include <glcd.h>
 #include <Standard5x7.h>
 #include <wii_user.h>
+#include <rand.h>
 #include <data.h>
 #include <gameui.h>
 
+#define X_WIDTH     128
 #define Y_HEIGHT    64
 #define RAM_SIZE    8192
 #define RAM_ROWS    RAM_SIZE/Y_HEIGHT
@@ -51,34 +55,70 @@
 enum static_state {INIT, WAIT};
 enum tick_state {SETUP, UPDATE, SCROLL, LEVEL};
 
-static const uint8_t walls[2][6] = {{0, 26, 50, 57, 82, 109},
-                              {18, 45, 70, 97, 117, 127}};
+//static const uint8_t walls[2][6] = {{0, 26, 50, 57, 82, 109},
+//                              {18, 45, 70, 97, 117, 127}};
 
 /* WIImote MAC address */
-const uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xe8, 0x28 };
+//TODO move to PROGMEM
+static const uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xe8, 0x28 };
 
 /* State variables */
+//TODO put this in struct gameStates
 static game_state_t last_game_state;
 static game_state_t next_game_state;
 static enum static_state start_state = INIT;
 static enum static_state connect_state = INIT;
 static enum tick_state play_state = SETUP;
 
-static uint8_t y_shift = 0;
+/* Wiimote status flags */
+//TODO put this in struct wiimoteStatus
 static uint8_t tried_to_connect = 0;
 static connection_status_t wiimote_status = DISCONNECTED;
 static uint8_t accel_en = 0;
 static uint8_t accel_status = 0;
 
+/* Wiimote sensor values */
+//TODO put this in struct sensorValues
 static uint8_t buttons = 0;
 static uint16_t accel_x;
 static uint16_t accel_y;
 static uint16_t accel_z;
 
 /* Counter variables */
+//TODO put this in struct ticks
+//TODO rename to scrollSpeed
 static uint8_t gameTicksPerScroll = TICKS_PER_SCROLL;
 static uint8_t gameTicksScroll = TICKS_PER_SCROLL-1;
 static uint8_t scrollTicks = WALL_GAP-1;
+//TODO replace this with below defined struct
+static uint8_t y_shift = 0;
+
+/* Current screen image */
+//TODO adapt this accordingly
+#define WALLS_ON_SCREEN 5
+struct wall
+{
+    uint8_t yPos;
+    wall_points_t points;
+};
+static struct
+{
+    uint8_t topWall;
+    xy_point ball;
+    struct wall walls[WALLS_ON_SCREEN];
+} screenImage;
+
+/* Screen dynamic values */
+struct ball_dyn
+{
+    uint8_t xAcc;
+    uint8_t yAcc;
+};
+static struct
+{
+    uint8_t yShift;
+    struct ball_dyn ballDynamics;
+} screenDynamics;
 
 static uint8_t toggle_wall = 0;
 
@@ -93,6 +133,7 @@ static void displayText(PGM_P const *text, uint8_t lines, uint8_t y_top);
 static void displayStartText(uint8_t y_top);
 static void displayConnectText(uint8_t y_top);
 static void displayNewWall(uint8_t y_off);
+//static void displayNewWall(void);
 static void clearWall(uint8_t y_off);
 
 /**
@@ -449,12 +490,49 @@ static void displayNewWall(uint8_t y_off)
     }
 }
 
-static void clearWall(uint8_t y_off)
+//static void displayNewWall(void)
+//{
+//    xy_point point0, point1;
+//    uint8_t newWall = rand16() & (WALLS_AVAILABLE-1);
+//
+//    /* Load new wall from PROGMEM */
+//    memcpy_P(screenImage.walls[screenImage.topWall], &data_walls[newWall], WALL_POINTS);
+//    screenImage.walls[screenImage.topWall].yPos = Y_HEIGHT+screenDynamics.yShift-1;
+//
+//    point0.y = screenImage.walls[screenImage.topWall].yPos;
+//    point1.y = screenImage.walls[screenImage.topWall].yPos;
+//
+//    for (uint8_t i = 0; i < WALL_POINTS; i += 2)
+//    {
+//        if (i == WALL_POINTS-1)
+//        {
+//            if (screenImage.walls[screenImage.topWall][i] != X_WIDTH-1)
+//            {
+//                point0.x = screenImage.walls[screenImage.topWall][i];
+//                point1.x = X_WIDTH-1;    
+//                glcdDrawLine(point0, point1, &glcdSetPixel);
+//            }
+//        }
+//        else
+//        {
+//            point0.x = screenImage.walls[screenImage.topWall][i];
+//            point1.x = screenImage.walls[screenImage.topWall][i+1];    
+//            glcdDrawLine(point0, point1, &glcdSetPixel);
+//        }
+//    }
+//
+//    if (screenImage.topWall == WALLS_ON_SCREEN-1)
+//        screenImage.topWall = 0;
+//    else
+//        screenImage.topWall++;
+//}
+
+static void clearWall(uint8_t yOff)
 {
     xy_point point0, point1;
 
-    point0.y = y_off;
-    point1.y = y_off;
+    point0.y = yOff;
+    point1.y = yOff;
     point0.x = 0;
     point1.x = 127;
     

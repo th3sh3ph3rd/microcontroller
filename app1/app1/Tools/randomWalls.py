@@ -4,24 +4,29 @@ from random import *
 
 seed()
 
-WALLNUM = 10
+WALLNUM = 32
+X_WIDTH = 128
+ARRAY_NAME = "data_walls"
 
-for i in range(10):
+print("#define WALLS_AVAILABLE", WALLNUM)
+print("wall_points_t ", ARRAY_NAME, "[WALLS_AVAILABLE] PROGMEM =", sep='')
+print("{")
+for i in range(int(WALLNUM/2)):
     p0 = randrange(0, 21+1)
     p1 = randrange(p0+10, p0+37+1)
     p2 = randrange(p1+8, p1+37+1)
-    if 127-p2 >= 18:
-        p3 = randrange(p2+10, 127-10)
-        p4 = 127
+    if (X_WIDTH-p2-1) >= 18:
+        p3 = randrange(p2+10, X_WIDTH-10-1)
+        p4 = X_WIDTH-1
     else:
-        p3 = 127
+        p3 = X_WIDTH-1
         p4 = 0
-    if p0 == 0:
-        print("{", p0, ", ", p1, ", ", p2, ", ", p3, ", ", p4, " ,127}")
+    
+    print("\t{", p0, ",", p1, ",", p2, ",", p3, ",", p4, "},", sep='')
+    if i == (WALLNUM/2)-1:
+        print("\t{", 127-p4, ",", 127-p3, ",", 127-p2, ",",127-p1, ",", 127-p0, "}", sep='')
     else:
-        print("{0, ", p0, ", ", p1, ", ", p2, ", ", p3, ", ", p4, "}")
-    if 127-p4 == 0:
-        print("{", 127-p4, ", ", 127-p3, ", ", 127-p2, ", ",127-p1, ", ", 127-p0, " ,127}")
-    else:
-        print("{0, ", 127-p4, ", ", 127-p3, ", ", 127-p2, ", ",127-p1, ", ", 127-p0, "}")
+        print("\t{", 127-p4, ",", 127-p3, ",", 127-p2, ",",127-p1, ",", 127-p0, "},", sep='')
+
+print("}")
 
