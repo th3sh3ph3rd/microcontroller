@@ -132,9 +132,11 @@ static void setAccelCB(uint8_t wii, error_t status);
 static void displayText(PGM_P const *text, uint8_t lines, uint8_t y_top);
 static void displayStartText(uint8_t y_top);
 static void displayConnectText(uint8_t y_top);
+static void initLevel(void);
 static void displayNewWall(uint8_t y_off);
-//static void displayNewWall(void);
+static void drawWall(uint8_t wall);
 static void clearWall(uint8_t y_off);
+static int8_t atan2(uint8_t x, uint8_t y);
 
 /**
  * @brief       Initialize the game user interface.
@@ -474,6 +476,24 @@ static void displayConnectText(uint8_t y_top)
         glcdDrawTextPgm(towiimote, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
+static void initLevel(void)
+{
+    xy_point point0, point1;
+    uint8_t newWall;
+    uint8_t yPos = screenDynamics.yShift;
+    screenImage.topWall = 0;
+
+    for (uint8_t w = 0; w < WALLS_ON_SCREEN; w++)
+    {
+        newWall = rand16() & (WALLS_AVAILABLE-1);
+        /* Load new wall from PROGMEM */
+        memcpy_P(screenImage.walls[w].points, &data_walls[newWall], WALL_POINTS);
+        screenImage.walls[w].yPos = yPos;
+        drawWall(w);
+        yPos += WALL_GAP;
+    }
+}
+
 static void displayNewWall(uint8_t y_off)
 {
     xy_point point0, point1;
@@ -490,42 +510,47 @@ static void displayNewWall(uint8_t y_off)
     }
 }
 
-//static void displayNewWall(void)
+//static void displayNewWall(uint8_t yOff)
 //{
 //    xy_point point0, point1;
 //    uint8_t newWall = rand16() & (WALLS_AVAILABLE-1);
 //
 //    /* Load new wall from PROGMEM */
-//    memcpy_P(screenImage.walls[screenImage.topWall], &data_walls[newWall], WALL_POINTS);
+//    memcpy_P(screenImage.walls[screenImage.topWall].points, &data_walls[newWall], WALL_POINTS);
 //    screenImage.walls[screenImage.topWall].yPos = Y_HEIGHT+screenDynamics.yShift-1;
 //
-//    point0.y = screenImage.walls[screenImage.topWall].yPos;
-//    point1.y = screenImage.walls[screenImage.topWall].yPos;
-//
-//    for (uint8_t i = 0; i < WALL_POINTS; i += 2)
-//    {
-//        if (i == WALL_POINTS-1)
-//        {
-//            if (screenImage.walls[screenImage.topWall][i] != X_WIDTH-1)
-//            {
-//                point0.x = screenImage.walls[screenImage.topWall][i];
-//                point1.x = X_WIDTH-1;    
-//                glcdDrawLine(point0, point1, &glcdSetPixel);
-//            }
-//        }
-//        else
-//        {
-//            point0.x = screenImage.walls[screenImage.topWall][i];
-//            point1.x = screenImage.walls[screenImage.topWall][i+1];    
-//            glcdDrawLine(point0, point1, &glcdSetPixel);
-//        }
-//    }
+//    drawWall(screenImage.topWall);
 //
 //    if (screenImage.topWall == WALLS_ON_SCREEN-1)
 //        screenImage.topWall = 0;
 //    else
 //        screenImage.topWall++;
 //}
+
+static void drawWall(uint8_t wall)
+{
+    point0.y = screenImage.walls[wall].yPos;
+    point1.y = screenImage.walls[wall].yPos;
+
+    for (uint8_t i = 0; i < WALL_POINTS; i += 2)
+    {
+        if (i == WALL_POINTS-1)
+        {
+            if (screenImage.walls[wall].points[i] != X_WIDTH-1)
+            {
+                point0.x = screenImage.walls[wall].points[i];
+                point1.x = X_WIDTH-1;    
+                glcdDrawLine(point0, point1, &glcdSetPixel);
+            }
+        }
+        else
+        {
+            point0.x = screenImage.walls[wall].points[i];
+            point1.x = screenImage.walls[wall].points[i+1];    
+            glcdDrawLine(point0, point1, &glcdSetPixel);
+        }
+    }
+}
 
 static void clearWall(uint8_t yOff)
 {
@@ -537,5 +562,44 @@ static void clearWall(uint8_t yOff)
     point1.x = 127;
     
     glcdDrawLine(point0, point1, &glcdClearPixel);
+}
+
+/* atan2 integer algorithm, inspired by: http://forums.parallax.com/discussion/115008/how-to-compute-atan2-with-integers-and-of-course-quickly */
+static int8_t atan2(uint8_t x, uint8_t y)
+{
+    int32_t angle;
+
+    if (y == 0)
+    {
+        if (x >= 0)
+            return 0;
+        return 180;
+    }
+    if (x == 0)
+    {
+        if (y > 0)
+            return 90;
+        return -90;
+    }
+
+    angle = (3667 * x * y) / (64 * x * x + 17 * y * y);
+    
+    if (abs(y) > abs(x))
+        angle = 90 - angle;
+
+    if (x < 0)
+    {
+        if (y < 0)
+            angle = 180 + angle;
+        else
+            angle = 180 - angle;
+    }
+    else
+    {
+        if (y < 0)
+            angle = 360 - angle;
+    }
+
+    return (int8_t) angle;
 }
 
