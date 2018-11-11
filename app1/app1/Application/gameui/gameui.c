@@ -25,6 +25,8 @@
 
 #define X_WIDTH     128
 #define Y_HEIGHT    64
+#define TOP         0
+#define BOTTOM      Y_HEIGHT-1
 #define RAM_SIZE    8192
 #define RAM_ROWS    RAM_SIZE/Y_HEIGHT
 
@@ -61,6 +63,7 @@
 /* Game parameters */
 #define TICKS_PER_SCROLL    10
 #define WALL_GAP            13
+#define BALL_RADIUS         3
 
 enum static_state {INIT, WAIT};
 enum tick_state {SETUP, UPDATE, SCROLL, LEVEL};
@@ -502,6 +505,10 @@ static void initLevel(void)
         drawWall(w);
         yPos += WALL_GAP;
     }
+
+    screenImage.ball.x = (X_WIDTH/2)-1;
+    screenImage.ball.y = BOTTOM+BALL_RADIUS;
+    glcdDrawCircle(screenImage.ball, BALL_RADIUS, &glcdSetPixel);
 }
 
 static void displayNewWall(uint8_t y_off)
