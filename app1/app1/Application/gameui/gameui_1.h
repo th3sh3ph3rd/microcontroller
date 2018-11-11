@@ -1,21 +1,6 @@
-/**
- *
- * @file gameui.h
- * @author Jan Nausner <e01614835@student.tuwien.ac.at>
- * @date 2018-10-30
- *
- * Header file for the game user interface.
- *
- */
-
-#ifndef __GAMEUI__
-#define __GAMEUI__
-
 #include <stdint.h>
 
-; //TODO WTF is going on here
-
-typedef enum game_state {START, CONNECT, PLAY, GAMEOVER, HIGHSCORE, PAUSE} game_state_t;
+typedef enum {START, CONNECT, PLAY, GAMEOVER, HIGHSCORE, PAUSE} game_state_t;
 
 /**
  * @brief       Initialize the game user interface.
@@ -42,6 +27,4 @@ uint8_t gameui_pause(game_state_t *game_state);
 uint8_t gameui_gameOver(game_state_t *game_state);
 
 uint8_t gameui_highScore(game_state_t *game_state);
-
-#endif
 

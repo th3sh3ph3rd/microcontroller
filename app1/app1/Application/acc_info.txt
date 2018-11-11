@@ -1,5 +1,9 @@
+
 https://www.dfrobot.com/wiki/index.php/How_to_Use_a_Three-Axis_Accelerometer_for_Tilt_Sensing
 https://theccontinuum.com/2012/09/24/arduino-imu-pitch-roll-from-accelerometer/
 https://cache.freescale.com/files/sensors/doc/app_note/AN3461.pdf
 http://forums.parallax.com/discussion/115008/how-to-compute-atan2-with-integers-and-of-course-quickly
 https://stackoverflow.com/questions/26201084/signed-char-atan2-and-atan-approximations
+
+https://electronics.stackexchange.com/questions/30370/fast-and-memory-efficient-moving-average-calculation
+https://www.avrfreaks.net/forum/moving-average-micro-controller

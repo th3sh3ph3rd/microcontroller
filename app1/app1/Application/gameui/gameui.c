@@ -48,6 +48,16 @@
 #define BUTTON_D    0x40
 #define BUTTON_U    0x80
 
+/* Accelerometer corner values */
+//TODO finf out the real values
+#define X_MIN       0
+#define X_MAX       255
+#define Y_MIN       0
+#define Y_MAX       255
+#define Z_MIN       0
+#define Z_MAX       255
+#define ACC_DELTA   10
+
 /* Game parameters */
 #define TICKS_PER_SCROLL    10
 #define WALL_GAP            13
@@ -55,8 +65,8 @@
 enum static_state {INIT, WAIT};
 enum tick_state {SETUP, UPDATE, SCROLL, LEVEL};
 
-//static const uint8_t walls[2][6] = {{0, 26, 50, 57, 82, 109},
-//                              {18, 45, 70, 97, 117, 127}};
+static const uint8_t walls[2][6] = {{0, 26, 50, 57, 82, 109},
+                             {18, 45, 70, 97, 117, 127}};
 
 /* WIImote MAC address */
 //TODO move to PROGMEM
@@ -136,7 +146,8 @@ static void initLevel(void);
 static void displayNewWall(uint8_t y_off);
 static void drawWall(uint8_t wall);
 static void clearWall(uint8_t y_off);
-static int8_t atan2(uint8_t x, uint8_t y);
+static int8_t ballDir(uint8_t x, uint8_t z);
+//static int8_t atan2(uint8_t x, uint8_t y);
 
 /**
  * @brief       Initialize the game user interface.
@@ -478,7 +489,6 @@ static void displayConnectText(uint8_t y_top)
 
 static void initLevel(void)
 {
-    xy_point point0, point1;
     uint8_t newWall;
     uint8_t yPos = screenDynamics.yShift;
     screenImage.topWall = 0;
@@ -487,7 +497,7 @@ static void initLevel(void)
     {
         newWall = rand16() & (WALLS_AVAILABLE-1);
         /* Load new wall from PROGMEM */
-        memcpy_P(screenImage.walls[w].points, &data_walls[newWall], WALL_POINTS);
+        memcpy_P((void *)screenImage.walls[w].points, &data_walls[newWall], WALL_POINTS);
         screenImage.walls[w].yPos = yPos;
         drawWall(w);
         yPos += WALL_GAP;
@@ -529,6 +539,8 @@ static void displayNewWall(uint8_t y_off)
 
 static void drawWall(uint8_t wall)
 {
+    xy_point point0, point1;
+    
     point0.y = screenImage.walls[wall].yPos;
     point1.y = screenImage.walls[wall].yPos;
 
@@ -564,42 +576,55 @@ static void clearWall(uint8_t yOff)
     glcdDrawLine(point0, point1, &glcdClearPixel);
 }
 
-/* atan2 integer algorithm, inspired by: http://forums.parallax.com/discussion/115008/how-to-compute-atan2-with-integers-and-of-course-quickly */
-static int8_t atan2(uint8_t x, uint8_t y)
+static int8_t balldir(uint8_t x, uint8_t z)
 {
-    int32_t angle;
+    if (x > (X_MAX/2)-ACC_DELTA &&
+        x < (X_MAX/2)+ACC_DELTA &&
+        (z > Z_MAX-ACC_DELTA || z < Z_MIN+ACC_DELTA))
+        return 0;
 
-    if (y == 0)
-    {
-        if (x >= 0)
-            return 0;
-        return 180;
-    }
-    if (x == 0)
-    {
-        if (y > 0)
-            return 90;
-        return -90;
-    }
+    if (x < X_MAX/2 && z < Z_MAX)
+        return 1;
 
-    angle = (3667 * x * y) / (64 * x * x + 17 * y * y);
-    
-    if (abs(y) > abs(x))
-        angle = 90 - angle;
-
-    if (x < 0)
-    {
-        if (y < 0)
-            angle = 180 + angle;
-        else
-            angle = 180 - angle;
-    }
-    else
-    {
-        if (y < 0)
-            angle = 360 - angle;
-    }
-
-    return (int8_t) angle;
+    return -1;
 }
+
+/* atan2 integer algorithm, inspired by: http://forums.parallax.com/discussion/115008/how-to-compute-atan2-with-integers-and-of-course-quickly */
+//static int8_t atan2(uint8_t x, uint8_t y)
+//{
+//    int32_t angle;
+//
+//    if (y == 0)
+//    {
+//        if (x >= 0)
+//            return 0;
+//        return 180;
+//    }
+//    if (x == 0)
+//    {
+//        if (y > 0)
+//            return 90;
+//        return -90;
+//    }
+//
+//    angle = (3667 * x * y) / (64 * x * x + 17 * y * y);
+//    
+//    if (abs(y) > abs(x))
+//        angle = 90 - angle;
+//
+//    if (x < 0)
+//    {
+//        if (y < 0)
+//            angle = 180 + angle;
+//        else
+//            angle = 180 - angle;
+//    }
+//    else
+//    {
+//        if (y < 0)
+//            angle = 360 - angle;
+//    }
+//
+//    return (int8_t) angle;
+//}
 
