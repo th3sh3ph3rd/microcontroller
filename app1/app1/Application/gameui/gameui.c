@@ -64,6 +64,7 @@
 #define TICKS_PER_SCROLL    10
 #define WALL_GAP            13
 #define BALL_RADIUS         3
+#define GRAVITY             2
 
 enum static_state {INIT, WAIT};
 enum tick_state {SETUP, UPDATE, SCROLL, LEVEL};
@@ -124,8 +125,8 @@ static struct
 /* Screen dynamic values */
 struct ball_dyn
 {
-    uint8_t xAcc;
-    uint8_t yAcc;
+    int8_t xAcc;
+    int8_t yAcc;
 };
 static struct
 {
@@ -150,6 +151,9 @@ static void displayNewWall(uint8_t y_off);
 static void drawWall(uint8_t wall);
 static void clearWall(uint8_t y_off);
 static int8_t ballDir(uint8_t x, uint8_t z);
+static uint8_t updateBallPos(void);
+static void drawBall(void);
+static void clearBall(void);
 //static int8_t atan2(uint8_t x, uint8_t y);
 
 /**
@@ -505,10 +509,12 @@ static void initLevel(void)
         drawWall(w);
         yPos += WALL_GAP;
     }
-
+    
+    screenDynamics.ballDynamics.xAcc = 0;
+    screenDynamics.ballDynamics.yAcc = GRAVITY;
     screenImage.ball.x = (X_WIDTH/2)-1;
-    screenImage.ball.y = BOTTOM+BALL_RADIUS;
-    glcdDrawCircle(screenImage.ball, BALL_RADIUS, &glcdSetPixel);
+    screenImage.ball.y = (screenDynamics.yShift+BOTTOM+BALL_RADIUS) & (Y_HEIGHT-1);
+    drawBall();
 }
 
 static void displayNewWall(uint8_t y_off)
@@ -594,6 +600,72 @@ static int8_t balldir(uint8_t x, uint8_t z)
         return 1;
 
     return -1;
+}
+
+static uint8_t updateBallPos(void)
+{
+    /* GAME OVER */
+    if (screenImage.ball.y + screenDynamics.ballDynamics.yAcc + BALL_RADIUS >= TOP)
+        return 1;
+
+    /* Hit left wall */
+    if (screenImage.ball.x + screenDynamics.ballDynamics.xAcc - BALL_RADIUS == 0)
+        screenImage.ball.x = BALL_RADIUS;
+    /* Hit right wall */
+    else if (screenImage.ball.x + screenDynamics.ballDynamics.xAcc + BALL_RADIUS >= X_WIDTH-1)
+        screenImage.ball.x = X_WIDTH-BALL_RADIUS-1;
+    /* Update ball position according to user input */
+    else
+        screenImage.ball.x = screenDynamics.ballDynamics.xAcc;
+
+    /* Wall collision detection */
+    for (uint8_t w = 0; w < WALLS_ON_SCREEN; w++)
+    {
+        //TODO detect collision with wall in x direction
+        // if (screenImage.walls[w].yPos >= screenImage.ball.y-BALL_RADIUS &&
+        //     screenImage.walls[w].yPos <= screenImage.ball.y+BALL_RADIUS)
+        /* Check if wall is on ball level */
+        if (screenImage.walls[w].yPos == screenImage.ball.y+BALL_RADIUS)
+        {
+            for (uint8_t p = 0; p < WALL_POINTS; p++)
+            {
+                if (p == WALL_POINTS-1 &&
+                    screenImage.walls[w].points[p] != X_WIDTH-1 &&
+                    screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS)
+                {
+                    //TODO set some flag
+                     break;
+                }
+                else if ((screenImage.walls[w].points[p] <= screenImage.ball.x-BALL_RADIUS &&
+                          screenImage.walls[w].points[p+1] >= screenImage.ball.x+BALL_RADIUS) ||
+                         (screenImage.walls[w].points[p] >= screenImage.ball.x-BALL_RADIUS &&
+                          screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS) ||
+                         (screenImage.walls[w].points[p+1] >= screenImage.ball.x-BALL_RADIUS &&
+                          screenImage.walls[w].points[p+1] <= screenImage.ball.x+BALL_RADIUS))
+                {
+                    //TODO set some flag
+                    break;
+                }
+            }
+        }
+    }
+
+    /* Compensate for scroll */
+    //TODO determine interference with collision detection
+    if (gameTicksScroll == gameTicksPerScroll)
+        screenImage.ball.y--;
+
+    return 0;
+}
+
+static void drawBall(void)
+{
+    glcdDrawCircle(screenImage.ball, BALL_RADIUS, &glcdSetPixel);
+}
+
+static void clearBall(void)
+{
+    glcdDrawCircle(screenImage.ball, BALL_RADIUS, &glcdClearPixel);
 }
 
 /* atan2 integer algorithm, inspired by: http://forums.parallax.com/discussion/115008/how-to-compute-atan2-with-integers-and-of-course-quickly */
