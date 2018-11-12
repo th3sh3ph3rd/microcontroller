@@ -15,7 +15,7 @@
 
 ; //TODO WTF is going on here
 
-typedef enum game_state {START, CONNECT, PLAY, GAMEOVER, HIGHSCORE, PAUSE} game_state_t;
+typedef enum game_state {START, CONNECT, SELECTPLAYER, PLAY, GAMEOVER, HIGHSCORE, PAUSE} game_state_t;
 
 /**
  * @brief       Initialize the game user interface.
@@ -25,6 +25,8 @@ void gameui_init(void);
 uint8_t gameui_start(game_state_t *game_state);
 
 uint8_t gameui_connect(game_state_t *game_state);
+
+uint8_t gameui_selectPlayer(game_state_t *game_state);
 
 /**
  * @brief               Completes one tick of the game user interface, consisting of fetching user input

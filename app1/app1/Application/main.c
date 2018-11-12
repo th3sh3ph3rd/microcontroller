@@ -40,6 +40,8 @@ int main(void)
                 gameui_start(&game_state);
             else if (CONNECT == game_state)
                 gameui_connect(&game_state);
+            else if (SELECTPLAYER == game_state)
+                gameui_selectPlayer(&game_state);
             else if (PLAY == game_state)
                 gameui_play(&game_state);
             else if (PAUSE == game_state)
