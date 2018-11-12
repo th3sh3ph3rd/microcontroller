@@ -22,8 +22,6 @@ typedef enum game_state {START, CONNECT, PLAY, GAMEOVER, HIGHSCORE, PAUSE} game_
  */
 void gameui_init(void);
 
-uint8_t gameui_setup(game_state_t *game_state);
-
 uint8_t gameui_start(game_state_t *game_state);
 
 uint8_t gameui_connect(game_state_t *game_state);

@@ -119,14 +119,7 @@ error_t wiiUserSetAccel(uint8_t wii, uint8_t enable, void (*setAccelCallback)(ui
 		_state[wii] = 2;
 	}
 	_union[wii].setAccelCallback = setAccelCallback;
-    
-    uint8_t reportMode;
-    if (enable)
-        reportMode = 0x31;
-    else
-        reportMode = 0x30;
-
-	uint8_t data[] = { 0xa2, 0x12, 0x00, reportMode };
+	uint8_t data[] = { 0xa2, 0x12, 0x00, 0x31 };
 	uint8_t status = wiiBtSendRaw(wii, sizeof(data), data);
 	if (status)
 		_state[wii] = 0;

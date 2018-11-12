@@ -52,29 +52,26 @@
 
 /* Accelerometer corner values */
 //TODO finf out the real values
-#define X_MIN       0
-#define X_MAX       255
-#define Y_MIN       0
-#define Y_MAX       255
-#define Z_MIN       0
-#define Z_MAX       255
+#define X_MIN       0x66
+#define X_MAX       0x99
+#define Y_MIN       0x52
+#define Y_MAX       0xa7
+#define Z_MIN       0x66
+#define Z_MAX       0x99
 #define ACC_DELTA   10
 
 /* Game parameters */
 #define TICKS_PER_SCROLL    10
-#define WALL_GAP            13
+#define WALL_GAP            15
 #define BALL_RADIUS         3
 #define GRAVITY             2
 
 enum static_state {INIT, WAIT};
 enum tick_state {SETUP, UPDATE, SCROLL, LEVEL};
 
-static const uint8_t walls[2][6] = {{0, 26, 50, 57, 82, 109},
-                             {18, 45, 70, 97, 117, 127}};
-
 /* WIImote MAC address */
 //TODO move to PROGMEM
-static const uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xe8, 0x28 };
+static const uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xfb, 0xf8 };
 
 /* State variables */
 //TODO put this in struct gameStates
@@ -94,9 +91,11 @@ static uint8_t accel_status = 0;
 /* Wiimote sensor values */
 //TODO put this in struct sensorValues
 static uint8_t buttons = 0;
-static uint16_t accel_x;
-static uint16_t accel_y;
-static uint16_t accel_z;
+static uint8_t accel_x;
+static uint8_t accel_y;
+static uint8_t accel_z;
+static uint8_t acc_min = 255;
+static uint8_t acc_max = 0;
 
 /* Counter variables */
 //TODO put this in struct ticks
@@ -104,12 +103,10 @@ static uint16_t accel_z;
 static uint8_t gameTicksPerScroll = TICKS_PER_SCROLL;
 static uint8_t gameTicksScroll = TICKS_PER_SCROLL-1;
 static uint8_t scrollTicks = WALL_GAP-1;
-//TODO replace this with below defined struct
-static uint8_t y_shift = 0;
 
 /* Current screen image */
 //TODO adapt this accordingly
-#define WALLS_ON_SCREEN 5
+#define WALLS_ON_SCREEN 4
 struct wall
 {
     uint8_t yPos;
@@ -165,7 +162,7 @@ void gameui_init(void)
 
     wiiUserInit(&buttonCB, &accelCB);
     
-    y_shift = glcdGetYShift();
+    screenDynamics.yShift = glcdGetYShift();;
 
     PORTH = 0;
     DDRH = 0xff; 
@@ -175,32 +172,9 @@ void gameui_init(void)
     DDRL = 0xff; 
 }
 
-//TODO alt name: levelInit
-uint8_t gameui_setup(game_state_t *game_state)
-{
-    uint8_t y_off = WALL_GAP;
-
-    glcdFillScreen(GLCD_CLEAR);
-
-    for (int w = 0; w < 4; w++)
-    {
-        displayNewWall(y_off);
-        y_off += WALL_GAP;
-    }
-
-    y_shift = glcdGetYShift();
-
-    *game_state = PLAY;
-
-    return 0;
-}
-
 uint8_t gameui_start(game_state_t *game_state)
 {
     PORTK = 1;
-    //PORTL &= 0xc0;
-    //PORTL = (accel_status<<7)|(accel_en<<6);
-    PORTH = accel_x;
 
     if (INIT == start_state)
     {
@@ -231,8 +205,6 @@ uint8_t gameui_start(game_state_t *game_state)
 uint8_t gameui_connect(game_state_t *game_state)
 {
     PORTK = 2;
-    //PORTL &= 0xc0;
-    PORTH = accel_x;
     
     if (INIT == connect_state)
     {
@@ -269,13 +241,10 @@ uint8_t gameui_connect(game_state_t *game_state)
 //TODO for tasking return in every block
 uint8_t gameui_play(game_state_t *game_state)
 {   
-    PORTK = 4;
-    //PORTL &= 0xc0;
-    //PORTL |= accel_x>>2;
-
-    //PORTL = (accel_status<<7)|(accel_en<<6);
-    //PORTK = accel_y;
-    //PORTL = accel_x;
+    //PORTK = 4;
+    //PORTH = ballDir(accel_x, accel_z);
+    //PORTK = acc_min;
+    //PORTH = accel_z;
 
     if (SETUP == play_state)
     {
@@ -286,12 +255,11 @@ uint8_t gameui_play(game_state_t *game_state)
         wiiUserSetAccel(0, 1, &setAccelCB);   
         if (accel_status == 1)
             play_state = UPDATE;
+        initLevel();
     }
     if (UPDATE == play_state)
     {
         PORTL = 2;
-
-        PORTH = ((uint32_t)((atan2(accel_y, accel_z)*180.0)/M_PI)>>20);
 
         if (gameTicksScroll == gameTicksPerScroll-1)
         {
@@ -300,6 +268,11 @@ uint8_t gameui_play(game_state_t *game_state)
         }
         else
             gameTicksScroll++;
+
+        clearBall();
+        screenDynamics.ballDynamics.xAcc = ballDir(accel_x, accel_y);
+        updateBallPos();
+        drawBall();
     } 
     if (SCROLL == play_state)
     {
@@ -315,24 +288,24 @@ uint8_t gameui_play(game_state_t *game_state)
             scrollTicks++;
         }
 
-        if (y_shift == Y_HEIGHT)
-            y_shift = 0;
+        if (screenDynamics.yShift == Y_HEIGHT)
+            screenDynamics.yShift = 0;
         else
-            y_shift++;
+            screenDynamics.yShift++;
 
-        glcdSetYShift(y_shift);
+        glcdSetYShift(screenDynamics.yShift);
     }
     if (LEVEL == play_state)
     {
         PORTL = 8;
         play_state = UPDATE;
-        clearWall(Y_HEIGHT+y_shift-1);
-        displayNewWall(Y_HEIGHT+y_shift-1);
-        toggle_wall = !toggle_wall;
+        //clearWall(screenDynamics.yShift);
+        //displayNewWall(screenDynamics.yShift+BOTTOM);
     }
 
     if (PLAY != next_game_state)
     {
+        //TODO app gets stuck here sometimes
         PORTL = 32;
         accel_en = 0;
         wiiUserSetAccel(0, 0, &setAccelCB);   
@@ -362,7 +335,6 @@ uint8_t gameui_pause(game_state_t *game_state)
 {
     PORTK = 8;
     //PORTL &= 0xc0;
-    PORTH = accel_x;
     
     last_game_state = PAUSE;
 
@@ -400,7 +372,6 @@ uint8_t gameui_highScore(game_state_t *game_state)
 {
     PORTK = 32;
     //PORTL &= 0xc0;
-    PORTH = accel_x;
 
     last_game_state = HIGHSCORE;
     
@@ -439,6 +410,11 @@ static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z)
     accel_x = x>>2;
     accel_y = y>>1;
     accel_z = z>>1;
+
+   // if (accel_z < acc_min)
+   //     acc_min = accel_z;
+   // if (accel_z > acc_max)
+   //     acc_max = accel_z;
 }
 
 static void connectCB(uint8_t wii, connection_status_t status)
@@ -457,41 +433,41 @@ static void setAccelCB(uint8_t wii, error_t status)
 
 static void displayText(PGM_P const *text, uint8_t lines, uint8_t y_top)
 {
-        xy_point startPoint;
-        //startPoint.y = (y_shift+y_top) & (Y_HEIGHT-1);
-        startPoint.y = 10;
-        startPoint.x = 10;
+    xy_point startPoint;
+    //startPoint.y = (y_shift+y_top) & (Y_HEIGHT-1);
+    startPoint.y = 10;
+    startPoint.x = 10;
 
-        for (int i = 0; i < lines; i++)
-        {
-            //glcdDrawTextPgm(text[i], startPoint, &Standard5x7, &glcdSetPixel);
-            glcdDrawText((const char *)pgm_read_word(&text[i]), startPoint, &Standard5x7, &glcdSetPixel);
-            startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-        }
+    for (int i = 0; i < lines; i++)
+    {
+        //glcdDrawTextPgm(text[i], startPoint, &Standard5x7, &glcdSetPixel);
+        glcdDrawText((const char *)pgm_read_word(&text[i]), startPoint, &Standard5x7, &glcdSetPixel);
+        startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    }
 }
 
-static void displayStartText(uint8_t y_top)
+static void displayStartText(uint8_t yTop)
 {
-        xy_point startPoint;
-        startPoint.y = (y_shift+y_top) & (Y_HEIGHT-1);
-        startPoint.x = 10;
+    xy_point startPoint;
+    startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
+    startPoint.x = 10;
 
-        glcdDrawTextPgm(game_name, startPoint, &Standard5x7, &glcdSetPixel);
-        startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-        glcdDrawTextPgm(play_b, startPoint, &Standard5x7, &glcdSetPixel);
-        startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-        glcdDrawTextPgm(highscore_b, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(game_name, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(play_b, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(highscore_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
-static void displayConnectText(uint8_t y_top)
+static void displayConnectText(uint8_t yTop)
 {
-        xy_point startPoint;
-        startPoint.y = (y_shift+y_top) & (Y_HEIGHT-1);
-        startPoint.x = 10;
+    xy_point startPoint;
+    startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
+    startPoint.x = 10;
 
-        glcdDrawTextPgm(connecting, startPoint, &Standard5x7, &glcdSetPixel);
-        startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-        glcdDrawTextPgm(towiimote, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(connecting, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(towiimote, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
 static void initLevel(void)
@@ -507,48 +483,47 @@ static void initLevel(void)
         memcpy_P((void *)screenImage.walls[w].points, &data_walls[newWall], WALL_POINTS);
         screenImage.walls[w].yPos = yPos;
         drawWall(w);
-        yPos += WALL_GAP;
+        yPos += WALL_GAP+1;
     }
     
     screenDynamics.ballDynamics.xAcc = 0;
     screenDynamics.ballDynamics.yAcc = GRAVITY;
     screenImage.ball.x = (X_WIDTH/2)-1;
-    screenImage.ball.y = (screenDynamics.yShift+BOTTOM+BALL_RADIUS) & (Y_HEIGHT-1);
+    screenImage.ball.y = (screenDynamics.yShift+BOTTOM-BALL_RADIUS);
     drawBall();
 }
 
-static void displayNewWall(uint8_t y_off)
-{
-    xy_point point0, point1;
-
-    point0.y = y_off;
-    point1.y = y_off;
-
-    for (uint8_t i = 0; i < 6; i += 2)
-    {
-        point0.x = walls[toggle_wall][i];
-        point1.x = walls[toggle_wall][i+1];
-        
-        glcdDrawLine(point0, point1, &glcdSetPixel);
-    }
-}
-
-//static void displayNewWall(uint8_t yOff)
+//static void displayNewWall(uint8_t y_off)
 //{
 //    xy_point point0, point1;
-//    uint8_t newWall = rand16() & (WALLS_AVAILABLE-1);
 //
-//    /* Load new wall from PROGMEM */
-//    memcpy_P(screenImage.walls[screenImage.topWall].points, &data_walls[newWall], WALL_POINTS);
-//    screenImage.walls[screenImage.topWall].yPos = Y_HEIGHT+screenDynamics.yShift-1;
+//    point0.y = y_off;
+//    point1.y = y_off;
 //
-//    drawWall(screenImage.topWall);
-//
-//    if (screenImage.topWall == WALLS_ON_SCREEN-1)
-//        screenImage.topWall = 0;
-//    else
-//        screenImage.topWall++;
+//    for (uint8_t i = 0; i < 6; i += 2)
+//    {
+//        point0.x = walls[toggle_wall][i];
+//        point1.x = walls[toggle_wall][i+1];
+//        
+//        glcdDrawLine(point0, point1, &glcdSetPixel);
+//    }
 //}
+
+static void displayNewWall(uint8_t yOff)
+{
+    uint8_t newWall = rand16() & (WALLS_AVAILABLE-1);
+
+    /* Load new wall from PROGMEM */
+    memcpy_P((void *)screenImage.walls[screenImage.topWall].points, &data_walls[newWall], WALL_POINTS);
+    screenImage.walls[screenImage.topWall].yPos = yOff;
+
+    drawWall(screenImage.topWall);
+
+    if (screenImage.topWall == WALLS_ON_SCREEN-1)
+        screenImage.topWall = 0;
+    else
+        screenImage.topWall++;
+}
 
 static void drawWall(uint8_t wall)
 {
@@ -589,14 +564,15 @@ static void clearWall(uint8_t yOff)
     glcdDrawLine(point0, point1, &glcdClearPixel);
 }
 
-static int8_t balldir(uint8_t x, uint8_t z)
+static int8_t ballDir(uint8_t x, uint8_t z)
 {
-    if (x > (X_MAX/2)-ACC_DELTA &&
-        x < (X_MAX/2)+ACC_DELTA &&
-        (z > Z_MAX-ACC_DELTA || z < Z_MIN+ACC_DELTA))
+    if (x >= 0x81-ACC_DELTA && 
+        x <= 0x81+ACC_DELTA &&
+        z >= Z_MAX-ACC_DELTA &&
+        z <= Z_MAX+ACC_DELTA)
         return 0;
 
-    if (x < X_MAX/2 && z < Z_MAX)
+    if (x > 0x81 && z < Z_MAX)
         return 1;
 
     return -1;
@@ -604,9 +580,9 @@ static int8_t balldir(uint8_t x, uint8_t z)
 
 static uint8_t updateBallPos(void)
 {
-    /* GAME OVER */
-    if (screenImage.ball.y + screenDynamics.ballDynamics.yAcc + BALL_RADIUS >= TOP)
-        return 1;
+//    /* GAME OVER */
+//    if (screenImage.ball.y + screenDynamics.ballDynamics.yAcc + BALL_RADIUS >= TOP)
+//        return 1;
 
     /* Hit left wall */
     if (screenImage.ball.x + screenDynamics.ballDynamics.xAcc - BALL_RADIUS == 0)
@@ -616,44 +592,44 @@ static uint8_t updateBallPos(void)
         screenImage.ball.x = X_WIDTH-BALL_RADIUS-1;
     /* Update ball position according to user input */
     else
-        screenImage.ball.x = screenDynamics.ballDynamics.xAcc;
-
-    /* Wall collision detection */
-    for (uint8_t w = 0; w < WALLS_ON_SCREEN; w++)
-    {
-        //TODO detect collision with wall in x direction
-        // if (screenImage.walls[w].yPos >= screenImage.ball.y-BALL_RADIUS &&
-        //     screenImage.walls[w].yPos <= screenImage.ball.y+BALL_RADIUS)
-        /* Check if wall is on ball level */
-        if (screenImage.walls[w].yPos == screenImage.ball.y+BALL_RADIUS)
-        {
-            for (uint8_t p = 0; p < WALL_POINTS; p++)
-            {
-                if (p == WALL_POINTS-1 &&
-                    screenImage.walls[w].points[p] != X_WIDTH-1 &&
-                    screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS)
-                {
-                    //TODO set some flag
-                     break;
-                }
-                else if ((screenImage.walls[w].points[p] <= screenImage.ball.x-BALL_RADIUS &&
-                          screenImage.walls[w].points[p+1] >= screenImage.ball.x+BALL_RADIUS) ||
-                         (screenImage.walls[w].points[p] >= screenImage.ball.x-BALL_RADIUS &&
-                          screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS) ||
-                         (screenImage.walls[w].points[p+1] >= screenImage.ball.x-BALL_RADIUS &&
-                          screenImage.walls[w].points[p+1] <= screenImage.ball.x+BALL_RADIUS))
-                {
-                    //TODO set some flag
-                    break;
-                }
-            }
-        }
-    }
-
-    /* Compensate for scroll */
-    //TODO determine interference with collision detection
-    if (gameTicksScroll == gameTicksPerScroll)
-        screenImage.ball.y--;
+        screenImage.ball.x += screenDynamics.ballDynamics.xAcc;
+//
+//    /* Wall collision detection */
+//    for (uint8_t w = 0; w < WALLS_ON_SCREEN; w++)
+//    {
+//        //TODO detect collision with wall in x direction
+//        // if (screenImage.walls[w].yPos >= screenImage.ball.y-BALL_RADIUS &&
+//        //     screenImage.walls[w].yPos <= screenImage.ball.y+BALL_RADIUS)
+//        /* Check if wall is on ball level */
+//        if (screenImage.walls[w].yPos == screenImage.ball.y+BALL_RADIUS)
+//        {
+//            for (uint8_t p = 0; p < WALL_POINTS; p++)
+//            {
+//                if (p == WALL_POINTS-1 &&
+//                    screenImage.walls[w].points[p] != X_WIDTH-1 &&
+//                    screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS)
+//                {
+//                    //TODO set some flag
+//                     break;
+//                }
+//                else if ((screenImage.walls[w].points[p] <= screenImage.ball.x-BALL_RADIUS &&
+//                          screenImage.walls[w].points[p+1] >= screenImage.ball.x+BALL_RADIUS) ||
+//                         (screenImage.walls[w].points[p] >= screenImage.ball.x-BALL_RADIUS &&
+//                          screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS) ||
+//                         (screenImage.walls[w].points[p+1] >= screenImage.ball.x-BALL_RADIUS &&
+//                          screenImage.walls[w].points[p+1] <= screenImage.ball.x+BALL_RADIUS))
+//                {
+//                    //TODO set some flag
+//                    break;
+//                }
+//            }
+//        }
+//    }
+//
+//    /* Compensate for scroll */
+//    //TODO determine interference with collision detection
+//    if (gameTicksScroll == gameTicksPerScroll)
+//        screenImage.ball.y--;
 
     return 0;
 }
