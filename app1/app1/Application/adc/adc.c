@@ -22,8 +22,8 @@
 enum adc_state {DIF, POT};
 static volatile enum adc_state state;
 
-static void (*difCB)(uint16_t adc);
-static void (*potCB)(uint16_t adc);
+static void (*difCB)(uint8_t adc);
+static void (*potCB)(uint8_t adc);
 
 /**
  * @brief       Initialize the ADC driver.
@@ -61,7 +61,7 @@ void adc_init(void)
  * @param _difCB    The callback function processing the adc value from the differential channel.
  * @param _potCB    The callback function processing the adc value from the potentiometer.
  */
-void adc_setCallbacks(void (*_difCB)(uint16_t adc), void (*_potCB)(uint16_t adc))
+void adc_setCallbacks(void (*_difCB)(uint8_t adc), void (*_potCB)(uint8_t adc))
 {
     difCB = _difCB;
     potCB = _potCB;
@@ -80,14 +80,14 @@ ISR(ADC_vect, ISR_BLOCK)
         ADMUX &= ~(ADMUX_DIF);
         state = POT;
         sei();
-        difCB(adc_res);
+        difCB(adc_res>>2);
     }
     else if (POT == state)
     {
         ADMUX |= ADMUX_DIF;
         state = DIF;
         sei();
-        potCB(adc_res);
+        potCB(adc_res>>2);
     }
 }
 

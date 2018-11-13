@@ -1,6 +1,7 @@
 /*
-mp3lib for VS1011E
+mp3lib for VS1011E and VS1053B
 Copyright (C) 2011 Andreas Hagmann, Embedded Computing Systems group - TU Wien
+Copyright (C) 2018 Thomas Lamprecht, Embedded Computing Systems group - TU Wien
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -38,13 +39,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 #define DREQ		PD0
 
-extern void spiSend(uint8_t data);
-extern uint8_t spiReceive(void);
 
 extern void mp3Init(void (*dataRequestCallback)(void));
 extern void mp3SetVolume(uint8_t volume);
 extern void mp3SendMusic(uint8_t *buffer);
 extern void mp3StartSineTest(void);
 extern bool mp3Busy(void);
+extern uint8_t mp3GetVS10xxVersion(void); // 2 => VS1011e, 4 => VS1053B
 
 #endif

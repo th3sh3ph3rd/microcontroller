@@ -7,3 +7,7 @@ Include mp3.h wherever you want to use the mp3 player functions. Link your own o
 avr-gcc main.o -mmcu=atmega1280 -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums -lmp3 -L. -o application.elf
 
 Make sure that the header and library files are in the compilers and linkers search path. E.g. in the same directory as your other source files (-L. adds the current directory to the linkers library search path).
+
+Revision 1:
+* fix issues with SmartMP3 from HW rev. 1.21 due to fast SPI clock resulting
+(sometimes) in sampling errors

@@ -23,7 +23,7 @@ void adc_init(void);
  * @param _difCB    The callback function processing the adc value from the differential channel.
  * @param _potCB    The callback function processing the adc value from the potentiometer.
  */
-void adc_setCallbacks(void (*_difCB)(uint16_t adc), void (*_potCB)(uint16_t adc));
+void adc_setCallbacks(void (*_difCB)(uint8_t adc), void (*_potCB)(uint8_t adc));
 
 #endif
 

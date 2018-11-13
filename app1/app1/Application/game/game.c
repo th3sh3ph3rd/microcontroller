@@ -8,8 +8,6 @@
  *
  */
 
-//TODO remove debug leds!!!
-
 #include <avr/io.h>
 #include <avr/sleep.h>
 #include <avr/pgmspace.h>
@@ -91,13 +89,11 @@ static struct
 {
     volatile uint8_t game;
     volatile uint8_t music;
-} interruptFlags;
+} workLeft;
 
 /* State variables */
-//TODO find out if this has to be init
 static struct
 {
-    game_state_t last;
     game_state_t next;
     static_state_t start;
     static_state_t connect;
@@ -192,7 +188,8 @@ static void displayGameOverText(uint8_t y_top);
 static void displayHighScoreText(uint8_t y_top);
 static void initLevel(void);
 static void moveSelector(uint8_t curr, uint8_t next);
-static void scrollScreen(void);
+static void playUpdate(void);
+static void playScroll(void);
 static void displayNewWall(uint8_t yOff);
 static void drawWall(uint8_t wall);
 static void clearWall(uint8_t wall);
@@ -201,17 +198,6 @@ static uint8_t updateBallPos(void);
 static void drawBall(void);
 static void clearBall(void);
 
-void randCB(uint16_t n)
-{
-    rand_feed(n>>2);
-}
-
-void volumeCB(uint16_t n)
-{
-    music_setVolume(n>>2);
-}
-
-
 /**
  * @brief       Initialize the game user interface.
  */
@@ -219,7 +205,8 @@ void game_init(void)
 {
     glcdInit();
     music_init(&musicCB);
-    adc_setCallbacks(&randCB, &volumeCB);
+    adc_setCallbacks(&rand_feed, &music_setVolume);
+    adc_init();
     wiiUserInit(&buttonCB, &accelCB); 
     
     /* Initialize the structs */
@@ -228,13 +215,12 @@ void game_init(void)
     wiimote.triedSetAcc = 0;
     wiimote.accStatus = 0;
     screenDynamics.yShift = glcdGetYShift();
+
     for (uint8_t p = 0; p < PLAYERNUM; p++)
         playerData.highScore[p] = 0;
-    
-    PORTK = 0;
-    DDRK = 0xff; 
-    PORTL = 0;
-    DDRL = 0xff;
+
+    workLeft.game = 0;
+    workLeft.music = 0;
 
     timer_startTimer1(50, TIMER_REPEAT, &gameTimerCB);
     
@@ -244,43 +230,34 @@ void game_init(void)
 void game_run(void)
 {
     game_state_t game_state = START;
-    uint8_t done_game = 0;
-    uint8_t done_music = 0;
 
     set_sleep_mode(SLEEP_MODE_IDLE);
     sleep_enable();
 
     for (;;)
     {
-        //TODO maybe transform this to do while to avoid chekcing interrupt flags
-        while (interruptFlags.game == 1 ||
-               interruptFlags.music == 1 ||
-               done_game != 0 ||
-               done_music != 0)
+        do
         {
-            if (interruptFlags.game == 1 || done_game != 0)
+            if (workLeft.game != 0)
             {
-                interruptFlags.game = 0;
-
                 if (START == game_state)
-                    done_game = start(&game_state);
+                    workLeft.game = start(&game_state);
                 else if (CONNECT == game_state)
-                    done_game = connect(&game_state);
+                    workLeft.game = connect(&game_state);
                 else if (SELECTPLAYER == game_state)
-                    done_game = selectPlayer(&game_state);
+                    workLeft.game = selectPlayer(&game_state);
                 else if (PLAY == game_state)
-                    done_game = play(&game_state);
+                    workLeft.game = play(&game_state);
                 else if (GAMEOVER == game_state)
-                    done_game = gameOver(&game_state);
+                    workLeft.game = gameOver(&game_state);
                 else if (HIGHSCORE == game_state)
-                    done_game = highScore(&game_state);
+                    workLeft.game = highScore(&game_state);
+
             }
-            if (interruptFlags.music == 1 || done_music != 0)
-            {
-                interruptFlags.music = 0;
-                done_music = music_play();
-            }
-        }
+            if (workLeft.music != 0)
+                workLeft.music = music_play();
+
+        } while (workLeft.game != 0 || workLeft.music != 0);
 
         sleep_cpu();
     }
@@ -288,13 +265,12 @@ void game_run(void)
 
 static uint8_t start(game_state_t *game_state)
 {
-    PORTK = 1;
     if (INIT == gameStates.start)
     {
-        gameStates.last = START;
         glcdFillScreen(GLCD_CLEAR);
         displayStartText(10);
         gameStates.start = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.start)
     {
@@ -317,12 +293,12 @@ static uint8_t start(game_state_t *game_state)
 
 static uint8_t connect(game_state_t *game_state)
 {
-    PORTK = 2;
     if (INIT == gameStates.connect)
     {
         glcdFillScreen(GLCD_CLEAR);
         displayConnectText(10);
         gameStates.connect = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.connect)
     {
@@ -334,8 +310,7 @@ static uint8_t connect(game_state_t *game_state)
 
         if (CONNECTED == wiimote.status)
         {
-            adc_init();
-            *game_state = gameStates.last;
+            *game_state = START;
             gameStates.connect = INIT;
             input.buttons = 0;
         }
@@ -348,16 +323,15 @@ static uint8_t connect(game_state_t *game_state)
 static uint8_t selectPlayer(game_state_t *game_state)
 {
     uint8_t lastPlayer;
-    PORTK = 4;
 
     if (INIT == gameStates.selectPlayer)
     {
-        gameStates.last = SELECTPLAYER;
         glcdFillScreen(GLCD_CLEAR);
         displaySelectPlayerText(10);
         moveSelector(0, 0);
         playerData.currPlayer = 0;
         gameStates.selectPlayer = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.selectPlayer)
     {
@@ -405,14 +379,10 @@ static uint8_t selectPlayer(game_state_t *game_state)
  * @return              The function returns a non-zero value if there is still something to do and 0 if
  *                      all tasks of one tick have been completed.
  */
-//TODO make function shorter!!! max 100 lines
 static uint8_t play(game_state_t *game_state)
 {   
-    PORTK = 8;
     if (SETUP == gameStates.play)
     {
-        PORTL ^= 1;
-        gameStates.last = PLAY;
         gameStates.next = PLAY;
         if (wiimote.accStatus == 1)
         {
@@ -426,72 +396,29 @@ static uint8_t play(game_state_t *game_state)
             wiimote.triedSetAcc = 1;
             wiiUserSetAccel(0, 1, &setAccelCB);   
         }
+        return 1;
     }
     if (UPDATE == gameStates.play)
     {
-        PORTL = 2;
-        if (tickCnt.scroll >= tickCnt.scrollDiv)
-        {
-            gameStates.play = SCROLL;
-            tickCnt.scroll = 0;
-        }
-        else
-            tickCnt.scroll++;
-        
-        if (tickCnt.score == TICKS_PER_SCORE-1)
-        {
-            playerData.currScore++;
-            tickCnt.score = 0;
-        }
-        else
-            tickCnt.score++;
-        
-        if (tickCnt.diff == tickCnt.diffDiv && tickCnt.scrollDiv > 1)
-        {
-            tickCnt.scrollDiv--;
-            tickCnt.diffDiv += TICKS_PER_DIFF;
-            tickCnt.diff = 0;
-        }
-        else
-            tickCnt.diff++;
-
-        calcBallAcc();
-        clearBall();
-        if (updateBallPos() == 1)
-        {
-            gameStates.play = NEXT;
-            gameStates.next = GAMEOVER;
-        }
-        drawBall();
+        playUpdate();
+        return 1;
     } 
     if (SCROLL == gameStates.play)
     {
-        PORTL = 4;
-        if (tickCnt.level == WALL_GAP)
-        {
-            gameStates.play = LEVEL;
-            tickCnt.level = 0;
-        }
-        else
-        {
-            gameStates.play = NEXT;
-            tickCnt.level++;
-        }
-
-        scrollScreen();
+        playScroll();
+        return 1;
     }
     if (LEVEL == gameStates.play)
     {
-        PORTL = 8;
         gameStates.play = NEXT;
         clearWall(screenImage.topWall);
         displayNewWall(BOTTOM);
+        return 1;
     }
     if (NEXT == gameStates.play)
     {
         if (PLAY == gameStates.next)
         {
-            PORTL = 16;
             if (DISCONNECTED == wiimote.status)
                 gameStates.next = CONNECT;
             else if (BUTTON_B & input.buttons)
@@ -499,13 +426,10 @@ static uint8_t play(game_state_t *game_state)
         } 
         if (PLAY != gameStates.next)
         {
-            PORTL ^= 32;
             if (wiimote.accStatus == 0)
             {
                 /* New highscore entry */
-                if ((GAMEOVER == gameStates.next ||
-                     START == gameStates.next) &&
-                    playerData.currScore > playerData.highScore[playerData.currPlayer])
+                if (playerData.currScore > playerData.highScore[playerData.currPlayer])
                     playerData.highScore[playerData.currPlayer] = playerData.currScore;
                 
                 *game_state = gameStates.next;
@@ -527,13 +451,12 @@ static uint8_t play(game_state_t *game_state)
 
 static uint8_t gameOver(game_state_t *game_state)
 {
-    PORTK = 32;
     if (INIT == gameStates.gameOver)
     {
-        gameStates.last = GAMEOVER;
         glcdFillScreen(GLCD_CLEAR);
         displayGameOverText(10);
         gameStates.gameOver = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.gameOver)
     {
@@ -556,13 +479,12 @@ static uint8_t gameOver(game_state_t *game_state)
 
 static uint8_t highScore(game_state_t *game_state)
 {
-    PORTK = 64;
     if (INIT == gameStates.highScore)
     {
-        gameStates.last = HIGHSCORE;
         glcdFillScreen(GLCD_CLEAR);
         displayHighScoreText(10);
         gameStates.highScore = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.highScore)
     {
@@ -583,12 +505,12 @@ static uint8_t highScore(game_state_t *game_state)
 
 static void gameTimerCB(void)
 {
-    interruptFlags.game = 1;
+    workLeft.game = 1;
 }
 
 static void musicCB(void)
 {
-    interruptFlags.music = 1;
+    workLeft.music = 1;
 }
 
 static void buttonCB(uint8_t wii, uint16_t buttonStates)
@@ -764,8 +686,59 @@ static void moveSelector(uint8_t curr, uint8_t next)
     glcdDrawCircle(selector, SELECTOR_RADIUS, &glcdSetPixel); 
 }
 
-static void scrollScreen(void)
+static void playUpdate(void)
 {
+    if (tickCnt.scroll >= tickCnt.scrollDiv)
+    {
+        gameStates.play = SCROLL;
+        tickCnt.scroll = 0;
+    }
+    else
+    {
+        gameStates.play = NEXT;
+        tickCnt.scroll++;
+    }
+    
+    if (tickCnt.score == TICKS_PER_SCORE-1)
+    {
+        playerData.currScore++;
+        tickCnt.score = 0;
+    }
+    else
+        tickCnt.score++;
+    
+    if (tickCnt.diff == tickCnt.diffDiv && tickCnt.scrollDiv > 1)
+    {
+        tickCnt.scrollDiv--;
+        tickCnt.diffDiv += TICKS_PER_DIFF;
+        tickCnt.diff = 0;
+    }
+    else
+        tickCnt.diff++;
+
+    calcBallAcc();
+    clearBall();
+    if (updateBallPos() == 1)
+    {
+        gameStates.play = NEXT;
+        gameStates.next = GAMEOVER;
+    }
+    drawBall();
+}
+
+static void playScroll(void)
+{
+    if (tickCnt.level == WALL_GAP)
+    {
+        gameStates.play = LEVEL;
+        tickCnt.level = 0;
+    }
+    else
+    {
+        gameStates.play = NEXT;
+        tickCnt.level++;
+    }
+
     if (screenDynamics.yShift == Y_HEIGHT-1)
         screenDynamics.yShift = 0;
     else
@@ -867,6 +840,7 @@ static uint8_t updateBallPos(void)
     uint8_t xCollisionL = 0;
     uint8_t xCollisionR = 0;
     uint8_t yCollision = 0;
+
     /* GAME OVER */
     if (screenImage.ball.y-BALL_RADIUS-1 == TOP)
         return 1;
