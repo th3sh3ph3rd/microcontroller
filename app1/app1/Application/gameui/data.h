@@ -46,6 +46,9 @@ PGM_P const data_connectText[] PROGMEM =
     towiimote,
 };
 
+/* Select player screen */
+const char select_b[] PROGMEM = "A:Play B:Menu";
+
 /* Pause screen */
 #define PAUSE_LINES 3
 const char pause[] PROGMEM = "Game paused";

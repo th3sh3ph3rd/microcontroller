@@ -156,31 +156,26 @@ error_t halWT41FcUartSend(uint8_t byte)
 
 /**
  * @brief   Empty the ringbuffer by calling the specified callback on every byte.
+ *          This function has to be called in an atomic context.
  */
 static void processRingbuffer(void)
 {
-    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    do
     {
-        ringbuffer_being_processed = 1;
-
-        do
-        {
-            sei();
-            recvCallback(rbuf.data[rbuf.end]);
-            rbuf.end = (rbuf.end + 1) & (RBUF_SZ - 1);
-            cli();
-
-            rbuf.len--;
-            if (CTS_state == 1 &&
-                rbuf.len < RBUF_LOW)
-            {
-                PORTJ &= ~(1<<CTS_PIN);
-                CTS_state = 0;
-            }
-        } while (rbuf.len > 0);
+        sei();
+        recvCallback(rbuf.data[rbuf.end]);
+        cli();
         
-        ringbuffer_being_processed = 0;
-    }
+        rbuf.end = (rbuf.end + 1) & (RBUF_SZ - 1);
+
+        rbuf.len--;
+        if (CTS_state == 1 &&
+            rbuf.len < RBUF_LOW)
+        {
+            PORTJ &= ~(1<<CTS_PIN);
+            CTS_state = 0;
+        }
+    } while (rbuf.len > 0);
 }
 
 /**
@@ -221,15 +216,15 @@ ISR(USART3_RX_vect, ISR_BLOCK)
 
     if (ringbuffer_being_processed == 0)
     {
-        sei();
+        ringbuffer_being_processed = 1;
         processRingbuffer();
+        ringbuffer_being_processed = 0;
     }
 }
 
 /**
  * @brief   Try sending the byte which has been held back by a full buffer.
  */
-//TODO move send cb to TX interrupt
 ISR(USART3_UDRE_vect, ISR_BLOCK)
 {
     /* Disable the UDR interrupt */

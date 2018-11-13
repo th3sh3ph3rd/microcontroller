@@ -79,7 +79,7 @@ enum tick_state {SETUP, UPDATE, SCROLL, LEVEL, NEXT};
 
 /* WIImote MAC address */
 //TODO move to PROGMEM
-static const uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0xba, 0xa1, 0x32 };
+static const uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xfb, 0xaa };
 
 /* State variables */
 //TODO find out if this has to be init
@@ -90,7 +90,6 @@ static struct
     enum static_state start;
     enum static_state connect;
     enum static_state selectPlayer;
-    enum static_state pause;
     enum static_state gameOver;
     enum static_state highScore;
     enum tick_state play;
@@ -170,7 +169,6 @@ static void displayText(PGM_P const *text, uint8_t lines, uint8_t y_top);
 static void displayStartText(uint8_t y_top);
 static void displayConnectText(uint8_t y_top);
 static void displaySelectPlayerText(uint8_t y_top);
-static void displayPauseText(uint8_t y_top);
 static void displayGameOverText(uint8_t y_top);
 static void displayHighScoreText(uint8_t y_top);
 static void initLevel(void);
@@ -179,7 +177,7 @@ static void scrollScreen(void);
 static void displayNewWall(uint8_t yOff);
 static void drawWall(uint8_t wall);
 static void clearWall(uint8_t wall);
-static int8_t ballAcc(uint8_t x, uint8_t z);
+static void calcBallAcc(void);
 static uint8_t updateBallPos(void);
 static void drawBall(void);
 static void clearBall(void);
@@ -201,7 +199,10 @@ void gameui_init(void)
     wiimote.status = DISCONNECTED;
     wiimote.triedSetAcc = 0;
     wiimote.accStatus = 0;
-    screenDynamics.yShift = glcdGetYShift();;
+    screenDynamics.yShift = glcdGetYShift();
+
+    for (uint8_t p = 0; p < PLAYERNUM; p++)
+        playerData.highScore[p] = 0;
     
     PORTK = 0;
     DDRK = 0xff; 
@@ -288,6 +289,8 @@ uint8_t gameui_selectPlayer(game_state_t *game_state)
             *game_state = CONNECT;
         else if (BUTTON_A & input.buttons)
             *game_state = PLAY;
+        else if (BUTTON_B & input.buttons)
+            *game_state = START;
         else if (BUTTON_U & input.buttons)
         {
             lastPlayer = playerData.currPlayer;
@@ -333,7 +336,6 @@ uint8_t gameui_play(game_state_t *game_state)
     PORTK = 8;
     if (SETUP == gameStates.play)
     {
-        //TODO fsm sometimes gets stuck here
         PORTL ^= 1;
         gameStates.last = PLAY;
         gameStates.next = PLAY;
@@ -378,8 +380,8 @@ uint8_t gameui_play(game_state_t *game_state)
         else
             tickCnt.diff++;
 
+        calcBallAcc();
         clearBall();
-        screenDynamics.ballDynamics.xAcc = ballAcc(input.accX, input.accY);
         if (updateBallPos() == 1)
         {
             gameStates.play = NEXT;
@@ -417,14 +419,11 @@ uint8_t gameui_play(game_state_t *game_state)
             PORTL = 16;
             if (DISCONNECTED == wiimote.status)
                 gameStates.next = CONNECT;
-            else if (BUTTON_A & input.buttons)
-                gameStates.next = START;
             else if (BUTTON_B & input.buttons)
-                gameStates.next = PAUSE;
+                gameStates.next = START;
         } 
         if (PLAY != gameStates.next)
         {
-            //TODO app gets stuck here sometimes
             PORTL ^= 32;
             if (wiimote.accStatus == 0)
             {
@@ -448,35 +447,6 @@ uint8_t gameui_play(game_state_t *game_state)
             gameStates.play = UPDATE;
     }
     
-    return 0;
-}
-
-uint8_t gameui_pause(game_state_t *game_state)
-{
-    PORTK = 16;
-    if (INIT == gameStates.pause)
-    {
-        gameStates.last = PAUSE;
-        glcdFillScreen(GLCD_CLEAR);
-        displayPauseText(10);
-        gameStates.pause = WAIT;
-    }
-    if (WAIT == gameStates.pause)
-    {
-        if (DISCONNECTED == wiimote.status)
-            *game_state = CONNECT;
-        else if (BUTTON_A & input.buttons)
-            *game_state = START;
-        else if (BUTTON_B & input.buttons)
-            *game_state = PLAY;
-
-        if (PAUSE != *game_state)
-        {
-            gameStates.pause = INIT;
-            input.buttons = 0;
-        }
-    }
-
     return 0;
 }
 
@@ -571,11 +541,6 @@ static void connectCB(uint8_t wii, connection_status_t status)
 
 static void setAccelCB(uint8_t wii, error_t status)
 {
-//    if (wiimote.accEn == 1)
-//        wiimote.accStatus = 1;
-//    if (wiimote.accEn == 0)
-//        wiimote.accStatus = 0;
-
     wiimote.accStatus = !wiimote.accStatus;
     wiimote.triedSetAcc = 0;
 }
@@ -635,20 +600,7 @@ static void displaySelectPlayerText(uint8_t yTop)
     startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
     glcdDrawTextPgm(player_5, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(play_b, startPoint, &Standard5x7, &glcdSetPixel);
-}
-
-static void displayPauseText(uint8_t yTop)
-{
-    xy_point startPoint;
-    startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
-    startPoint.x = 10;
-
-    glcdDrawTextPgm(pause, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(end_b, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(resume_b, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(select_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
 static void displayGameOverText(uint8_t yTop)
@@ -666,34 +618,34 @@ static void displayGameOverText(uint8_t yTop)
 
 static void displayHighScoreText(uint8_t yTop)
 {
-    char hsStr[15];
+    char hsStr[17];
     xy_point startPoint;
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
     startPoint.x = 10;
     
-    memset(hsStr, 0, 15);
+    memset(hsStr, 0, 16);
     strcpy_P(hsStr, player_1);
-    sprintf(hsStr+8, " %ul", playerData.highScore[0]);
+    sprintf(hsStr+8, ": %u", playerData.highScore[0]);
     glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    memset(hsStr, 0, 15);
+    memset(hsStr, 0, 16);
     strcpy_P(hsStr, player_2);
-    sprintf(hsStr+8, " %ul", playerData.highScore[1]);
+    sprintf(hsStr+8, ": %u", playerData.highScore[1]);
     glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    memset(hsStr, 0, 15);
+    memset(hsStr, 0, 16);
     strcpy_P(hsStr, player_3);
-    sprintf(hsStr+8, " %ul", playerData.highScore[1]);
+    sprintf(hsStr+8, ": %u", playerData.highScore[2]);
     glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    memset(hsStr, 0, 15);
+    memset(hsStr, 0, 16);
     strcpy_P(hsStr, player_4);
-    sprintf(hsStr+8, " %ul", playerData.highScore[3]);
+    sprintf(hsStr+8, ": %u", playerData.highScore[3]);
     glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    memset(hsStr, 0, 15);
+    memset(hsStr, 0, 16);
     strcpy_P(hsStr, player_5);
-    sprintf(hsStr+8, " %ul", playerData.highScore[4]);
+    sprintf(hsStr+8, ": %u", playerData.highScore[4]);
     glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
     glcdDrawTextPgm(menu_b, startPoint, &Standard5x7, &glcdSetPixel);
@@ -770,7 +722,8 @@ static void displayNewWall(uint8_t yOff)
     uint8_t newWall = rand16() & (WALLS_AVAILABLE-1);
 
     /* Load new wall from PROGMEM */
-    memcpy_P((void *)screenImage.walls[screenImage.topWall].points, &data_walls[newWall], WALL_POINTS);
+    memcpy_P((void *)screenImage.walls[screenImage.topWall].points,
+             &data_walls[newWall], WALL_POINTS);
     screenImage.walls[screenImage.topWall].yPos = yOff;
 
     drawWall(screenImage.topWall);
@@ -820,16 +773,23 @@ static void clearWall(uint8_t wall)
     glcdDrawLine(point0, point1, &glcdClearPixel);
 }
 
-static int8_t ballAcc(uint8_t x, uint8_t z)
+static void calcBallAcc(void)
 {
-    if (x >= X_MID-ACC_DELTA && 
-        x <= X_MID+ACC_DELTA)
-        return 0;
+    if (input.accX >= X_MID-ACC_DELTA && 
+        input.accX <= X_MID+ACC_DELTA)
+    {
+       screenDynamics.ballDynamics.xAcc = 0;
+       return;
+    }
 
-    if (x > 0x81 && z > Z_MIN)
-        return 1;
+    if (input.accX > 0x81 &&
+        input.accZ > Z_MIN)
+    {
+        screenDynamics.ballDynamics.xAcc = 1;
+        return;
+    }
 
-    return -1;
+    screenDynamics.ballDynamics.xAcc = -1;
 }
 
 static uint8_t updateBallPos(void)
@@ -918,7 +878,9 @@ static void drawBall(void)
     xy_point ball;
     ball.x = screenImage.ball.x;
     ball.y = screenImage.ball.y+screenDynamics.yShift;
-    glcdDrawCircle(ball, BALL_RADIUS, &glcdSetPixel);
+
+    for (uint8_t r = 1; r <= BALL_RADIUS; r++)
+        glcdDrawCircle(ball, r, &glcdSetPixel);
 }
 
 static void clearBall(void)
@@ -926,6 +888,8 @@ static void clearBall(void)
     xy_point ball;
     ball.x = screenImage.ball.x;
     ball.y = screenImage.ball.y+screenDynamics.yShift;
-    glcdDrawCircle(ball, BALL_RADIUS, &glcdClearPixel);
+    
+    for (uint8_t r = 1; r <= BALL_RADIUS; r++)
+        glcdDrawCircle(ball, r, &glcdClearPixel);
 }
 

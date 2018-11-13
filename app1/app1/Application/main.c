@@ -44,8 +44,6 @@ int main(void)
                 gameui_selectPlayer(&game_state);
             else if (PLAY == game_state)
                 gameui_play(&game_state);
-            else if (PAUSE == game_state)
-                gameui_pause(&game_state);
             else if (GAMEOVER == game_state)
                 gameui_gameOver(&game_state);
             else if (HIGHSCORE == game_state)
