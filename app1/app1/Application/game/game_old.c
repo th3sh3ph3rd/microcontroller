@@ -250,7 +250,7 @@ void game_run(void)
     set_sleep_mode(SLEEP_MODE_IDLE);
     sleep_enable();
 
-    for (;;)
+    while (1)
     {
         //TODO maybe transform this to do while to avoid chekcing interrupt flags
         while (interruptFlags.game == 1 ||
@@ -295,6 +295,7 @@ static uint8_t start(game_state_t *game_state)
         glcdFillScreen(GLCD_CLEAR);
         displayStartText(10);
         gameStates.start = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.start)
     {
@@ -323,6 +324,7 @@ static uint8_t connect(game_state_t *game_state)
         glcdFillScreen(GLCD_CLEAR);
         displayConnectText(10);
         gameStates.connect = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.connect)
     {
@@ -358,6 +360,7 @@ static uint8_t selectPlayer(game_state_t *game_state)
         moveSelector(0, 0);
         playerData.currPlayer = 0;
         gameStates.selectPlayer = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.selectPlayer)
     {
@@ -426,6 +429,7 @@ static uint8_t play(game_state_t *game_state)
             wiimote.triedSetAcc = 1;
             wiiUserSetAccel(0, 1, &setAccelCB);   
         }
+        return 1;
     }
     if (UPDATE == gameStates.play)
     {
@@ -463,6 +467,7 @@ static uint8_t play(game_state_t *game_state)
             gameStates.next = GAMEOVER;
         }
         drawBall();
+        return 1;
     } 
     if (SCROLL == gameStates.play)
     {
@@ -479,6 +484,7 @@ static uint8_t play(game_state_t *game_state)
         }
 
         scrollScreen();
+        return 1;
     }
     if (LEVEL == gameStates.play)
     {
@@ -486,6 +492,7 @@ static uint8_t play(game_state_t *game_state)
         gameStates.play = NEXT;
         clearWall(screenImage.topWall);
         displayNewWall(BOTTOM);
+        return 1;
     }
     if (NEXT == gameStates.play)
     {
@@ -534,6 +541,7 @@ static uint8_t gameOver(game_state_t *game_state)
         glcdFillScreen(GLCD_CLEAR);
         displayGameOverText(10);
         gameStates.gameOver = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.gameOver)
     {
@@ -551,6 +559,7 @@ static uint8_t gameOver(game_state_t *game_state)
         }
     }
     
+        return 1;
     return 0;
 }
 
@@ -563,6 +572,7 @@ static uint8_t highScore(game_state_t *game_state)
         glcdFillScreen(GLCD_CLEAR);
         displayHighScoreText(10);
         gameStates.highScore = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.highScore)
     {
