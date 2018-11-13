@@ -1,17 +1,19 @@
 /**
  *
- * @file gameui.c
+ * @file game.c
  * @author Jan Nausner <e01614835@student.tuwien.ac.at>
- * @date 2018-10-30
+ * @date 2018-11-13
  *
- * Implementation of the game user interface.
+ * Implementation of the game.
  *
  */
 
 //TODO remove debug leds!!!
 
 #include <avr/io.h>
+#include <avr/sleep.h>
 #include <avr/pgmspace.h>
+#include <avr/interrupt.h>
 
 #include <stdint.h>
 #include <stdio.h>
@@ -22,8 +24,10 @@
 #include <wii_user.h>
 #include <adc.h>
 #include <rand.h>
+#include <timer.h>
+#include <music.h>
 #include <data.h>
-#include <gameui.h>
+#include <game.h>
 
 #define X_WIDTH     128
 #define Y_HEIGHT    64
@@ -74,12 +78,20 @@
 #define SELECTOR_RADIUS     2
 #define SELECTOR_Y_START    6
 
-enum static_state {INIT, WAIT};
-enum tick_state {SETUP, UPDATE, SCROLL, LEVEL, NEXT};
+typedef enum {START, CONNECT, SELECTPLAYER, PLAY, GAMEOVER, HIGHSCORE} game_state_t;
+typedef enum {INIT, WAIT} static_state_t;
+typedef enum {SETUP, UPDATE, SCROLL, LEVEL, NEXT} tick_state_t;
 
 /* WIImote MAC address */
 //TODO move to PROGMEM
 static const uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xfb, 0xaa };
+
+/* Interrupt flags */
+static struct
+{
+    volatile uint8_t game;
+    volatile uint8_t music;
+} interruptFlags;
 
 /* State variables */
 //TODO find out if this has to be init
@@ -87,12 +99,12 @@ static struct
 {
     game_state_t last;
     game_state_t next;
-    enum static_state start;
-    enum static_state connect;
-    enum static_state selectPlayer;
-    enum static_state gameOver;
-    enum static_state highScore;
-    enum tick_state play;
+    static_state_t start;
+    static_state_t connect;
+    static_state_t selectPlayer;
+    static_state_t gameOver;
+    static_state_t highScore;
+    tick_state_t play;
 } gameStates;
 
 /* Wiimote status flags */
@@ -158,14 +170,21 @@ static struct
     uint16_t highScore[PLAYERNUM];
 } playerData;
 
-/* Wii callback functions */
+/* Callback functions */
+static void gameTimerCB(void);
+static void musicCB(void);
 static void buttonCB(uint8_t wii, uint16_t buttonStates);
 static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z);
 static void connectCB(uint8_t wii, connection_status_t status);
 static void setAccelCB(uint8_t wii, error_t status);
 
 /* Local functions */
-static void displayText(PGM_P const *text, uint8_t lines, uint8_t y_top);
+static uint8_t start(game_state_t *game_state);
+static uint8_t connect(game_state_t *game_state);
+static uint8_t selectPlayer(game_state_t *game_state);
+static uint8_t play(game_state_t *game_state);
+static uint8_t gameOver(game_state_t *game_state);
+static uint8_t highScore(game_state_t *game_state);
 static void displayStartText(uint8_t y_top);
 static void displayConnectText(uint8_t y_top);
 static void displaySelectPlayerText(uint8_t y_top);
@@ -182,35 +201,92 @@ static uint8_t updateBallPos(void);
 static void drawBall(void);
 static void clearBall(void);
 
-static void dummyCB(uint16_t n)
-{}
+void randCB(uint16_t n)
+{
+    rand_feed(n>>2);
+}
+
+void volumeCB(uint16_t n)
+{
+    music_setVolume(n>>2);
+}
+
 
 /**
  * @brief       Initialize the game user interface.
  */
-void gameui_init(void)
+void game_init(void)
 {
     glcdInit();
-    adc_setCallbacks(&rand_feed, &dummyCB);
-    wiiUserInit(&buttonCB, &accelCB);
-   
+    music_init(&musicCB);
+    adc_setCallbacks(&randCB, &volumeCB);
+    wiiUserInit(&buttonCB, &accelCB); 
+    
     /* Initialize the structs */
     wiimote.triedConnect = 0;
     wiimote.status = DISCONNECTED;
     wiimote.triedSetAcc = 0;
     wiimote.accStatus = 0;
     screenDynamics.yShift = glcdGetYShift();
-
     for (uint8_t p = 0; p < PLAYERNUM; p++)
         playerData.highScore[p] = 0;
     
     PORTK = 0;
     DDRK = 0xff; 
     PORTL = 0;
-    DDRL = 0xff; 
+    DDRL = 0xff;
+
+    timer_startTimer1(50, TIMER_REPEAT, &gameTimerCB);
+    
+    sei();
 }
 
-uint8_t gameui_start(game_state_t *game_state)
+void game_run(void)
+{
+    game_state_t game_state = START;
+    uint8_t done_game = 0;
+    uint8_t done_music = 0;
+
+    set_sleep_mode(SLEEP_MODE_IDLE);
+    sleep_enable();
+
+    while (1)
+    {
+        //TODO maybe transform this to do while to avoid chekcing interrupt flags
+        while (interruptFlags.game == 1 ||
+               interruptFlags.music == 1 ||
+               done_game != 0 ||
+               done_music != 0)
+        {
+            if (interruptFlags.game == 1 || done_game != 0)
+            {
+                interruptFlags.game = 0;
+
+                if (START == game_state)
+                    done_game = start(&game_state);
+                else if (CONNECT == game_state)
+                    done_game = connect(&game_state);
+                else if (SELECTPLAYER == game_state)
+                    done_game = selectPlayer(&game_state);
+                else if (PLAY == game_state)
+                    done_game = play(&game_state);
+                else if (GAMEOVER == game_state)
+                    done_game = gameOver(&game_state);
+                else if (HIGHSCORE == game_state)
+                    done_game = highScore(&game_state);
+            }
+            if (interruptFlags.music == 1 || done_music != 0)
+            {
+                interruptFlags.music = 0;
+                done_music = music_play();
+            }
+        }
+
+        sleep_cpu();
+    }
+}
+
+static uint8_t start(game_state_t *game_state)
 {
     PORTK = 1;
     if (INIT == gameStates.start)
@@ -219,6 +295,7 @@ uint8_t gameui_start(game_state_t *game_state)
         glcdFillScreen(GLCD_CLEAR);
         displayStartText(10);
         gameStates.start = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.start)
     {
@@ -239,7 +316,7 @@ uint8_t gameui_start(game_state_t *game_state)
     return 0;
 }
 
-uint8_t gameui_connect(game_state_t *game_state)
+static uint8_t connect(game_state_t *game_state)
 {
     PORTK = 2;
     if (INIT == gameStates.connect)
@@ -247,6 +324,7 @@ uint8_t gameui_connect(game_state_t *game_state)
         glcdFillScreen(GLCD_CLEAR);
         displayConnectText(10);
         gameStates.connect = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.connect)
     {
@@ -269,7 +347,7 @@ uint8_t gameui_connect(game_state_t *game_state)
     return 0;
 }
 
-uint8_t gameui_selectPlayer(game_state_t *game_state)
+static uint8_t selectPlayer(game_state_t *game_state)
 {
     uint8_t lastPlayer;
     PORTK = 4;
@@ -282,6 +360,7 @@ uint8_t gameui_selectPlayer(game_state_t *game_state)
         moveSelector(0, 0);
         playerData.currPlayer = 0;
         gameStates.selectPlayer = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.selectPlayer)
     {
@@ -329,9 +408,8 @@ uint8_t gameui_selectPlayer(game_state_t *game_state)
  * @return              The function returns a non-zero value if there is still something to do and 0 if
  *                      all tasks of one tick have been completed.
  */
-//TODO for tasking return in every block
 //TODO make function shorter!!! max 100 lines
-uint8_t gameui_play(game_state_t *game_state)
+static uint8_t play(game_state_t *game_state)
 {   
     PORTK = 8;
     if (SETUP == gameStates.play)
@@ -351,6 +429,7 @@ uint8_t gameui_play(game_state_t *game_state)
             wiimote.triedSetAcc = 1;
             wiiUserSetAccel(0, 1, &setAccelCB);   
         }
+        return 1;
     }
     if (UPDATE == gameStates.play)
     {
@@ -388,6 +467,7 @@ uint8_t gameui_play(game_state_t *game_state)
             gameStates.next = GAMEOVER;
         }
         drawBall();
+        return 1;
     } 
     if (SCROLL == gameStates.play)
     {
@@ -404,6 +484,7 @@ uint8_t gameui_play(game_state_t *game_state)
         }
 
         scrollScreen();
+        return 1;
     }
     if (LEVEL == gameStates.play)
     {
@@ -411,6 +492,7 @@ uint8_t gameui_play(game_state_t *game_state)
         gameStates.play = NEXT;
         clearWall(screenImage.topWall);
         displayNewWall(BOTTOM);
+        return 1;
     }
     if (NEXT == gameStates.play)
     {
@@ -450,7 +532,7 @@ uint8_t gameui_play(game_state_t *game_state)
     return 0;
 }
 
-uint8_t gameui_gameOver(game_state_t *game_state)
+static uint8_t gameOver(game_state_t *game_state)
 {
     PORTK = 32;
     if (INIT == gameStates.gameOver)
@@ -459,6 +541,7 @@ uint8_t gameui_gameOver(game_state_t *game_state)
         glcdFillScreen(GLCD_CLEAR);
         displayGameOverText(10);
         gameStates.gameOver = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.gameOver)
     {
@@ -476,10 +559,11 @@ uint8_t gameui_gameOver(game_state_t *game_state)
         }
     }
     
+        return 1;
     return 0;
 }
 
-uint8_t gameui_highScore(game_state_t *game_state)
+static uint8_t highScore(game_state_t *game_state)
 {
     PORTK = 64;
     if (INIT == gameStates.highScore)
@@ -488,6 +572,7 @@ uint8_t gameui_highScore(game_state_t *game_state)
         glcdFillScreen(GLCD_CLEAR);
         displayHighScoreText(10);
         gameStates.highScore = WAIT;
+        return 1;
     }
     if (WAIT == gameStates.highScore)
     {
@@ -504,6 +589,16 @@ uint8_t gameui_highScore(game_state_t *game_state)
     }
 
     return 0;
+}
+
+static void gameTimerCB(void)
+{
+    interruptFlags.game = 1;
+}
+
+static void musicCB(void)
+{
+    interruptFlags.music = 1;
 }
 
 static void buttonCB(uint8_t wii, uint16_t buttonStates)
@@ -543,21 +638,6 @@ static void setAccelCB(uint8_t wii, error_t status)
 {
     wiimote.accStatus = !wiimote.accStatus;
     wiimote.triedSetAcc = 0;
-}
-
-static void displayText(PGM_P const *text, uint8_t lines, uint8_t y_top)
-{
-    xy_point startPoint;
-    //startPoint.y = (y_shift+y_top) & (Y_HEIGHT-1);
-    startPoint.y = 10;
-    startPoint.x = 10;
-
-    for (int i = 0; i < lines; i++)
-    {
-        //glcdDrawTextPgm(text[i], startPoint, &Standard5x7, &glcdSetPixel);
-        glcdDrawText((const char *)pgm_read_word(&text[i]), startPoint, &Standard5x7, &glcdSetPixel);
-        startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    }
 }
 
 static void displayStartText(uint8_t yTop)
