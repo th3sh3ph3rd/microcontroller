@@ -4,7 +4,7 @@ from random import *
 
 seed()
 
-WALLNUM = 32
+WALLNUM = 64
 X_WIDTH = 128
 ARRAY_NAME = "data_walls"
 

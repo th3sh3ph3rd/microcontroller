@@ -25,6 +25,7 @@
 #include <timer.h>
 #include <music.h>
 #include <data.h>
+#include <mac.h>
 #include <game.h>
 
 #define X_WIDTH     128
@@ -79,10 +80,6 @@
 typedef enum {START, CONNECT, SELECTPLAYER, PLAY, GAMEOVER, HIGHSCORE} game_state_t;
 typedef enum {INIT, WAIT} static_state_t;
 typedef enum {SETUP, UPDATE, SCROLL, LEVEL, NEXT} tick_state_t;
-
-/* WIImote MAC address */
-//TODO move to PROGMEM
-static const uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xfb, 0xaa };
 
 /* Interrupt flags */
 static struct
@@ -304,6 +301,8 @@ static uint8_t connect(game_state_t *game_state)
     {
         if (wiimote.triedConnect == 0)
         {
+            uint8_t mac[6];
+            memcpy_P(mac, mac_address, 6);
             wiiUserConnect(0, mac, &connectCB);
             wiimote.triedConnect = 1;
         }
@@ -558,11 +557,11 @@ static void displayStartText(uint8_t yTop)
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
     startPoint.x = 10;
 
-    glcdDrawTextPgm(game_name, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(data_game_name, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(play_b, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(data_play_b, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(highscore_b, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(data_highscore_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
 static void displayConnectText(uint8_t yTop)
@@ -571,28 +570,28 @@ static void displayConnectText(uint8_t yTop)
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
     startPoint.x = 10;
 
-    glcdDrawTextPgm(connecting, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(data_connecting, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(towiimote, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(data_towiimote, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
 static void displaySelectPlayerText(uint8_t yTop)
 {
     xy_point startPoint;
+    char plStr[9];
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
     startPoint.x = 10;
 
-    glcdDrawTextPgm(player_1, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(player_2, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(player_3, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(player_4, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(player_5, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(select_b, startPoint, &Standard5x7, &glcdSetPixel);
+    for (uint8_t p = 0; p < PLAYERNUM; p++)
+    {
+        memset(plStr, 0, 9);
+        strcpy_P(plStr, data_player);
+        sprintf(plStr+7, "%u", p+1);
+        glcdDrawText(plStr, startPoint, &Standard5x7, &glcdSetPixel);
+        startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    }
+    
+    glcdDrawTextPgm(data_select_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
 static void displayGameOverText(uint8_t yTop)
@@ -601,11 +600,11 @@ static void displayGameOverText(uint8_t yTop)
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
     startPoint.x = 10;
 
-    glcdDrawTextPgm(gameover, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(data_gameover, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(menu_b, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(data_menu_b, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(highscore_b, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(data_highscore_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
 static void displayHighScoreText(uint8_t yTop)
@@ -614,33 +613,17 @@ static void displayHighScoreText(uint8_t yTop)
     xy_point startPoint;
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
     startPoint.x = 10;
+
+    for (uint8_t p = 0; p < PLAYERNUM; p++)
+    {
+        memset(hsStr, 0, 16);
+        strcpy_P(hsStr, data_player);
+        sprintf(hsStr+7, "%d: %u", p+1, playerData.highScore[p]);
+        glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
+        startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    }
     
-    memset(hsStr, 0, 16);
-    strcpy_P(hsStr, player_1);
-    sprintf(hsStr+8, ": %u", playerData.highScore[0]);
-    glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    memset(hsStr, 0, 16);
-    strcpy_P(hsStr, player_2);
-    sprintf(hsStr+8, ": %u", playerData.highScore[1]);
-    glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    memset(hsStr, 0, 16);
-    strcpy_P(hsStr, player_3);
-    sprintf(hsStr+8, ": %u", playerData.highScore[2]);
-    glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    memset(hsStr, 0, 16);
-    strcpy_P(hsStr, player_4);
-    sprintf(hsStr+8, ": %u", playerData.highScore[3]);
-    glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    memset(hsStr, 0, 16);
-    strcpy_P(hsStr, player_5);
-    sprintf(hsStr+8, ": %u", playerData.highScore[4]);
-    glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(menu_b, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(data_menu_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
 static void initLevel(void)
