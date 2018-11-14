@@ -19,9 +19,9 @@
 uint8_t halGlcdInit(void);
 
 /**
- * @brief       Set the internal RAM address.
- * @param xCol  X RAM column.
- * @param yPage Y RAM page.
+ * @brief       Set the internal address.
+ * @param xCol  X column.
+ * @param yPage Y page.
  */
 uint8_t halGlcdSetAddress(const uint8_t xCol,
                           const uint8_t yPage);
@@ -37,6 +37,18 @@ uint8_t halGlcdWriteData(const uint8_t data);
  * @return      The data.
  */
 uint8_t halGlcdReadData(void);
+
+/**
+ * @brief           Set the display row address displayed at the top of the screen.
+ * @param yShift    The y-shift address.
+ */
+uint8_t halGlcdSetYShift(uint8_t yShift);
+
+/**
+ * @brief       Get the display row address displayed at the top of the screen.
+ * @return      The y-shift address.
+ */
+uint8_t halGlcdGetYShift(void);
 
 #endif
 
