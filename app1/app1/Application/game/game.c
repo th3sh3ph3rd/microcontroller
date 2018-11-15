@@ -733,11 +733,6 @@ static void playScroll(void)
         tickCnt.level++;
     }
 
-//    if (screenDynamics.yShift == Y_HEIGHT-1)
-//        screenDynamics.yShift = 0;
-//    else
-//        screenDynamics.yShift++;
-
     screenDynamics.yShift = (screenDynamics.yShift+1) & (Y_HEIGHT-1);
 
     for (uint8_t w = 0; w < WALLS_ON_SCREEN; w++)
