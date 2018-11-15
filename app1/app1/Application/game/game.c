@@ -323,7 +323,7 @@ static uint8_t connect(game_state_t *game_state)
             input.buttons = 0;
         }
     }
-    screenDynamics.yShift = glcdGetYShift();;
+    screenDynamics.yShift = glcdGetYShift();
 
     return 0;
 }
@@ -438,8 +438,6 @@ static uint8_t play(game_state_t *game_state)
             {
                 /* New highscore entry */
                 enterHighScore();
-                //if (playerData.currScore > playerData.highScore[playerData.currPlayer])
-                //    playerData.highScore[playerData.currPlayer] = playerData.currScore;
                 
                 *game_state = gameStates.next;
                 gameStates.play = SETUP;
@@ -735,10 +733,12 @@ static void playScroll(void)
         tickCnt.level++;
     }
 
-    if (screenDynamics.yShift == Y_HEIGHT-1)
-        screenDynamics.yShift = 0;
-    else
-        screenDynamics.yShift++;
+//    if (screenDynamics.yShift == Y_HEIGHT-1)
+//        screenDynamics.yShift = 0;
+//    else
+//        screenDynamics.yShift++;
+
+    screenDynamics.yShift = (screenDynamics.yShift+1) & (Y_HEIGHT-1);
 
     for (uint8_t w = 0; w < WALLS_ON_SCREEN; w++)
     {

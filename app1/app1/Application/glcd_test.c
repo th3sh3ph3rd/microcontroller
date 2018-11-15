@@ -10,7 +10,9 @@ int main(void)
     //glcdClearPixel(20, 20);
 
     //glcdDrawChar('X', (xy_point) {20, 20}, &Standard5x7, &glcdSetPixel);
-    glcdDrawText("Abc ", (xy_point) {20, 20}, &Standard5x7, &glcdSetPixel);
+    //glcdDrawText("Abc ", (xy_point) {20, 20}, &Standard5x7, &glcdSetPixel);
+    //glcdDrawRect((xy_point) {10, 10}, (xy_point) {40, 20}, &glcdSetPixel);
+    glcdFillRect((xy_point) {40, 20}, (xy_point) {10, 5}, &glcdSetPixel);
 
     while(1);
 }
