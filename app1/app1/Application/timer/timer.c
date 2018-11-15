@@ -27,11 +27,12 @@
 #define MAX_256     1048
 #define MAX_1024    4194
 
+/* Calculate the output compare register value for the desired interval */
 #define OCR(T, P)   (((F_CPU/1000)*T)/(P))-1
 
-typedef enum timer_state {AVAILABLE, NOT_AVAILABLE} timer_state_t;
+typedef enum {AVAILABLE, NOT_AVAILABLE} timer_state_t;
 
-typedef struct timer {
+typedef struct {
     volatile timer_state_t state;
     timer_mode_t mode;
     void (*callback)(void);
@@ -264,3 +265,4 @@ ISR(TIMER5_COMPA_vect, ISR_BLOCK)
     if (timer5.callback != NULL)
         timer5.callback();
 }
+

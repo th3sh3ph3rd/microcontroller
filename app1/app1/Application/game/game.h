@@ -13,9 +13,6 @@
 
 #include <stdint.h>
 
-//; //TODO WTF is going on here
-
-
 /**
  * @brief       Initialize the game user interface.
  */

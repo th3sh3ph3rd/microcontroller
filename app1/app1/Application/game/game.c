@@ -4,7 +4,7 @@
  * @author Jan Nausner <e01614835@student.tuwien.ac.at>
  * @date 2018-11-13
  *
- * Implementation of the game.
+ * Implementation of the falling down ball game.
  *
  */
 
@@ -25,6 +25,7 @@
 #include <timer.h>
 #include <music.h>
 #include <data.h>
+#include <task.h>
 #include <mac.h>
 #include <game.h>
 
@@ -77,6 +78,12 @@
 #define SELECTOR_RADIUS     2
 #define SELECTOR_Y_START    6
 
+//TODO use only x axis for accelerometer
+//TODO in button callback remove second condition
+//TODO use displayNewWall in levelInit
+//TODO handle return value of wiimote functons
+//TODO transform struct to bitfields, also in UART
+
 typedef enum {START, CONNECT, SELECTPLAYER, PLAY, GAMEOVER, HIGHSCORE} game_state_t;
 typedef enum {INIT, WAIT} static_state_t;
 typedef enum {SETUP, UPDATE, SCROLL, LEVEL, NEXT} tick_state_t;
@@ -84,8 +91,8 @@ typedef enum {SETUP, UPDATE, SCROLL, LEVEL, NEXT} tick_state_t;
 /* Interrupt flags */
 static struct
 {
-    volatile uint8_t game;
-    volatile uint8_t music;
+    volatile task_state_t game;
+    volatile task_state_t music;
 } workLeft;
 
 /* State variables */
@@ -177,17 +184,17 @@ static void connectCB(uint8_t wii, connection_status_t status);
 static void setAccelCB(uint8_t wii, error_t status);
 
 /* Local functions */
-static uint8_t start(game_state_t *game_state);
-static uint8_t connect(game_state_t *game_state);
-static uint8_t selectPlayer(game_state_t *game_state);
-static uint8_t play(game_state_t *game_state);
-static uint8_t gameOver(game_state_t *game_state);
-static uint8_t highScore(game_state_t *game_state);
-static void displayStartText(uint8_t y_top);
-static void displayConnectText(uint8_t y_top);
-static void displaySelectPlayerText(uint8_t y_top);
-static void displayGameOverText(uint8_t y_top);
-static void displayHighScoreText(uint8_t y_top);
+static task_state_t start(game_state_t *game_state);
+static task_state_t connect(game_state_t *game_state);
+static task_state_t selectPlayer(game_state_t *game_state);
+static task_state_t play(game_state_t *game_state);
+static task_state_t gameOver(game_state_t *game_state);
+static task_state_t highScore(game_state_t *game_state);
+static void displayStartText(uint8_t yTop);
+static void displayConnectText(uint8_t yTop);
+static void displaySelectPlayerText(uint8_t yTop);
+static void displayGameOverText(uint8_t yTop);
+static void displayHighScoreText(uint8_t yTop);
 static void initLevel(void);
 static void moveSelector(uint8_t curr, uint8_t next);
 static void playUpdate(void);
@@ -202,7 +209,7 @@ static void clearBall(void);
 static void enterHighScore(void);
 
 /**
- * @brief       Initialize the game user interface.
+ * @brief       Initialize the game and all required peripherals.
  */
 void game_init(void)
 {
@@ -233,6 +240,9 @@ void game_init(void)
     sei();
 }
 
+/*
+ * @brief       Run the game. This procedure switches between the music and game tasks.
+ */
 void game_run(void)
 {
     game_state_t game_state = START;
@@ -244,7 +254,7 @@ void game_run(void)
     {
         do
         {
-            if (workLeft.game != 0)
+            if (workLeft.game!= DONE)
             {
                 if (START == game_state)
                     workLeft.game = start(&game_state);
@@ -260,23 +270,28 @@ void game_run(void)
                     workLeft.game = highScore(&game_state);
 
             }
-            if (workLeft.music != 0)
+            if (workLeft.music != DONE)
                 workLeft.music = music_play();
 
-        } while (workLeft.game != 0 || workLeft.music != 0);
+        } while (workLeft.game != DONE || workLeft.music != DONE);
 
         sleep_cpu();
     }
 }
 
-static uint8_t start(game_state_t *game_state)
+/*
+ * @brief               Display the start screen of the game.
+ * @param game_state    Contains the next state after the procedure call.
+ * @return              The task state is returned, either DONE or BUSY.
+ */
+static task_state_t start(game_state_t *game_state)
 {
     if (INIT == gameStates.start)
     {
         glcdFillScreen(GLCD_CLEAR);
         displayStartText(10);
         gameStates.start = WAIT;
-        return 1;
+        return BUSY;
     }
     if (WAIT == gameStates.start)
     {
@@ -294,17 +309,23 @@ static uint8_t start(game_state_t *game_state)
         }
     }
 
-    return 0;
+    return DONE;
 }
 
-static uint8_t connect(game_state_t *game_state)
+/*
+ * @brief               Display the connect screen of the game and waits
+ *                      for a successful wiimote connection.
+ * @param game_state    Contains the next state after the procedure call.
+ * @return              The task state is returned, either DONE or BUSY.
+ */
+static task_state_t connect(game_state_t *game_state)
 {
     if (INIT == gameStates.connect)
     {
         glcdFillScreen(GLCD_CLEAR);
         displayConnectText(10);
         gameStates.connect = WAIT;
-        return 1;
+        return BUSY;
     }
     if (WAIT == gameStates.connect)
     {
@@ -325,10 +346,15 @@ static uint8_t connect(game_state_t *game_state)
     }
     screenDynamics.yShift = glcdGetYShift();
 
-    return 0;
+    return DONE;
 }
 
-static uint8_t selectPlayer(game_state_t *game_state)
+/*
+ * @brief               Lets the user select a player.
+ * @param game_state    Contains the next state after the procedure call.
+ * @return              The task state is returned, either DONE or BUSY.
+ */
+static task_state_t selectPlayer(game_state_t *game_state)
 {
     uint8_t lastPlayer;
 
@@ -339,7 +365,7 @@ static uint8_t selectPlayer(game_state_t *game_state)
         moveSelector(0, 0);
         playerData.currPlayer = 0;
         gameStates.selectPlayer = WAIT;
-        return 1;
+        return BUSY;
     }
     if (WAIT == gameStates.selectPlayer)
     {
@@ -377,17 +403,16 @@ static uint8_t selectPlayer(game_state_t *game_state)
         }
     }
 
-    return 0;
+    return DONE;
 }
 
-/**
- * @brief               Completes one tick of the game user interface, consisting of fetching user input
- *                      and updating the picture on the screen accordingly.
- * @param game_state    The game state after calling the function is stored here. Must not be NULL.
- * @return              The function returns a non-zero value if there is still something to do and 0 if
- *                      all tasks of one tick have been completed.
+/*
+ * @brief               The main game function. Takes user input and updates
+ *                      the screen accordingly.
+ * @param game_state    Contains the next state after the procedure call.
+ * @return              The task state is returned, either DONE or BUSY.
  */
-static uint8_t play(game_state_t *game_state)
+static task_state_t play(game_state_t *game_state)
 {   
     if (SETUP == gameStates.play)
     {
@@ -404,24 +429,24 @@ static uint8_t play(game_state_t *game_state)
             wiimote.triedSetAcc = 1;
             wiiUserSetAccel(0, 1, &setAccelCB);   
         }
-        return 1;
+        return BUSY;
     }
     if (UPDATE == gameStates.play)
     {
         playUpdate();
-        return 1;
+        return BUSY;
     } 
     if (SCROLL == gameStates.play)
     {
         playScroll();
-        return 1;
+        return BUSY;
     }
     if (LEVEL == gameStates.play)
     {
         gameStates.play = NEXT;
         clearWall(screenImage.topWall);
         displayNewWall(BOTTOM);
-        return 1;
+        return BUSY;
     }
     if (NEXT == gameStates.play)
     {
@@ -453,17 +478,22 @@ static uint8_t play(game_state_t *game_state)
             gameStates.play = UPDATE;
     }
     
-    return 0;
+    return DONE;
 }
 
-static uint8_t gameOver(game_state_t *game_state)
+/*
+ * @brief               Displays the game over message.
+ * @param game_state    Contains the next state after the procedure call.
+ * @return              The task state is returned, either DONE or BUSY.
+ */
+static task_state_t gameOver(game_state_t *game_state)
 {
     if (INIT == gameStates.gameOver)
     {
         glcdFillScreen(GLCD_CLEAR);
         displayGameOverText(10);
         gameStates.gameOver = WAIT;
-        return 1;
+        return BUSY;
     }
     if (WAIT == gameStates.gameOver)
     {
@@ -481,17 +511,22 @@ static uint8_t gameOver(game_state_t *game_state)
         }
     }
     
-    return 0;
+    return DONE;
 }
 
-static uint8_t highScore(game_state_t *game_state)
+/*
+ * @brief               Diplays the current highscore table (max. 5 entries).
+ * @param game_state    Contains the next state after the procedure call.
+ * @return              The task state is returned, either DONE or BUSY.
+ */
+static task_state_t highScore(game_state_t *game_state)
 {
     if (INIT == gameStates.highScore)
     {
         glcdFillScreen(GLCD_CLEAR);
         displayHighScoreText(10);
         gameStates.highScore = WAIT;
-        return 1;
+        return BUSY;
     }
     if (WAIT == gameStates.highScore)
     {
@@ -507,19 +542,28 @@ static uint8_t highScore(game_state_t *game_state)
         }
     }
 
-    return 0;
+    return DONE;
 }
 
+/*
+ * @brief   Callback function for the main game timer. Set a flag on interrupt.
+ */
 static void gameTimerCB(void)
 {
-    workLeft.game = 1;
+    workLeft.game = BUSY;
 }
 
+/*
+ * @brief   Callback function for the mp3 module. Set a flag on interrupt.
+ */
 static void musicCB(void)
 {
-    workLeft.music = 1;
+    workLeft.music = BUSY;
 }
 
+/*
+ * @brief   Callback function for the wiimote buttons.
+ */
 static void buttonCB(uint8_t wii, uint16_t buttonStates)
 {
     if ((buttonStates & BUTTON_1_WII) && !(input.buttons & BUTTON_1))
@@ -540,6 +584,9 @@ static void buttonCB(uint8_t wii, uint16_t buttonStates)
         input.buttons |= BUTTON_U;
 }
 
+/*
+ * @brief   Callback function for the wiimote accelerometer.
+ */
 static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z)
 {
     input.accX = x>>2;
@@ -547,18 +594,28 @@ static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z)
     input.accZ = z>>1;
 }
 
+/*
+ * @brief   Callback function for the wiimote connection.
+ */
 static void connectCB(uint8_t wii, connection_status_t status)
 {
     wiimote.status = status;
     wiimote.triedConnect = 0;
 }
 
+/*
+ * @brief   Callback function for enabling/disabling the wiimote accelerometer.
+ */
 static void setAccelCB(uint8_t wii, error_t status)
 {
     wiimote.accStatus = !wiimote.accStatus;
     wiimote.triedSetAcc = 0;
 }
 
+/*
+ * @brief   Display the text for the start screen.
+ * @param y The y coordinate of the top line.
+ */
 static void displayStartText(uint8_t yTop)
 {
     xy_point startPoint;
@@ -572,6 +629,10 @@ static void displayStartText(uint8_t yTop)
     glcdDrawTextPgm(data_highscore_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
+/*
+ * @brief   Display the text for the connect screen.
+ * @param y The y coordinate of the top line.
+ */
 static void displayConnectText(uint8_t yTop)
 {
     xy_point startPoint;
@@ -583,6 +644,10 @@ static void displayConnectText(uint8_t yTop)
     glcdDrawTextPgm(data_towiimote, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
+/*
+ * @brief   Display the text for the select player screen.
+ * @param y The y coordinate of the top line.
+ */
 static void displaySelectPlayerText(uint8_t yTop)
 {
     xy_point startPoint;
@@ -602,6 +667,10 @@ static void displaySelectPlayerText(uint8_t yTop)
     glcdDrawTextPgm(data_select_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
+/*
+ * @brief   Display the text for the game over screen.
+ * @param y The y coordinate of the top line.
+ */
 static void displayGameOverText(uint8_t yTop)
 {
     xy_point startPoint;
@@ -615,6 +684,10 @@ static void displayGameOverText(uint8_t yTop)
     glcdDrawTextPgm(data_highscore_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
+/*
+ * @brief   Display the current highscore table.
+ * @param y The y coordinate of the top line.
+ */
 static void displayHighScoreText(uint8_t yTop)
 {
     char hsStr[16];
@@ -637,6 +710,9 @@ static void displayHighScoreText(uint8_t yTop)
     glcdDrawTextPgm(data_menu_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
+/*
+ * @brief   Procedure to initialise the screen with the ball and a new random level.
+ */
 static void initLevel(void)
 {
     uint8_t newWall;
@@ -669,6 +745,11 @@ static void initLevel(void)
     playerData.currScore = 0;
 }
 
+/*
+ * @brief       This function moves the selector on the select player screen.
+ * @param curr  Currently selected player.
+ * @param next  Next selected player.
+ */
 static void moveSelector(uint8_t curr, uint8_t next)
 {
     xy_point selector;
@@ -680,6 +761,11 @@ static void moveSelector(uint8_t curr, uint8_t next)
     glcdDrawCircle(selector, SELECTOR_RADIUS, &glcdSetPixel); 
 }
 
+/*
+ * @brief   This procedure performs the necessary updates of a game tick.
+ *          The scroll, score and difficulty counters are updated and the
+ *          ball is moved to its new position.
+ */
 static void playUpdate(void)
 {
     if (tickCnt.scroll >= tickCnt.scrollDiv)
@@ -720,6 +806,10 @@ static void playUpdate(void)
     drawBall();
 }
 
+/*
+ * @brief   This procedure performs the scrolling of the screen. The
+ *          internally stored ball an wall positions are updated accordingly.
+ */
 static void playScroll(void)
 {
     if (tickCnt.level == WALL_GAP)
@@ -751,6 +841,10 @@ static void playScroll(void)
     glcdSetYShift(screenDynamics.yShift);
 }
 
+/*
+ * @brief       Display a new random wall on the bottom of the screen.
+ * @param yOff  The y position of the new wall.
+ */
 static void displayNewWall(uint8_t yOff)
 {
     uint8_t newWall = rand16() & (WALLS_AVAILABLE-1);
@@ -768,6 +862,10 @@ static void displayNewWall(uint8_t yOff)
         screenImage.topWall++;
 }
 
+/*
+ * @brief       Draws a level wall on the screen.
+ * @param wall  The index of the wall in the screenImage.
+ */
 static void drawWall(uint8_t wall)
 {
     xy_point point0, point1;
@@ -795,6 +893,10 @@ static void drawWall(uint8_t wall)
     }
 }
 
+/*
+ * @brief       Deletes a level wall.
+ * @param wall  The index of the wall in the screenImage.
+ */
 static void clearWall(uint8_t wall)
 {
     xy_point point0, point1;
@@ -807,6 +909,9 @@ static void clearWall(uint8_t wall)
     glcdDrawLine(point0, point1, &glcdClearPixel);
 }
 
+/*
+ * @brief   Calculate the ball acceleration according to the accelerometer data.
+ */
 static void calcBallAcc(void)
 {
     if (input.accX >= X_MID-ACC_DELTA && 
@@ -826,6 +931,11 @@ static void calcBallAcc(void)
     screenDynamics.ballDynamics.xAcc = -1;
 }
 
+/*
+ * @brief   This function performs collision detection for the ball and
+ *          sets the balls next position accordingly.
+ * @return  On game over 1 is returned, else 0.
+ */
 static uint8_t updateBallPos(void)
 {
     uint8_t xCollisionL = 0;
@@ -845,8 +955,10 @@ static uint8_t updateBallPos(void)
         {
             for (uint8_t p = 0; p < WALL_POINTS; p += 2)
             {
+                /* Detect if a wall is being hit from the top */
                 if (screenImage.walls[w].yPos == screenImage.ball.y+BALL_RADIUS+1)
                 {
+                    /* Rightmost wall */
                     if (p == WALL_POINTS-1 &&
                         screenImage.walls[w].points[p] != X_WIDTH-1 &&
                         screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS)
@@ -854,6 +966,7 @@ static uint8_t updateBallPos(void)
                         yCollision = 1;
                         break;
                     }
+                    /* Inner wall */
                     else if ((screenImage.walls[w].points[p] < screenImage.ball.x-BALL_RADIUS &&
                               screenImage.walls[w].points[p+1] > screenImage.ball.x+BALL_RADIUS) ||
                              (screenImage.walls[w].points[p] >= screenImage.ball.x-BALL_RADIUS &&
@@ -865,6 +978,7 @@ static uint8_t updateBallPos(void)
                         break;
                     }
                 }
+                /* Detect if a wall is being hit from the side */
                 else
                 {
                     if (p == WALL_POINTS-1 &&
@@ -891,6 +1005,7 @@ static uint8_t updateBallPos(void)
         }
     }
 
+    /* Detect if the screen borders have been reached */
     if (screenImage.ball.x-BALL_RADIUS-1 == 0)
         xCollisionL = 1;
     else if (screenImage.ball.x+BALL_RADIUS+1 == X_WIDTH-1)
@@ -908,6 +1023,9 @@ static uint8_t updateBallPos(void)
     return 0;
 }
 
+/*
+ * @brief   Draw the ball to the screen on its current position.
+ */
 static void drawBall(void)
 {
     xy_point ball;
@@ -918,6 +1036,9 @@ static void drawBall(void)
         glcdDrawCircle(ball, r, &glcdSetPixel);
 }
 
+/*
+ * @brief   Erase the ball from the screen.
+ */
 static void clearBall(void)
 {
     xy_point ball;
@@ -928,9 +1049,14 @@ static void clearBall(void)
         glcdDrawCircle(ball, r, &glcdClearPixel);
 }
 
+/*
+ * @brief   Check if the current score belongs in the highscore
+ *          table and place it on the appropriate position.
+ */
 static void enterHighScore(void)
 {
     int8_t hsEntryIdx = -1;
+    /* Check if a new highscore has been reached */
     for (uint8_t p = 0; p < PLAYERNUM; p++)
     {
         if (playerData.highScore[p].player < 0)
@@ -945,6 +1071,7 @@ static void enterHighScore(void)
             break;
         }
     }
+    /* Place the highscore entry on the appropriate table position */
     if (hsEntryIdx >= 0)
     {
         for (uint8_t p = PLAYERNUM-1; p >= hsEntryIdx; p--)

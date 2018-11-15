@@ -13,6 +13,7 @@
 #include <spi.h>
 #include <mp3.h>
 #include <sdcard.h>
+#include <task.h>
 
 /* dt_himalayas.mp3 */
 #define SONG_START  4385760
@@ -40,7 +41,7 @@ void music_init(void (*mp3DataReqCB)(void))
  * @brief   Play some music from the SD card on the mp3 module.
  * @return  Return non zero if there is still work to do and 0 if everything is done.
  */
-uint8_t music_play(void)
+task_state_t music_play(void)
 {
     sdcard_block_t musicBuffer;
 
@@ -58,9 +59,9 @@ uint8_t music_play(void)
                 sdcardBlockAddress = SONG_START;
         }
         spiLock = 0;
-        return 1;
+        return BUSY;
     }
-    return 0;
+    return DONE;
 }
 
 /**

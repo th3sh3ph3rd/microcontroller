@@ -50,7 +50,6 @@ static void (*recvCallback)(uint8_t);
 /* State variables */
 enum sendstate {IDLE, SEND, RES_BLOCK, UDR_BLOCK, HW_BLOCK};
 
-//TODO optimization: put in bitfield
 static volatile uint8_t wt41_reset_complete = 0;
 static volatile uint8_t ringbuffer_being_processed = 0;
 static volatile uint8_t CTS_state = 0;

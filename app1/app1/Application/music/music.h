@@ -12,6 +12,7 @@
 #define __MUSIC__
 
 #include <stdint.h>
+#include <task.h>
 
 /**
  * @brief   Initialize the music module.
@@ -22,7 +23,7 @@ void music_init(void (*mp3DataReqCB)(void));
  * @brief   Play some music from the SD card on the mp3 module.
  * @return  Return non zero if there is still work to do and 0 if everything is done.
  */
-uint8_t music_play(void);
+task_state_t music_play(void);
 
 /**
  * @brief           Pass a raw volume value (e.g from a pot) to the module.
