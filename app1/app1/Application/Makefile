@@ -7,8 +7,8 @@
 #   install     downloads elf file to mcu
 #
 
-#FILENAME    = main
-FILENAME    = glcd_test
+FILENAME    = main
+#FILENAME    = glcd_test
 OBJECTS     = $(FILENAME).o
 #OBJECTS	   += adc/adc.o font/Standard5x7.o game/game.o hal_wt41_fc_uart/hal_wt41_fc_uart.o music/music.o rand/rand.o spi/spi.o timer/timer.o
 OBJECTS	   += adc/adc.o font/Standard5x7.o game/game.o glcd/glcd.o glcd/hal_glcd.o hal_wt41_fc_uart/hal_wt41_fc_uart.o music/music.o rand/rand.o spi/spi.o timer/timer.o
