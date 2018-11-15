@@ -8,16 +8,22 @@
 #
 
 FILENAME    = main
+#FILENAME    = hal_glcd_test
 OBJECTS     = $(FILENAME).o
 OBJECTS	   += adc/adc.o font/Standard5x7.o game/game.o hal_wt41_fc_uart/hal_wt41_fc_uart.o music/music.o rand/rand.o spi/spi.o timer/timer.o
+#OBJECTS	   += adc/adc.o font/Standard5x7.o game/game.o glcd/glcd.o glcd/hal_glcd.o hal_wt41_fc_uart/hal_wt41_fc_uart.o music/music.o rand/rand.o spi/spi.o timer/timer.o
+#OBJECTS	   += glcd/hal_glcd.o
 
 MCU         = atmega1280
 
 CCLD        = avr-gcc
 CCFLAGS     = -mmcu=$(MCU) -std=gnu99 -Wall -Wextra -Wstrict-prototypes -frename-registers
-CCFLAGS	   += -fshort-enums -fpack-struct -I. -Iadc -Ifont -Igame -Igameui -Ihal_wt41_fc_uart -Imusic -Ilibglcd -Ilibmp3 -Ilibwiimote -Irand -Ilibsdcard -Ispi -Itimer
-#LDFLAGS     = -mmcu=$(MCU) -Wl,-u,vfprintf -lprintf_min -Llibglcd -Llibmp3 -Llibwiimote -lglcd -lmp3 -lwiimote
+CCFLAGS	   += -fshort-enums -fpack-struct -I. -Iadc -Ifont -Igame -Ihal_wt41_fc_uart -Imusic -Ilibglcd -Ilibmp3 -Ilibwiimote -Irand -Ilibsdcard -Ispi -Itimer
+#CCFLAGS	   += -fshort-enums -fpack-struct -I. -Iadc -Ifont -Igame -Iglcd -Ihal_wt41_fc_uart -Imusic -Ilibmp3 -Ilibwiimote -Irand -Ilibsdcard -Ispi -Itimer
+#CCFLAGS	   += -fshort-enums -fpack-struct -I. -Iglcd
 LDFLAGS     = -mmcu=$(MCU) -Llibglcd -Llibmp3 -Llibsdcard -Llibwiimote -lglcd -lmp3 -lsdcard -lwiimote
+#LDFLAGS     = -mmcu=$(MCU) -Llibmp3 -Llibsdcard -Llibwiimote -lmp3 -lsdcard -lwiimote
+#LDFLAGS     = -mmcu=$(MCU)
 
 PROG        = avrprog2
 PRFLAGS     = -m$(MCU)

@@ -17,8 +17,6 @@
 #include <hal_glcd.h>
 #include <glcd.h>
 
-#define GLCD_FILL   0xff
-#define GLCD_CLEAR  0x00
 #define X_MAX       128
 #define Y_MAX       64
 
@@ -82,11 +80,6 @@ void glcdInvertPixel(const uint8_t x, const uint8_t y)
     halGlcdWriteData(page ^ (1<<y));
 }
 
-typedef struct xy_point_t
-{
-    uint8_t x, y;
-} xy_point;
-
 /**
  * @brief           Draws a line between two points.
  * @param p1        First endpoint.
@@ -116,13 +109,13 @@ void glcdDrawLine(const xy_point p1, const xy_point p2,
 static void drawLineLow(const xy_point p1, const xy_point p2,
                         void (*drawPx)(const uint8_t, const uint8_t))
 {
-    uint8_t dx, dy, yi, d, y;
+    int8_t dx, dy, yi, d, y;
     dx = p2.x - p1.x;
     dy = p2.y - p1.y;
     yi = 1;
     if (dy < 0)
     {
-        y1 = -1;
+        yi = -1;
         dy = -dy;
     }
     d = 2*dy - dx;
@@ -131,25 +124,25 @@ static void drawLineLow(const xy_point p1, const xy_point p2,
     for (uint8_t x = p1.x; x <= p2.x; x++)
     {
         drawPx(x, y);
-        if (D > 0)
+        if (d > 0)
         {
-            D -= 2*dx;
-            y += y1;
+            d -= 2*dx;
+            y += yi;
         }
-        D += 2*dy;
+        d += 2*dy;
     }
 }
 
 static void drawLineHigh(const xy_point p1, const xy_point p2,
                          void (*drawPx)(const uint8_t, const uint8_t))
 {
-    uint8_t dx, dy, xi, d, x;
+    int8_t dx, dy, xi, d, x;
     dx = p2.x - p1.x;
     dy = p2.y - p1.y;
     xi = 1;
     if (dy < 0)
     {
-        x1 = -1;
+        xi = -1;
         dx = -dx;
     }
     d = 2*dx - dy;
@@ -158,12 +151,12 @@ static void drawLineHigh(const xy_point p1, const xy_point p2,
     for (uint8_t y = p1.y; y <= p2.y; y++)
     {
         drawPx(x, y);
-        if (D > 0)
+        if (d > 0)
         {
-            D -= 2*dy;
-            x += x1;
+            d -= 2*dy;
+            x += xi;
         }
-        D += 2*dx;
+        d += 2*dx;
     }
 }
 
@@ -235,18 +228,18 @@ void glcdDrawCircle(const xy_point c, const uint8_t radius,
     uint8_t y = 0;
     uint8_t dx = 1;
     uint8_t dy = 1;
-    uint8_t error = dx - (radius << 1);
+    int8_t error = dx - (radius << 1);
 
     while (x >= y)
     {
-        drawPx(p1.x + x, p1.y + y);
-        drawPx(p1.x + y, p1.y + x);
-        drawPx(p1.x - y, p1.y + y);
-        drawPx(p1.x - x, p1.y + y);
-        drawPx(p1.x - x, p1.y - y);
-        drawPx(p1.x - y, p1.y - x);
-        drawPx(p1.x + y, p1.y - x);
-        drawPx(p1.x + x, p1.y - y);
+        drawPx(c.x + x, c.y + y);
+        drawPx(c.x + y, c.y + x);
+        drawPx(c.x - y, c.y + y);
+        drawPx(c.x - x, c.y + y);
+        drawPx(c.x - x, c.y - y);
+        drawPx(c.x - y, c.y - x);
+        drawPx(c.x + y, c.y - x);
+        drawPx(c.x + x, c.y - y);
 
         if (error <= 0)
         {
@@ -258,7 +251,7 @@ void glcdDrawCircle(const xy_point c, const uint8_t radius,
         {
             x--;
             dx += 2;
-            error += dx - (radius << 1)
+            error += dx - (radius << 1);
         }
     }
 }
@@ -331,12 +324,13 @@ void glcdDrawChar(const char c, const xy_point p, const font* f,
     if (c < f->startChar || c > f->endChar)
         return;
 
+    uint8_t charIndex = c - f->startChar;
     for (uint8_t pn = 0; pn < f->charSpacing; pn++)
     {
-        uint8_t page = pgm_read_byte(&(f->font[c][pn]));
+        char page = pgm_read_byte(&(f->font[charIndex+pn]));
         for (uint8_t y = 0; y < 8; y++)
         {
-            if (pg < font->width && (page & (1<<y)))
+            if (pn < f->width && (page & (1<<y)))
                 drawPx(p.x+pn, p.y+y);
             else if (pn < f->charSpacing)
                 drawPx(p.x+pn, p.y+y);
@@ -382,8 +376,8 @@ void glcdDrawTextPgm(PGM_P text, const xy_point p, const font* f,
     //TODO maybe get rid of division
     for (uint8_t c = 0; c < X_MAX/f->charSpacing; c++)
     {
-        uint8_t character = pgm_read_byte(&text[c]);
-        if (pgm_read_byte(character == '\0')
+        char character = pgm_read_byte(&text[c]);
+        if (character == '\0')
             return;
 
         glcdDrawChar(character, (xy_point) {x, p.y}, f, drawPx);

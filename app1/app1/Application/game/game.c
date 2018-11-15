@@ -156,11 +156,16 @@ static struct
 } screenDynamics;
 
 /* Player data */
+struct highScoreEntry
+{
+    int8_t player;
+    uint8_t score;
+};
 static struct
 {
     uint8_t currPlayer;
     uint16_t currScore;
-    uint16_t highScore[PLAYERNUM];
+    struct highScoreEntry highScore[PLAYERNUM];
 } playerData;
 
 /* Callback functions */
@@ -194,6 +199,7 @@ static void calcBallAcc(void);
 static uint8_t updateBallPos(void);
 static void drawBall(void);
 static void clearBall(void);
+static void enterHighScore(void);
 
 /**
  * @brief       Initialize the game user interface.
@@ -214,7 +220,10 @@ void game_init(void)
     screenDynamics.yShift = glcdGetYShift();
 
     for (uint8_t p = 0; p < PLAYERNUM; p++)
-        playerData.highScore[p] = 0;
+    {
+        playerData.highScore[p].player = -1;
+        playerData.highScore[p].score = 0;
+    }
 
     workLeft.game = 0;
     workLeft.music = 0;
@@ -428,8 +437,9 @@ static uint8_t play(game_state_t *game_state)
             if (wiimote.accStatus == 0)
             {
                 /* New highscore entry */
-                if (playerData.currScore > playerData.highScore[playerData.currPlayer])
-                    playerData.highScore[playerData.currPlayer] = playerData.currScore;
+                enterHighScore();
+                //if (playerData.currScore > playerData.highScore[playerData.currPlayer])
+                //    playerData.highScore[playerData.currPlayer] = playerData.currScore;
                 
                 *game_state = gameStates.next;
                 gameStates.play = SETUP;
@@ -616,9 +626,12 @@ static void displayHighScoreText(uint8_t yTop)
 
     for (uint8_t p = 0; p < PLAYERNUM; p++)
     {
+        if (playerData.highScore[p].player < 0)
+            break;
+
         memset(hsStr, 0, 16);
         strcpy_P(hsStr, data_player);
-        sprintf(hsStr+7, "%d: %u", p+1, playerData.highScore[p]);
+        sprintf(hsStr+7, "%d: %u", playerData.highScore[p].player+1, playerData.highScore[p].score);
         glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
         startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
     }
@@ -918,5 +931,40 @@ static void clearBall(void)
     
     for (uint8_t r = 1; r <= BALL_RADIUS; r++)
         glcdDrawCircle(ball, r, &glcdClearPixel);
+}
+
+static void enterHighScore(void)
+{
+    int8_t hsEntryIdx = -1;
+    for (uint8_t p = 0; p < PLAYERNUM; p++)
+    {
+        if (playerData.highScore[p].player < 0)
+        {
+            playerData.highScore[p].player = playerData.currPlayer;
+            playerData.highScore[p].score = playerData.currScore;
+            return;
+        }
+        if (playerData.currScore > playerData.highScore[p].score)
+        {
+            hsEntryIdx = p;
+            break;
+        }
+    }
+    if (hsEntryIdx >= 0)
+    {
+        for (uint8_t p = PLAYERNUM-1; p >= hsEntryIdx; p--)
+        {
+            if (p == hsEntryIdx)
+            {
+                playerData.highScore[p].player = playerData.currPlayer;
+                playerData.highScore[p].score = playerData.currScore;
+            }
+            else
+            {
+                playerData.highScore[p].player = playerData.highScore[p-1].player;
+                playerData.highScore[p].score = playerData.highScore[p-1].score;
+            }
+        }
+    }
 }
 

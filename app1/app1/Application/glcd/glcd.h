@@ -15,6 +15,9 @@
 #include <stdint.h>
 #include <font.h>
 
+#define GLCD_FILL   0xff
+#define GLCD_CLEAR  0x00
+
 /**
  * @brief       Initialize the glcd module.
  */
