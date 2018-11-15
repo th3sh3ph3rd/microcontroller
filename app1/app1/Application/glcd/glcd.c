@@ -33,6 +33,9 @@ static void writePage(const uint8_t x, const uint8_t y, const uint8_t data);
 void glcdInit(void)
 {
     halGlcdInit();
+
+    PORTK = 0;
+    DDRK = 0xff;
 }
 
 /**
@@ -47,7 +50,7 @@ void glcdSetPixel(const uint8_t x, const uint8_t y)
     halGlcdSetAddress(x, y>>3);
     page = halGlcdReadData();
     halGlcdSetAddress(x, y>>3);
-    halGlcdWriteData(page | (1<<y));
+    halGlcdWriteData(page | (1 << (y & 7)));
 }
 
 /**
@@ -62,7 +65,7 @@ void glcdClearPixel(const uint8_t x, const uint8_t y)
     halGlcdSetAddress(x, y>>3);
     page = halGlcdReadData();
     halGlcdSetAddress(x, y>>3);
-    halGlcdWriteData(page & ~(1<<y));
+    halGlcdWriteData(page & ~(1 << (y & 7)));
 }
 
 /**
@@ -77,7 +80,7 @@ void glcdInvertPixel(const uint8_t x, const uint8_t y)
     halGlcdSetAddress(x, y>>3);
     page = halGlcdReadData();
     halGlcdSetAddress(x, y>>3);
-    halGlcdWriteData(page ^ (1<<y));
+    halGlcdWriteData(page ^ (1 << (y & 7)));
 }
 
 /**
@@ -224,17 +227,17 @@ uint8_t glcdGetYShift(void)
 void glcdDrawCircle(const xy_point c, const uint8_t radius,
                     void (*drawPx)(const uint8_t, const uint8_t))
 {
-    uint8_t x = radius-1;
+    uint8_t x = radius;
     uint8_t y = 0;
-    uint8_t dx = 1;
-    uint8_t dy = 1;
+    int8_t dx = 1;
+    int8_t dy = 1;
     int8_t error = dx - (radius << 1);
 
     while (x >= y)
     {
         drawPx(c.x + x, c.y + y);
         drawPx(c.x + y, c.y + x);
-        drawPx(c.x - y, c.y + y);
+        drawPx(c.x - y, c.y + x);
         drawPx(c.x - x, c.y + y);
         drawPx(c.x - x, c.y - y);
         drawPx(c.x - y, c.y - x);
@@ -324,16 +327,14 @@ void glcdDrawChar(const char c, const xy_point p, const font* f,
     if (c < f->startChar || c > f->endChar)
         return;
 
-    uint8_t charIndex = c - f->startChar;
-    for (uint8_t pn = 0; pn < f->charSpacing; pn++)
+    uint16_t charIndex = ((c - f->startChar) * f->width);
+    for (uint8_t pn = 0; pn < f->width; pn++)
     {
         char page = pgm_read_byte(&(f->font[charIndex+pn]));
         for (uint8_t y = 0; y < 8; y++)
         {
-            if (pn < f->width && (page & (1<<y)))
-                drawPx(p.x+pn, p.y+y);
-            else if (pn < f->charSpacing)
-                drawPx(p.x+pn, p.y+y);
+            if (page & (1<<y))
+                drawPx(p.x+pn, p.y+y-8);
         }
     } 
 }

@@ -18,8 +18,8 @@
 #define GLCD_CTRL_RS        PE4
 #define GLCD_CTRL_RW        PE5
 #define GLCD_CTRL_EN        PE6
-#define GLCD_CTRL_CS0       PE3
-#define GLCD_CTRL_CS1       PE2
+#define GLCD_CTRL_CS0       PE2
+#define GLCD_CTRL_CS1       PE3
 #define GLCD_CTRL_RESET     PE7
 
 #define GLCD_DATA_PORT      PORTA
@@ -30,9 +30,9 @@
 #define GLCD_STATUS_DISP    PA5
 #define GLCD_STATUS_RESET   PA4
 
-#define GLCD_CONTROLLER_0   0
-#define GLCD_CONTROLLER_1   1
-#define GLCD_CONTROLLER_B   2
+#define GLCD_CONTROLLER_0   (1<<GLCD_CTRL_CS1)
+#define GLCD_CONTROLLER_1   (1<<GLCD_CTRL_CS0)
+#define GLCD_CONTROLLER_B   (GLCD_CONTROLLER_1 | GLCD_CONTROLLER_0)
 
 #define GLCD_CMD_ON         0x3f
 #define GLCD_CMD_OFF        0x3e
@@ -44,6 +44,12 @@
 #define MAX_X       128
 #define MAX_Y       64
 
+#define busy_wait_setup()      \
+        __asm__ __volatile__ (  \
+            "nop" "\n\t"        \
+            "nop" "\n\t"        \
+            "nop" "\n\t" ::)
+
 #define busy_wait_enable()      \
         __asm__ __volatile__ (  \
             "nop" "\n\t"        \
@@ -51,15 +57,7 @@
             "nop" "\n\t"        \
             "nop" "\n\t"        \
             "nop" "\n\t"        \
-            "nop" "\n\t"        \
-            "nop" "\n\t"        \
             "nop" "\n\t" ::)
-
-#define enable() { \
-        GLCD_CTRL_PORT &= ~(1<<GLCD_CTRL_EN); \
-        busy_wait_enable(); \
-        GLCD_CTRL_PORT |= (1<<GLCD_CTRL_EN); \
-        busy_wait_enable(); } \
 
 static struct
 {
@@ -72,14 +70,14 @@ static struct
 static void halGlcdCtrlWriteData(const uint8_t controller,
                                  const uint8_t data);
 static uint8_t halGlcdCtrlReadData(const uint8_t controller);
+static uint8_t halGlcdCtrlReadStatus(const uint8_t controller);
 static void halGlcdCtrlWriteCmd(const uint8_t controller,
                                 const uint8_t data);
 static void halGlcdCtrlSetAddress(const uint8_t controller,
                                   const uint8_t x,
                                   const uint8_t y);
 static void halGlcdCtrlBusyWait(const uint8_t controller);
-static void halGlcdCtrlSelect(const uint8_t controller);
-static void halGlcdCtrlClearRAM(void);
+static void halGlcdCtrlClearRAM(const uint8_t controller);
 
 /**
  * @brief       Initialize the glcd driver.
@@ -91,14 +89,17 @@ uint8_t halGlcdInit(void)
     GLCD_CTRL_PORT &= ~0xfc;
     GLCD_CTRL_DDR |= 0xfc;
 
-    PORTK = 0;
-    DDRK = 0xff;
-
     /* Perform reset */
     GLCD_CTRL_PORT |= (1<<GLCD_CTRL_RESET);
-
-    halGlcdCtrlWriteCmd(GLCD_CONTROLLER_B, GLCD_CMD_ON);
-    halGlcdCtrlClearRAM();
+    GLCD_CTRL_PORT &= ~(GLCD_CONTROLLER_B);
+    
+    internalAddr.controller = GLCD_CONTROLLER_0;
+    halGlcdCtrlWriteCmd(GLCD_CONTROLLER_0, GLCD_CMD_ON);
+    halGlcdCtrlWriteCmd(GLCD_CONTROLLER_1, GLCD_CMD_ON);
+    halGlcdCtrlWriteCmd(GLCD_CONTROLLER_0, GLCD_CMD_DISP_START);
+    halGlcdCtrlWriteCmd(GLCD_CONTROLLER_1, GLCD_CMD_DISP_START);
+    halGlcdCtrlClearRAM(GLCD_CONTROLLER_0);
+    halGlcdCtrlClearRAM(GLCD_CONTROLLER_1);
     halGlcdSetYShift(0);
     halGlcdSetAddress(0, 0);
 
@@ -113,16 +114,17 @@ uint8_t halGlcdInit(void)
 uint8_t halGlcdSetAddress(const uint8_t xCol,
                           const uint8_t yPage)
 {
-    internalAddr.x = xCol & (MAX_X_CHIP);
+    internalAddr.x = xCol & (MAX_X-1);
     internalAddr.y = yPage & 7;
-    
-    if (xCol < MAX_X_CHIP)
-       internalAddr.controller = GLCD_CONTROLLER_0;
-    else
-       internalAddr.controller = GLCD_CONTROLLER_1;
 
-    halGlcdCtrlSetAddress(internalAddr.x, internalAddr.y,
-                          internalAddr.controller);
+    if (xCol < MAX_X_CHIP)
+        internalAddr.controller = GLCD_CONTROLLER_0;
+    else
+        internalAddr.controller = GLCD_CONTROLLER_1;
+
+
+    halGlcdCtrlSetAddress(internalAddr.controller,
+                          internalAddr.x & (MAX_X_CHIP-1), internalAddr.y);
 
     return 0;
 }
@@ -135,17 +137,17 @@ uint8_t halGlcdWriteData(const uint8_t data)
 {
     halGlcdCtrlWriteData(internalAddr.controller, data);
 
-    if (internalAddr.x == MAX_X_CHIP-1)
-    {
-        internalAddr.controller = GLCD_CONTROLLER_1;
-        halGlcdCtrlSetAddress(0, internalAddr.y, internalAddr.controller);
-    }
-    else if (internalAddr.x == MAX_X-1)
+    if (internalAddr.x == MAX_X-1)
     {
         internalAddr.controller = GLCD_CONTROLLER_0;
-        halGlcdCtrlSetAddress(0, internalAddr.y, internalAddr.controller);
+        halGlcdCtrlSetAddress(GLCD_CONTROLLER_0, 0, internalAddr.y);
     }
-
+    else if (internalAddr.x == MAX_X_CHIP-1)
+    {
+        internalAddr.controller = GLCD_CONTROLLER_1;
+        halGlcdCtrlSetAddress(GLCD_CONTROLLER_1, 0, internalAddr.y);
+    }
+    
     internalAddr.x = (internalAddr.x+1) & (MAX_X-1);
 
     return 0;
@@ -157,17 +159,20 @@ uint8_t halGlcdWriteData(const uint8_t data)
  */
 uint8_t halGlcdReadData(void)
 {
+    /* Dummy read necessary */
+    halGlcdCtrlReadData(internalAddr.controller);
+    halGlcdCtrlSetAddress(internalAddr.controller, internalAddr.x, internalAddr.y);
     uint8_t data = halGlcdCtrlReadData(internalAddr.controller);
-
-    if (internalAddr.x == MAX_X_CHIP-1)
-    {
-        internalAddr.controller = GLCD_CONTROLLER_1;
-        halGlcdCtrlSetAddress(0, internalAddr.y, internalAddr.controller);
-    }
-    else if (internalAddr.x == MAX_X-1)
+    
+    if (internalAddr.x == MAX_X-1)
     {
         internalAddr.controller = GLCD_CONTROLLER_0;
-        halGlcdCtrlSetAddress(0, internalAddr.y, internalAddr.controller);
+        halGlcdCtrlSetAddress(GLCD_CONTROLLER_0, 0, internalAddr.y);
+    }
+    else if (internalAddr.x == MAX_X_CHIP-1)
+    {
+        internalAddr.controller = GLCD_CONTROLLER_1;
+        halGlcdCtrlSetAddress(GLCD_CONTROLLER_1, 0, internalAddr.y);
     }
 
     internalAddr.x = (internalAddr.x+1) & (MAX_X-1);
@@ -181,7 +186,8 @@ uint8_t halGlcdReadData(void)
  */
 uint8_t halGlcdSetYShift(uint8_t yShift)
 {
-    halGlcdCtrlWriteCmd(GLCD_CONTROLLER_B, GLCD_CMD_DISP_START | (yShift & (MAX_Y-1)));
+    halGlcdCtrlWriteCmd(GLCD_CONTROLLER_0, GLCD_CMD_DISP_START | (yShift & (MAX_Y-1)));
+    halGlcdCtrlWriteCmd(GLCD_CONTROLLER_1, GLCD_CMD_DISP_START | (yShift & (MAX_Y-1)));
     internalAddr.yShift = yShift & (MAX_Y-1);
 
     return 0;
@@ -204,21 +210,17 @@ uint8_t halGlcdGetYShift(void)
 static void halGlcdCtrlWriteData(const uint8_t controller,
                                  const uint8_t data)
 {
-    if (GLCD_CONTROLLER_B == controller)
-    {
-        halGlcdCtrlBusyWait(GLCD_CONTROLLER_0);
-        halGlcdCtrlBusyWait(GLCD_CONTROLLER_1);
-        halGlcdCtrlSelect(GLCD_CONTROLLER_B);
-    }
-    else 
-        halGlcdCtrlBusyWait(controller);
+    halGlcdCtrlBusyWait(controller);
     
-    /* Prepare for write access */ 
-    GLCD_CTRL_PORT |= (1<<GLCD_CTRL_RS);
-    GLCD_CTRL_PORT &= ~(1<<GLCD_CTRL_RW);
-    
+    /* Prepare for data write access */
     GLCD_DATA_PORT = data;
-    enable(); 
+    GLCD_CTRL_PORT &= ~(1<<GLCD_CTRL_EN);
+    GLCD_CTRL_PORT = (GLCD_CTRL_PORT & ((1<<GLCD_CTRL_RESET)|(1<<GLCD_CTRL_EN))) | (1<<GLCD_CTRL_RS) | controller;
+    busy_wait_setup();
+    GLCD_CTRL_PORT |= (1<<GLCD_CTRL_EN);
+    busy_wait_enable();
+
+    GLCD_CTRL_PORT &= ~((1<<GLCD_CTRL_EN)|GLCD_CONTROLLER_B);
 }
 
 /*
@@ -230,39 +232,76 @@ static uint8_t halGlcdCtrlReadData(const uint8_t controller)
 {
     uint8_t data;
     
-    /* Prepare for read access */
     halGlcdCtrlBusyWait(controller);
+   
+    /* Set data port to input */
     GLCD_DATA_DDR = 0;
-    GLCD_CTRL_PORT |= (1<<GLCD_CTRL_RS)|(1<<GLCD_CTRL_RW);
     
-    /* To read data, two read accesses are required */
-    enable();
-    data = GLCD_DATA_PIN;
-    enable();
+    /* Prepare for data read access */
+    GLCD_CTRL_PORT &= ~(1<<GLCD_CTRL_EN);
+    GLCD_CTRL_PORT = (GLCD_CTRL_PORT & ((1<<GLCD_CTRL_RESET)|(1<<GLCD_CTRL_EN))) | (1<<GLCD_CTRL_RW) | (1<<GLCD_CTRL_RS) | controller;
+    busy_wait_setup();
+    GLCD_CTRL_PORT |= (1<<GLCD_CTRL_EN);
+    busy_wait_enable();
+    
     data = GLCD_DATA_PIN;
 
+    GLCD_CTRL_PORT &= ~((1<<GLCD_CTRL_EN)|GLCD_CONTROLLER_B);
+    
+    /* Restore initial pin states */
     GLCD_DATA_DDR = 0xff;
-
+    
     return data;
 }
 
+/*
+ * @brief               Read the status byte.
+ * @param controller    The selected controller.
+ * @return              The read byte.
+ */
+static uint8_t halGlcdCtrlReadStatus(const uint8_t controller)
+{
+    uint8_t status;
+    
+    /* Set data port to input */
+    GLCD_DATA_DDR = 0;
+    
+    /* Prepare for status read access */
+    GLCD_CTRL_PORT &= ~(1<<GLCD_CTRL_EN);
+    GLCD_CTRL_PORT = (GLCD_CTRL_PORT & ((1<<GLCD_CTRL_RESET)|(1<<GLCD_CTRL_EN))) | (1<<GLCD_CTRL_RW) | controller;
+    busy_wait_setup();
+    GLCD_CTRL_PORT |= (1<<GLCD_CTRL_EN);
+    busy_wait_enable();
+    
+    status = GLCD_DATA_PIN;
+
+    GLCD_CTRL_PORT &= ~((1<<GLCD_CTRL_EN)|GLCD_CONTROLLER_B);
+    
+    /* Restore initial pin states */
+    GLCD_DATA_DDR = 0xff;
+
+    return status;
+}
+
+/*
+ * @brief               Write a command byte.
+ * @param controller    The selected controller.
+ * @param data          The command to write.
+ */
 static void halGlcdCtrlWriteCmd(const uint8_t controller,
                                 const uint8_t data)
 {
-    if (GLCD_CONTROLLER_B == controller)
-    {
-        halGlcdCtrlBusyWait(GLCD_CONTROLLER_0);
-        halGlcdCtrlBusyWait(GLCD_CONTROLLER_1);
-        halGlcdCtrlSelect(GLCD_CONTROLLER_B);
-    }
-    else 
-        halGlcdCtrlBusyWait(controller);
-
-    /* Prepare for writing a command */
-    GLCD_CTRL_PORT &= ~((1<<GLCD_CTRL_RS)|(1<<GLCD_CTRL_RW));
+    halGlcdCtrlBusyWait(controller);
     
+    /* Prepare for data write access */
+    GLCD_CTRL_PORT &= ~(1<<GLCD_CTRL_EN);
     GLCD_DATA_PORT = data;
-    enable();
+    GLCD_CTRL_PORT = (GLCD_CTRL_PORT & ((1<<GLCD_CTRL_RESET)|(1<<GLCD_CTRL_EN))) | controller;
+    busy_wait_setup();
+    GLCD_CTRL_PORT |= (1<<GLCD_CTRL_EN);
+    busy_wait_enable();
+   
+    GLCD_CTRL_PORT &= ~((1<<GLCD_CTRL_EN)|GLCD_CONTROLLER_B);
 }
 
 /*
@@ -275,8 +314,8 @@ static void halGlcdCtrlSetAddress(const uint8_t controller,
                                   const uint8_t x,
                                   const uint8_t y)
 {
-    halGlcdCtrlWriteCmd(controller, GLCD_CMD_SET_PAGE | y);
     halGlcdCtrlWriteCmd(controller, GLCD_CMD_SET_ADDR | x);
+    halGlcdCtrlWriteCmd(controller, GLCD_CMD_SET_PAGE | y);
 }
 
 /*
@@ -285,69 +324,26 @@ static void halGlcdCtrlSetAddress(const uint8_t controller,
  */
 static void halGlcdCtrlBusyWait(const uint8_t controller)
 {
-    halGlcdCtrlSelect(controller);
-
-    /* Set busy, display & reset status pins to input */
-    GLCD_DATA_DDR &= ~((1<<GLCD_STATUS_BUSY)|(1<<GLCD_STATUS_RESET));
-    /* Prepare for read access */
-    GLCD_CTRL_PORT &= ~((1<<GLCD_CTRL_EN)|(1<<GLCD_CTRL_RS));
-    GLCD_CTRL_PORT |= (1<<GLCD_CTRL_RW);
-    
-    busy_wait_enable();
-    
-    /* Wait until busy line is low and check if display was reset */
-    uint8_t controllerStatus;
+    uint8_t status;
     do
     {
-        GLCD_CTRL_PORT |= (1<<GLCD_CTRL_EN);
-        busy_wait_enable();
-
-        controllerStatus = GLCD_DATA_PIN &
-                           ((1<<GLCD_STATUS_BUSY)|(1<<GLCD_STATUS_RESET));
-
-        GLCD_CTRL_PORT &= ~(1<<GLCD_CTRL_EN);
-        busy_wait_enable();
+        status = halGlcdCtrlReadStatus(controller);
     }
-    while(controllerStatus != 0);
-
-    /* Restore initial pin states */
-    GLCD_CTRL_PORT |= (1<<GLCD_CTRL_RS);
-    GLCD_CTRL_PORT &= ~(1<<GLCD_CTRL_RW);
-    GLCD_DATA_DDR |= (1<<GLCD_STATUS_BUSY)|(1<<GLCD_STATUS_RESET);
+    while((status & ((1<<GLCD_STATUS_BUSY)|(1<<GLCD_STATUS_RESET))) != 0);
 }
 
 /*
- * @brief               Select the desired RAM controller(s).
- * @param controller    The desired controller(s) (_0, _1, or _B for both).
+ * @brief               Sets all pages of the given controller to 0x00.
+ * @param controller    The controller to clear.
  */
-static void halGlcdCtrlSelect(const uint8_t controller)
-{
-    if (GLCD_CONTROLLER_0 == controller)
-    {
-        GLCD_CTRL_PORT &= ~(1<<GLCD_CTRL_CS1);
-        GLCD_CTRL_PORT |= (1<<GLCD_CTRL_CS0);
-    }
-    else if (GLCD_CONTROLLER_1 == controller)
-    {
-        GLCD_CTRL_PORT &= ~(1<<GLCD_CTRL_CS0);
-        GLCD_CTRL_PORT |= (1<<GLCD_CTRL_CS1);
-    }
-    else if (GLCD_CONTROLLER_B == controller)
-    {
-        GLCD_CTRL_PORT |= (1<<GLCD_CTRL_CS0);
-        GLCD_CTRL_PORT |= (1<<GLCD_CTRL_CS1);
-    }
-}
-
-//TODO optimize for both controllers
-static void halGlcdCtrlClearRAM(void)
+static void halGlcdCtrlClearRAM(const uint8_t controller)
 {
     for (uint8_t y = 0; y < 8; y++)
     {
-        halGlcdCtrlSetAddress(GLCD_CONTROLLER_B, 0, y);
+        halGlcdCtrlSetAddress(controller, 0, y);
         
         for (uint8_t x = 0; x < MAX_X_CHIP; x++)
-            halGlcdCtrlWriteData(GLCD_CONTROLLER_B, 0x00);
+            halGlcdCtrlWriteData(controller, 0x00);
     }
 }
 
