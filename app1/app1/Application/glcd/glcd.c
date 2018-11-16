@@ -20,12 +20,18 @@
 #define X_MAX   128
 #define Y_MAX   64
 
+/** Returns the aspect equal height of a given width
+    Fast and inprecise version. */
+#define ASPECT_HEIGHT_F(w)      (((w) * 11)>>3)
+/** Returns the aspect equal width of a given height
+    Fast and inprecise version. */
+#define ASPECT_WIDTH_F(h)       (((h) * 3)>>2)
+
 /* Static functions */
 static void drawLineLow(const xy_point p1, const xy_point p2,
                         void (*drawPx)(const uint8_t, const uint8_t));
 static void drawLineHigh(const xy_point p1, const xy_point p2,
                          void (*drawPx)(const uint8_t, const uint8_t));
-static void writePage(const uint8_t x, const uint8_t y, const uint8_t data);
 
 /**
  * @brief       Initialize the glcd module.
@@ -166,7 +172,6 @@ static void drawLineHigh(const xy_point p1, const xy_point p2,
  * @param p2        Second corner.
  * @param drawPx    Pixel draw function.
  */
-//TODO not sure if we need some case distinction here (for the corners)
 void glcdDrawRect(const xy_point p1, const xy_point p2,
                   void (*drawPx)(const uint8_t, const uint8_t))
 {
@@ -180,22 +185,9 @@ void glcdDrawRect(const xy_point p1, const xy_point p2,
  * @brief           Fill screen with the specified pattern.
  * @param pattern   The pattern.
  */
-//TODO further optimization: exploit internal x increment
-//TODO use hal function exploit post increment
 void glcdFillScreen(const uint8_t pattern)
 {
-//    for (uint8_t y = 0; y < Y_MAX/8; y++)
-//    {
-//        for (uint8_t x = 0; x < X_MAX; x++)
-//            writePage(x, y, pattern);
-//    }
     halGlcdFillScreen(pattern);
-}
-
-static void writePage(const uint8_t x, const uint8_t y, const uint8_t data)
-{
-    halGlcdSetAddress(x, y);
-    halGlcdWriteData(data);
 }
 
 /**
