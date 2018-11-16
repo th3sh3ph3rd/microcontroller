@@ -50,5 +50,11 @@ uint8_t halGlcdSetYShift(uint8_t yShift);
  */
 uint8_t halGlcdGetYShift(void);
 
+/*
+ * @brief           Fills the whole screen with the desired pattern.
+ * @param pattern   The pattern for filling the screen.
+ */
+uint8_t halGlcdFillScreen(uint8_t pattern);
+
 #endif
 

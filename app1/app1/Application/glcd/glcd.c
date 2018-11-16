@@ -184,11 +184,12 @@ void glcdDrawRect(const xy_point p1, const xy_point p2,
 //TODO use hal function exploit post increment
 void glcdFillScreen(const uint8_t pattern)
 {
-    for (uint8_t y = 0; y < Y_MAX/8; y++)
-    {
-        for (uint8_t x = 0; x < X_MAX; x++)
-            writePage(x, y, pattern);
-    }
+//    for (uint8_t y = 0; y < Y_MAX/8; y++)
+//    {
+//        for (uint8_t x = 0; x < X_MAX; x++)
+//            writePage(x, y, pattern);
+//    }
+    halGlcdFillScreen(pattern);
 }
 
 static void writePage(const uint8_t x, const uint8_t y, const uint8_t data)
@@ -332,7 +333,7 @@ void glcdDrawChar(const char c, const xy_point p, const font* f,
         for (uint8_t y = 0; y < 8; y++)
         {
             if (page & (1<<y))
-                drawPx(p.x+pn, p.y+y-8);
+                drawPx(p.x+pn, p.y+y-7);
         }
     } 
 }

@@ -69,7 +69,7 @@
 
 /* Game parameters */
 #define TICKS_PER_SCROLL    10
-#define TICKS_PER_SCORE     20
+#define TICKS_PER_SCORE     1
 #define TICKS_PER_DIFF      20
 #define WALL_GAP            15
 #define BALL_RADIUS         3
@@ -83,6 +83,7 @@
 //TODO use displayNewWall in levelInit
 //TODO handle return value of wiimote functons
 //TODO transform struct to bitfields, also in UART
+//TODO collision detection: fails sometimes, one pixel error on screen bounds
 
 typedef enum {START, CONNECT, SELECTPLAYER, PLAY, GAMEOVER, HIGHSCORE} game_state_t;
 typedef enum {INIT, WAIT} static_state_t;
@@ -166,7 +167,7 @@ static struct
 struct highScoreEntry
 {
     int8_t player;
-    uint8_t score;
+    uint16_t score;
 };
 static struct
 {
