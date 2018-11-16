@@ -59,6 +59,13 @@
             "nop" "\n\t"        \
             "nop" "\n\t" ::)
 
+//TODO use this for the controller argument
+typedef enum {
+    CONTROLLER_0 = (1<<GLCD_CTRL_CS1),
+    CONTROLLER_1 = (1<<GLCD_CTRL_CS0),
+    CONTROLLER_B = (1<<GLCD_CTRL_CS1)|(1<<GLCD_CTRL_CS0)
+} controller_t;
+
 static struct
 {
     uint8_t x;
@@ -259,6 +266,7 @@ static uint8_t halGlcdCtrlReadData(const uint8_t controller)
  * @param controller    The selected controller.
  * @return              The read byte.
  */
+//TODO remove delays
 static uint8_t halGlcdCtrlReadStatus(const uint8_t controller)
 {
     uint8_t status;

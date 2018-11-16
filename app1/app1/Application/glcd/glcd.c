@@ -17,8 +17,8 @@
 #include <hal_glcd.h>
 #include <glcd.h>
 
-#define X_MAX       128
-#define Y_MAX       64
+#define X_MAX   128
+#define Y_MAX   64
 
 /* Static functions */
 static void drawLineLow(const xy_point p1, const xy_point p2,
@@ -33,9 +33,6 @@ static void writePage(const uint8_t x, const uint8_t y, const uint8_t data);
 void glcdInit(void)
 {
     halGlcdInit();
-
-    PORTK = 0;
-    DDRK = 0xff;
 }
 
 /**
@@ -184,6 +181,7 @@ void glcdDrawRect(const xy_point p1, const xy_point p2,
  * @param pattern   The pattern.
  */
 //TODO further optimization: exploit internal x increment
+//TODO use hal function exploit post increment
 void glcdFillScreen(const uint8_t pattern)
 {
     for (uint8_t y = 0; y < Y_MAX/8; y++)
