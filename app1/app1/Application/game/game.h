@@ -8,8 +8,8 @@
  *
  */
 
-#ifndef __GAMEUI__
-#define __GAMEUI__
+#ifndef __GAME__
+#define __GAME__
 
 #include <stdint.h>
 

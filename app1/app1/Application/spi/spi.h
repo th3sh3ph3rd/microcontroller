@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 
-/* Typedef as in des SD card library */
+/* Typedef as in the SD card library */
 typedef enum {
     SPI_PRESCALER_128   = 3,
     SPI_PRESCALER_4     = 0,

@@ -13,8 +13,8 @@
 
 #include <stdint.h>
 
-typedef enum timer_mode {TIMER_SINGLE, TIMER_REPEAT} timer_mode_t;
-typedef enum timer_error {SUCC, NOT_AVAIL, INVAL} timer_error_t;
+typedef enum {TIMER_SINGLE, TIMER_REPEAT} timer_mode_t;
+typedef enum {SUCC, NOT_AVAIL, INVAL} timer_error_t;
 
 /**
  * @brief           Start a timer to run for the specified amount of ms.

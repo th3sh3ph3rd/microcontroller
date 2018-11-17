@@ -80,6 +80,9 @@
 #define SELECTOR_Y_START    6
 
 //TODO test new ball shape and remove old code
+//TODO improve circle drawing, remove aspect ratio macros
+//TODO either implement ellipse or remove it
+//TODO either filter volume input or remove oldvolume var in music.c
 //TODO transform struct to bitfields, also in UART
 //TODO collision detection: fails sometimes
 //TODO live score display
@@ -1080,8 +1083,8 @@ static void drawBall(void)
 //    for (uint8_t r = 1; r <= BALL_RADIUS; r++)
 //        glcdDrawCircle(ball, r, &glcdSetPixel);
 
-    xy_point p0 = {ball.x-BALL_RADIUS, ball.y}:
-    xy_point p1 = {ball.x+BALL_RADIUS, ball.y}: 
+    xy_point p0 = {ball.x-BALL_RADIUS, ball.y};
+    xy_point p1 = {ball.x+BALL_RADIUS, ball.y}; 
     glcdDrawLine(p0, p1, &glcdSetPixel);
 
     uint8_t d = 1;
@@ -1107,8 +1110,8 @@ static void clearBall(void)
 //    for (uint8_t r = 1; r <= BALL_RADIUS; r++)
 //        glcdDrawCircle(ball, r, &glcdClearPixel);
     
-    xy_point p0 = {ball.x-BALL_RADIUS, ball.y}:
-    xy_point p1 = {ball.x+BALL_RADIUS, ball.y}: 
+    xy_point p0 = {ball.x-BALL_RADIUS, ball.y};
+    xy_point p1 = {ball.x+BALL_RADIUS, ball.y}; 
     glcdDrawLine(p0, p1, &glcdClearPixel);
 
     uint8_t d = 1;
