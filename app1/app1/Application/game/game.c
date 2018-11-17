@@ -83,6 +83,7 @@
 //TODO improve circle drawing, remove aspect ratio macros
 //TODO either implement ellipse or remove it
 //TODO either filter volume input or remove oldvolume var in music.c
+//TODO split game file up
 //TODO transform struct to bitfields, also in UART
 //TODO collision detection: fails sometimes
 //TODO live score display
@@ -202,7 +203,6 @@ static struct connAnim connectAnim =
         {{53, 35}, {73, 45}, {73, 35}, {53, 45}}
     }
 };
-
 
 /* Callback functions */
 static void gameTimerCB(void);
