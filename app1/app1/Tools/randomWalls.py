@@ -12,15 +12,21 @@ print("#define WALLS_AVAILABLE", WALLNUM)
 print("wall_points_t ", ARRAY_NAME, "[WALLS_AVAILABLE] PROGMEM =", sep='')
 print("{")
 for i in range(int(WALLNUM/2)):
-    p0 = randrange(0, 21+1)
-    p1 = randrange(p0+10, p0+37+1)
-    p2 = randrange(p1+8, p1+37+1)
-    if (X_WIDTH-p2-1) >= 18:
-        p3 = randrange(p2+10, X_WIDTH-10-1)
-        p4 = X_WIDTH-1
-    else:
-        p3 = X_WIDTH-1
-        p4 = 0
+#    p0 = randrange(0, 21+1)
+#    p1 = randrange(p0+10, p0+37+1)
+#    p2 = randrange(p1+8, p1+37+1)
+#    if (X_WIDTH-p2-1) >= 18:
+#        p3 = randrange(p2+10, X_WIDTH-10-1)
+#        p4 = X_WIDTH-1
+#    else:
+#        p3 = X_WIDTH-1
+#        p4 = 0
+    
+    p0 = randrange(8, 12+1)
+    p1 = randrange(p0+15, p0+31+1)
+    p2 = randrange(p1+8, p1+12+1)
+    p3 = randrange(p2+15, p2+31+1)
+    p4 = randrange(p3+8, p3+12+1)
     
     print("\t{", p0, ",", p1, ",", p2, ",", p3, ",", p4, "},", sep='')
     if i == (WALLNUM/2)-1:

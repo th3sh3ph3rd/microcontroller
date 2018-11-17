@@ -33,8 +33,6 @@
 #define Y_HEIGHT    64
 #define TOP         0
 #define BOTTOM      Y_HEIGHT-1
-#define RAM_SIZE    8192
-#define RAM_ROWS    RAM_SIZE/Y_HEIGHT
 
 /* Wii button encoding */
 #define BUTTON_2_WII    0x01
@@ -84,8 +82,10 @@
 //TODO either implement ellipse or remove it
 //TODO either filter volume input or remove oldvolume var in music.c
 //TODO split game file up
+//TODO optimize unused buttons away in buttoncb
 //TODO transform struct to bitfields, also in UART
 //TODO collision detection: fails sometimes
+//TODO animate/blink player selector
 //TODO live score display
 //TODO put animation frames in PROGMEM
 //TODO make better level generator
