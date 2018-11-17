@@ -83,6 +83,9 @@
 //TODO transform struct to bitfields, also in UART
 //TODO collision detection: fails sometimes
 //TODO live score display
+//TODO put animation frames in PROGMEM
+//TODO make better level generator
+//TODO make better makefile or put modules in archives
 
 typedef enum {START, CONNECT, SELECTPLAYER, PLAY, GAMEOVER, HIGHSCORE} game_state_t;
 typedef enum {INIT, WAIT} static_state_t;

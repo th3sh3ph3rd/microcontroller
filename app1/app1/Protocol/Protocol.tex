@@ -47,10 +47,10 @@
 %***************************************************************************
 % enter your data into the following fields
 %***************************************************************************
-\newcommand{\Vorname}{IhrVorname/Your First Name}
-\newcommand{\Nachname}{IhrNachname/YourSurname}
-\newcommand{\MatrNr}{3333333}
-\newcommand{\Email}{e3333333@student.tuwien.ac.at}
+\newcommand{\Vorname}{Jan}
+\newcommand{\Nachname}{Nausner}
+\newcommand{\MatrNr}{01614835}
+\newcommand{\Email}{e01614835@student.tuwien.ac.at}
 \newcommand{\Part}{I}
 %***************************************************************************
 
@@ -99,7 +99,13 @@ from the implementation proposal in the protocol.
 %---------------------------------------------------------------------------
 
 \bConnections{What}{}
-J12 & Connected to VCC \\
+J12 & Connected to GND \\ \hline
+J14 & EXT \\ \hline
+J15 & PF0 \\ \hline
+LEDs & Off \\ \hline
+GLCD backlight & On \\ \hline
+PORT switches & Off \\ \hline
+PORT jumpers & Pull down \\
 \eConnections
 
 Write down all things we need to know to get your program running on our board.
@@ -160,7 +166,21 @@ Explain your modules.
 \subsection{HAL GLCD}
 %---------------------------------------------------------------------------
 
+%***************************************************************************
+\section{UART}
+%***************************************************************************
 
+%***************************************************************************
+\section{Rand}
+%***************************************************************************
+
+%***************************************************************************
+\section{ADC}
+%***************************************************************************
+
+%***************************************************************************
+\section{Timer}
+%***************************************************************************
 
 %***************************************************************************
 \section{...explain your application modules ...}
@@ -176,38 +196,43 @@ Explain your modules.
 \section{Problems}
 %***************************************************************************
 
-In this section you can write about the problems you encoutered while
-	implementation your application.
-This can range from misunderstanding of the hardware, to plain, simple, typos
-	in your program.
+One problem that was encountered during the development of the application
+was the faulty function \emph{wiiUserSetAccel}. In the specification it was
+stated that using this function it would be possible to either turn the wiimote
+accelerometer on or off. Unfortunately this behavior was not reflected in the
+implementation, which only turned the accelerometer on, regardless of the value
+of the \emph{enable} parameter.
 
-This is important information for us, which allows us to determine if there
-	were common problems and act accordingly.
-Don't worry, we don't deduct points for problems mention here which are
-	already fixed.
+Another difficulty concerned the interpretation of the accelerometer data. It
+took some time and thinking to derive a simple and fast algorithm for wiimote
+tilt detection which did not require the use of complex numerics or even 
+floating point arithmetic. To understand the principal behavior of an
+accelerometer, the following article was consulted: http://bildr.org/2011/04/sensing-orientation-with-the-adxl335-arduino/.
 
+A lot of time had to be in invested in figuring out how to communicate with 
+the GLCD module. The exact timing and pin level sequence had to be found out 
+by trial-and-error, as the datasheets for the hardware were not completely 
+accurate.
 
 %***************************************************************************
 \section{Work}
 %***************************************************************************
 
-Estimate the work you put into solving the Application.
-You can add additional points, if you like.
-
 \begin{tabular}{|l|c|c|}\hline
 	Task & Assumption (IP) & Reality \\ \hline
 
 	reading manuals, datasheets &  5 h &  5 h\\
-	program design              &  5 h &  5 h\\
-	programming                 & 10 h & 10 h\\
-	debugging                   & 45 h & 50 h\\
-	questions, protocol         & 10 h &  5 h\\ \hline
+	program design              & 10 h &  6 h\\
+	programming                 & 20 h & 16 h\\
+	debugging                   & 20 h & 44 h\\
+	questions, protocol         &  5 h &  4 h\\ \hline
 
-	\textbf{Total}              & 75 h & 75 h\\ \hline
+	\textbf{Total}              & 60 h & 75 h\\ \hline
 \end{tabular}
 
 
 %***************************************************************************
 \newpage
 \end{document}
+
 
