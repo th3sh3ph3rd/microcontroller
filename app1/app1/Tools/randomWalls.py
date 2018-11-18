@@ -7,8 +7,10 @@ seed()
 WALLNUM = 64
 X_WIDTH = 128
 ARRAY_NAME = "data_walls"
+MAX_GAP_WIDTH = 12
 
 print("#define WALLS_AVAILABLE", WALLNUM)
+print("#define MAX_GAP_WIDTH", MAX_GAP_WIDTH)
 print("wall_points_t ", ARRAY_NAME, "[WALLS_AVAILABLE] PROGMEM =", sep='')
 print("{")
 for i in range(int(WALLNUM/2)):
@@ -22,11 +24,11 @@ for i in range(int(WALLNUM/2)):
 #        p3 = X_WIDTH-1
 #        p4 = 0
     
-    p0 = randrange(8, 12+1)
+    p0 = randrange(8, MAX_GAP_WIDTH+1)
     p1 = randrange(p0+15, p0+31+1)
-    p2 = randrange(p1+8, p1+12+1)
+    p2 = randrange(p1+8, p1+MAX_GAP_WIDTH+1)
     p3 = randrange(p2+15, p2+31+1)
-    p4 = randrange(p3+8, p3+12+1)
+    p4 = randrange(p3+8, p3+MAX_GAP_WIDTH+1)
     
     print("\t{", p0, ",", p1, ",", p2, ",", p3, ",", p4, "},", sep='')
     if i == (WALLNUM/2)-1:
