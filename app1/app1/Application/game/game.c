@@ -82,6 +82,7 @@
 //TODO either implement ellipse or remove it
 //TODO either filter volume input or remove oldvolume var in music.c
 //TODO split game file up
+//TODO in hal_glcd read statu only set status bits as input
 //TODO optimize unused buttons away in buttoncb
 //TODO transform struct to bitfields, also in UART
 //TODO collision detection: fails sometimes
