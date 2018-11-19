@@ -22,7 +22,6 @@
 #define DELTA_VOLUME    50
 
 static uint32_t sdcardBlockAddress = SONG_START;
-static uint8_t oldVolume = 0;
 static uint8_t spiLock = 0;
 
 static uint8_t scaleVolume(uint8_t volume); 
@@ -73,10 +72,7 @@ void music_setVolume(uint8_t volumeRaw)
     uint8_t newVolume = scaleVolume(volumeRaw);
     /* Only set the volume if the spi is not used by other functions */
     if (spiLock == 0)
-    {
         mp3SetVolume(newVolume);
-        oldVolume = newVolume;
-    }
 }
 
 /**

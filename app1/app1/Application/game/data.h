@@ -29,6 +29,20 @@ const char data_end_b[] PROGMEM = "A: End game";
 const char data_data_resume_b[] PROGMEM = "B: Resume";
 const char data_gameover[] PROGMEM = "Game over!";
 
+/* Connection screen animation */
+struct connectFrame
+{
+    xy_point l0p0;
+    xy_point l0p1;
+    xy_point l1p0;
+    xy_point l1p1;
+};
+const unsigned char data_connectFrames[2][4][2] PROGMEM =
+{
+    {{53, 40}, {73, 40}, {63, 35}, {63, 45}},
+    {{53, 35}, {73, 45}, {73, 35}, {53, 45}}
+};
+
 /* A set of randomly generated walls for the game */
 #define WALL_POINTS 5
 typedef const unsigned char wall_points_t[WALL_POINTS]; 

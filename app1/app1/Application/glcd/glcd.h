@@ -95,17 +95,6 @@ void glcdDrawCircle(const xy_point c, const uint8_t radius,
                     void (*drawPx)(const uint8_t, const uint8_t));
 
 /**
- * @brief           Draws an ellipse at the given centerpoint with given x/y radius.
- * @param c         The centerpoint.
- * @param radiusX   The x radius.
- * @param radiusY   The y radius.
- * @param drawPx    Pixel draw function.
- */
-void glcdDrawEllipse(const xy_point c, const uint8_t radiusX,
-                     const uint8_t radiusY,
-                     void (*drawPx)(const uint8_t, const uint8_t));
-
-/**
  * @brief           Draws a vertical line.
  * @param x         X postion for the line.
  * @param drawPx    Pixel draw function.

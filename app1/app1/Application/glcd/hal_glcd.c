@@ -255,18 +255,18 @@ static uint8_t halGlcdCtrlReadStatus(const controller_t controller)
     uint8_t status;
     
     /* Set data port to input */
-    GLCD_DATA_DDR = 0;
+    GLCD_DATA_DDR &= ~((1<<GLCD_STATUS_BUSY)|(1<<GLCD_STATUS_DISP)|(1<<GLCD_STATUS_RESET));
     
     /* Prepare for status read access */
     GLCD_CTRL_PORT = (GLCD_CTRL_PORT & (1<<GLCD_CTRL_RESET)) | (1<<GLCD_CTRL_RW) | controller;
     GLCD_CTRL_PORT |= (1<<GLCD_CTRL_EN);
     
-    status = GLCD_DATA_PIN;
+    status = GLCD_DATA_PIN & ((1<<GLCD_STATUS_BUSY)|(1<<GLCD_STATUS_DISP)|(1<<GLCD_STATUS_RESET));
 
     GLCD_CTRL_PORT &= ~((1<<GLCD_CTRL_EN)|CONTROLLER_B);
     
     /* Restore initial pin states */
-    GLCD_DATA_DDR = 0xff;
+    GLCD_DATA_DDR |= (1<<GLCD_STATUS_BUSY)|(1<<GLCD_STATUS_DISP)|(1<<GLCD_STATUS_RESET);
 
     return status;
 }

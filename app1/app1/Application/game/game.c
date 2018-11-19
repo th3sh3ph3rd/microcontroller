@@ -77,17 +77,14 @@
 #define SELECTOR_RADIUS     2
 #define SELECTOR_Y_START    6
 
-//TODO test new walls, wall drawing & collision detection, make collision detection function smaller
-//TODO improve circle drawing, remove aspect ratio macros
-//TODO either implement ellipse or remove it
-//TODO either filter volume input or remove oldvolume var in music.c
-//TODO in hal_glcd read status only set status bits as input
-//TODO optimize unused buttons away in buttoncb
-//TODO transform struct to bitfields, also in UART
 //TODO collision detection: fails sometimes
-//TODO put animation frames in PROGMEM
+//TODO make collision detection function smaller
+//TODO game sometimes freezes on reconnect
+//TODO accelerometer sometimes not disabled
+//TODO transform struct to bitfields, also in UART and collision detection
+//TODO check cyclomatic complexity
+
 //TODO make better makefile or put modules in archives
-//TODO split game file up
 
 //TODO animate/blink player selector
 //TODO live score display
@@ -184,26 +181,7 @@ static struct
 /* Connect screen animation figure */
 #define CONNECT_FRAMES 2
 #define CONNECT_FRAME_MS 350
-struct connectFrame
-{
-    xy_point l0p0;
-    xy_point l0p1;
-    xy_point l1p0;
-    xy_point l1p1;
-};
-struct connAnim
-{
-    uint8_t currFrame;
-    struct connectFrame frames[CONNECT_FRAMES];
-};
-static struct connAnim connectAnim =
-{
-    0,
-    {
-        {{53, 40}, {73, 40}, {63, 35}, {63, 45}},
-        {{53, 35}, {73, 45}, {73, 35}, {53, 45}}
-    }
-};
+uint8_t currFrame;
 
 /* Callback functions */
 static void gameTimerCB(void);
@@ -599,18 +577,10 @@ static void musicCB(void)
  */
 static void buttonCB(uint8_t wii, uint16_t buttonStates)
 {
-    if (buttonStates & BUTTON_1_WII)
-        input.buttons |= BUTTON_1;
-    if (buttonStates & BUTTON_2_WII)
-        input.buttons |= BUTTON_2;
     if (buttonStates & BUTTON_A_WII)
         input.buttons |= BUTTON_A;
     if (buttonStates & BUTTON_B_WII)
         input.buttons |= BUTTON_B;
-    if (buttonStates & BUTTON_L_WII)
-        input.buttons |= BUTTON_L;
-    if (buttonStates & BUTTON_R_WII)
-        input.buttons |= BUTTON_R;
     if (buttonStates & BUTTON_D_WII)
         input.buttons |= BUTTON_D;
     if (buttonStates & BUTTON_U_WII)
@@ -645,18 +615,21 @@ static void setAccelCB(uint8_t wii, error_t status)
 
 static void connectAnimCB(void)
 {
-    glcdDrawLine(connectAnim.frames[connectAnim.currFrame].l0p0,
-                 connectAnim.frames[connectAnim.currFrame].l0p1,
+    struct connectFrame frame;
+    memcpy_P(&frame, &data_connectFrames[currFrame], sizeof(struct connectFrame));
+    glcdDrawLine(frame.l0p0,
+                 frame.l0p1,
                  &glcdClearPixel);
-    glcdDrawLine(connectAnim.frames[connectAnim.currFrame].l1p0,
-                 connectAnim.frames[connectAnim.currFrame].l1p1,
+    glcdDrawLine(frame.l1p0,
+                 frame.l1p1,
                  &glcdClearPixel);
-    connectAnim.currFrame = !connectAnim.currFrame;
-    glcdDrawLine(connectAnim.frames[connectAnim.currFrame].l0p0,
-                 connectAnim.frames[connectAnim.currFrame].l0p1,
+    currFrame = !currFrame;
+    memcpy_P(&frame, &data_connectFrames[currFrame], sizeof(struct connectFrame));
+    glcdDrawLine(frame.l0p0,
+                 frame.l0p1,
                  &glcdSetPixel);
-    glcdDrawLine(connectAnim.frames[connectAnim.currFrame].l1p0,
-                 connectAnim.frames[connectAnim.currFrame].l1p1,
+    glcdDrawLine(frame.l1p0,
+                 frame.l1p1,
                  &glcdSetPixel);
 }
 
@@ -1038,8 +1011,8 @@ static uint8_t updateBallPos(void)
                             break;
                         }
                         /* Inner wall */
-                        else if ((screenImage.walls[w].points[p-1] < screenImage.ball.x-BALL_RADIUS &&
-                                  screenImage.walls[w].points[p] > screenImage.ball.x+BALL_RADIUS) ||
+                        else if ((screenImage.walls[w].points[p-1] <= screenImage.ball.x-BALL_RADIUS &&
+                                  screenImage.walls[w].points[p] >= screenImage.ball.x+BALL_RADIUS) ||
                                  (screenImage.walls[w].points[p-1] >= screenImage.ball.x-BALL_RADIUS &&
                                   screenImage.walls[w].points[p-1] <= screenImage.ball.x+BALL_RADIUS) ||
                                  (screenImage.walls[w].points[p] >= screenImage.ball.x-BALL_RADIUS &&
@@ -1053,7 +1026,7 @@ static uint8_t updateBallPos(void)
                     if (p == 0 &&
                         screenImage.walls[w].points[0] == screenImage.ball.x-BALL_RADIUS-1)
                     {
-                        xCollisionR = 1;
+                        xCollisionL = 1;
                         break;
                     }
                     else if (screenImage.walls[w].points[p-1] == screenImage.ball.x+BALL_RADIUS+1)
@@ -1080,14 +1053,14 @@ static uint8_t updateBallPos(void)
                     {
                         /* Leftmost wall */
                         if (p == WALL_POINTS-1 &&
-                            screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS)
+                            screenImage.walls[w].points[WALL_POINTS-1] <= screenImage.ball.x+BALL_RADIUS)
                         {
                             yCollision = 1;
                             break;
                         }
                         /* Inner wall */
-                        else if ((screenImage.walls[w].points[p] < screenImage.ball.x-BALL_RADIUS &&
-                                  screenImage.walls[w].points[p+1] > screenImage.ball.x+BALL_RADIUS) ||
+                        else if ((screenImage.walls[w].points[p] <= screenImage.ball.x-BALL_RADIUS &&
+                                  screenImage.walls[w].points[p+1] >= screenImage.ball.x+BALL_RADIUS) ||
                                  (screenImage.walls[w].points[p] >= screenImage.ball.x-BALL_RADIUS &&
                                   screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS) ||
                                  (screenImage.walls[w].points[p+1] >= screenImage.ball.x-BALL_RADIUS &&
@@ -1099,7 +1072,7 @@ static uint8_t updateBallPos(void)
                     }
                     /* Detect if a wall is being hit from the side */
                     if (p == WALL_POINTS-1 &&
-                        screenImage.walls[w].points[p] == screenImage.ball.x+BALL_RADIUS+1)
+                        screenImage.walls[w].points[WALL_POINTS-1] == screenImage.ball.x+BALL_RADIUS+1)
                     {
                         xCollisionR = 1;
                         break;

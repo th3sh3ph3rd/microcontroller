@@ -20,13 +20,6 @@
 #define X_MAX   128
 #define Y_MAX   64
 
-/** Returns the aspect equal height of a given width
-    Fast and inprecise version. */
-#define ASPECT_HEIGHT_F(w)      (((w) * 11)>>3)
-/** Returns the aspect equal width of a given height
-    Fast and inprecise version. */
-#define ASPECT_WIDTH_F(h)       (((h) * 3)>>2)
-
 /* Static functions */
 static void drawLineLow(const xy_point p1, const xy_point p2,
                         void (*drawPx)(const uint8_t, const uint8_t));
@@ -249,18 +242,6 @@ void glcdDrawCircle(const xy_point c, const uint8_t radius,
         }
     }
 }
-
-/**
- * @brief           Draws an ellipse at the given centerpoint with given x/y radius.
- * @param c         The centerpoint.
- * @param radiusX   The x radius.
- * @param radiusY   The y radius.
- * @param drawPx    Pixel draw function.
- */
-/* Midpoint ellipse algorithm: https://www.cpp.edu/~raheja/CS445/MEA.pdf or https://dai.fmph.uniba.sk/upload/0/01/Ellipse.pdf */
-void glcdDrawEllipse(const xy_point c, const uint8_t radiusX,
-                     const uint8_t radiusY,
-                     void (*drawPx)(const uint8_t, const uint8_t));
 
 /**
  * @brief           Draws a vertical line.
