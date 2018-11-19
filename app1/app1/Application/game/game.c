@@ -81,7 +81,6 @@
 //TODO make collision detection function smaller
 //TODO game sometimes freezes on reconnect
 //TODO accelerometer sometimes not disabled
-//TODO transform struct to bitfields, also in UART and collision detection
 //TODO check cyclomatic complexity
 
 //TODO make better makefile or put modules in archives
@@ -104,21 +103,21 @@ static struct
 static struct
 {
     game_state_t next;
-    static_state_t start;
-    static_state_t connect;
-    static_state_t selectPlayer;
-    static_state_t gameOver;
-    static_state_t highScore;
+    static_state_t start:1;
+    static_state_t connect:1;
+    static_state_t selectPlayer:1;
+    static_state_t gameOver:1;
+    static_state_t highScore:1;
     tick_state_t play;
 } gameStates;
 
 /* Wiimote status flags */
 static struct
 {
-    uint8_t triedConnect;
-    connection_status_t status;
-    uint8_t triedSetAcc;
-    uint8_t accStatus;
+    uint8_t triedConnect:1;
+    connection_status_t status:1;
+    uint8_t triedSetAcc:1;
+    uint8_t accStatus:1;
 } wiimote;
 
 /* Wiimote sensor values */

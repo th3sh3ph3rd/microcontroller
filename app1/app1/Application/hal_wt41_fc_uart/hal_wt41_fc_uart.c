@@ -50,10 +50,14 @@ static void (*recvCallback)(uint8_t);
 /* State variables */
 enum sendstate {IDLE, SEND, RES_BLOCK, UDR_BLOCK, HW_BLOCK};
 
-static volatile uint8_t wt41_reset_complete = 0;
-static volatile uint8_t ringbuffer_being_processed = 0;
-static volatile uint8_t CTS_state = 0;
-static volatile enum sendstate send_state = IDLE;
+/* Interrupt flags */
+static struct
+{
+    volatile uint8_t wt41_reset_complete:1;
+    volatile uint8_t ringbuffer_lock:1;
+    volatile uint8_t CTS_state:1;
+    volatile enum sendstate send_state:3;
+} flags;
 
 /* Local functions */
 static void processRingbuffer(void);
@@ -71,6 +75,8 @@ error_t halWT41FcUartInit(
 {
     sendCallback = sndCallback;
     recvCallback = rcvCallback;
+
+    flags.send_state = IDLE;
 
     /****************
      * Setup USART3 *
@@ -118,20 +124,20 @@ error_t halWT41FcUartInit(
  */
 error_t halWT41FcUartSend(uint8_t byte)
 {
-    if (IDLE == send_state)
+    if (IDLE == flags.send_state)
         tx_byte_buf = byte;
 
     /* Buffer the byte until the wt41 reset has finished */
-    if (wt41_reset_complete == 0)
+    if (flags.wt41_reset_complete == 0)
     {
-        send_state = RES_BLOCK;
+        flags.send_state = RES_BLOCK;
         return ERROR;
     }
     /* High RTS inidcates flow control by WT41 */
     if ((PINJ & (1<<RTS_PIN)) != 0)
     {
         /* Enable pin change interrupt for RTS */
-        send_state = HW_BLOCK;
+        flags.send_state = HW_BLOCK;
         PCMSK1 |= (1<<RTS_INT);
         return ERROR;
     }
@@ -139,12 +145,12 @@ error_t halWT41FcUartSend(uint8_t byte)
     if ((UCSR3A & (1<<UDRE3)) == 0)
     {
         /* Enable user data register interrupt */
-        send_state = UDR_BLOCK;
+        flags.send_state = UDR_BLOCK;
         UCSR3B |= (1<<UDRIE3);
         return ERROR;
     }
 
-    send_state = SEND;
+    flags.send_state = SEND;
     /* Copy byte into UART register */
     UDR3 = byte;
     /* Enable user data register interrupt */
@@ -168,11 +174,11 @@ static void processRingbuffer(void)
         rbuf.end = (rbuf.end + 1) & (RBUF_SZ - 1);
 
         rbuf.len--;
-        if (CTS_state == 1 &&
+        if (flags.CTS_state == 1 &&
             rbuf.len < RBUF_LOW)
         {
             PORTJ &= ~(1<<CTS_PIN);
-            CTS_state = 0;
+            flags.CTS_state = 0;
         }
     } while (rbuf.len > 0);
 }
@@ -186,8 +192,8 @@ static void resetCompleted(void)
     cli();
     /* Disable reset */
     PORTJ |= (1<<RST_PIN);
-    wt41_reset_complete = 1;
-    if (RES_BLOCK == send_state)
+    flags.wt41_reset_complete = 1;
+    if (RES_BLOCK == flags.send_state)
     {
         sei();
         halWT41FcUartSend(tx_byte_buf);
@@ -206,18 +212,18 @@ ISR(USART3_RX_vect, ISR_BLOCK)
     rbuf.start = (rbuf.start + 1) & (RBUF_SZ - 1);
     rbuf.len++;
     /* Set CTS if buffer capacity low */
-    if (CTS_state == 0 && 
+    if (flags.CTS_state == 0 && 
         RBUF_SZ - rbuf.len < RBUF_HIGH)
     {
         PORTJ |= (1<<CTS_PIN);
-        CTS_state = 1;
+        flags.CTS_state = 1;
     }
 
-    if (ringbuffer_being_processed == 0)
+    if (flags.ringbuffer_lock == 0)
     {
-        ringbuffer_being_processed = 1;
+        flags.ringbuffer_lock = 1;
         processRingbuffer();
-        ringbuffer_being_processed = 0;
+        flags.ringbuffer_lock = 0;
     }
 }
 
@@ -228,13 +234,13 @@ ISR(USART3_UDRE_vect, ISR_BLOCK)
 {
     /* Disable the UDR interrupt */
     UCSR3B &= ~(1<<UDRIE3);
-    if (SEND == send_state)
+    if (SEND == flags.send_state)
     {
-        send_state = IDLE;
+        flags.send_state = IDLE;
         sei();
         sendCallback();
     }	
-    else if (UDR_BLOCK == send_state)
+    else if (UDR_BLOCK == flags.send_state)
     {
         sei();
         halWT41FcUartSend(tx_byte_buf);
