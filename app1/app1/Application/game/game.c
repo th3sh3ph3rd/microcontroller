@@ -71,7 +71,7 @@
 #define TICKS_PER_SCORE     2
 #define TICKS_PER_DIFF      20
 #define WALL_GAP            15
-#define BALL_RADIUS         3
+#define BALL_RADIUS         2
 #define GRAVITY             1
 #define PLAYERNUM           5
 #define SELECTOR_RADIUS     2
@@ -1233,21 +1233,15 @@ static void drawBall(void)
     ball.x = screenImage.ball.x;
     ball.y = screenImage.ball.y+screenDynamics.yShift;
 
-//    for (uint8_t r = 1; r <= BALL_RADIUS; r++)
-//        glcdDrawCircle(ball, r, &glcdSetPixel);
-
     xy_point p0 = {ball.x-BALL_RADIUS, ball.y};
     xy_point p1 = {ball.x+BALL_RADIUS, ball.y}; 
     glcdDrawLine(p0, p1, &glcdSetPixel);
 
-    uint8_t d = 1;
+    uint8_t dx = 0;
     for (uint8_t l = 1; l <= BALL_RADIUS; l++)
     {
-        glcdDrawLine((xy_point) {ball.x+d-BALL_RADIUS, ball.y-l}, (xy_point) {ball.x-d+BALL_RADIUS, ball.y-l}, &glcdSetPixel);
-        glcdDrawLine((xy_point) {ball.x+d-BALL_RADIUS, ball.y+l}, (xy_point) {ball.x-d+BALL_RADIUS, ball.y+l}, &glcdSetPixel);
-
-        if ((l & 1) == 0)
-            d++;
+        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y-l}, (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y-l}, &glcdSetPixel);
+        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y+l}, (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y+l}, &glcdSetPixel);
     }
 }
 
@@ -1259,22 +1253,15 @@ static void clearBall(void)
     xy_point ball;
     ball.x = screenImage.ball.x;
     ball.y = screenImage.ball.y+screenDynamics.yShift;
-    
-//    for (uint8_t r = 1; r <= BALL_RADIUS; r++)
-//        glcdDrawCircle(ball, r, &glcdClearPixel);
-    
+   
     xy_point p0 = {ball.x-BALL_RADIUS, ball.y};
     xy_point p1 = {ball.x+BALL_RADIUS, ball.y}; 
     glcdDrawLine(p0, p1, &glcdClearPixel);
 
-    uint8_t d = 1;
     for (uint8_t l = 1; l <= BALL_RADIUS; l++)
     {
-        glcdDrawLine((xy_point) {ball.x+d-BALL_RADIUS, ball.y-l}, (xy_point) {ball.x-d+BALL_RADIUS, ball.y-l}, &glcdClearPixel);
-        glcdDrawLine((xy_point) {ball.x+d-BALL_RADIUS, ball.y+l}, (xy_point) {ball.x-d+BALL_RADIUS, ball.y+l}, &glcdClearPixel);
-
-        if ((l & 1) == 0)
-            d++;
+        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y-l}, (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y-l}, &glcdClearPixel);
+        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y+l}, (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y+l}, &glcdClearPixel);
     }
 }
 

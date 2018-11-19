@@ -7,20 +7,19 @@
 #   install     downloads elf file to mcu
 #
 
-#TODO write sub makefiles
-#TODO make -I, -L and -l generic
-
 FILENAME    = main
-MODULES     = adc font game glcd hal_wt41_fc_uart music rand spi timer
-ARCHIVES    = mp3 sdcard wiimote
+#FILENAME    = glcd_test
 OBJECTS     = $(FILENAME).o
-OBJECTS	   += $(MODULES)/$(MODULES).o
+#OBJECTS	   += adc/adc.o font/Standard5x7.o game/game.o hal_wt41_fc_uart/hal_wt41_fc_uart.o music/music.o rand/rand.o spi/spi.o timer/timer.o
+OBJECTS	   += adc/adc.o font/Standard5x7.o game/game.o glcd/glcd.o glcd/hal_glcd.o hal_wt41_fc_uart/hal_wt41_fc_uart.o music/music.o rand/rand.o spi/spi.o timer/timer.o
 
 MCU         = atmega1280
 
 CCLD        = avr-gcc
 CCFLAGS     = -mmcu=$(MCU) -std=gnu99 -Wall -Wextra -Wstrict-prototypes -frename-registers
+#CCFLAGS	   += -fshort-enums -fpack-struct -I. -Iadc -Ifont -Igame -Ihal_wt41_fc_uart -Imusic -Ilibglcd -Ilibmp3 -Ilibwiimote -Irand -Ilibsdcard -Ispi -Itimer
 CCFLAGS	   += -fshort-enums -fpack-struct -I. -Iadc -Ifont -Igame -Iglcd -Ihal_wt41_fc_uart -Imusic -Ilibmp3 -Ilibwiimote -Irand -Ilibsdcard -Ispi -Itimer
+#LDFLAGS     = -mmcu=$(MCU) -Llibglcd -Llibmp3 -Llibsdcard -Llibwiimote -lglcd -lmp3 -lsdcard -lwiimote
 LDFLAGS     = -mmcu=$(MCU) -Llibmp3 -Llibsdcard -Llibwiimote -lmp3 -lsdcard -lwiimote
 
 PROG        = avrprog2
@@ -31,11 +30,8 @@ all: $(FILENAME).elf
 $(FILENAME).elf: $(OBJECTS)
 	$(CCLD) -o $@ $(OBJECTS) $(LDFLAGS)
 
-$(FILENAME).o: $(FILENAME).c
-	$(CCLD) $(CCFLAGS) -c -o $@ $<
-
 %.o: %.c
-	$(MAKE) -C $(patsubst %.o,,$@)
+	$(CCLD) $(CCFLAGS) -c -o $@ $<
 
 install: $(FILENAME).elf
 	$(PROG) $(PRFLAGS) --flash w:$<
