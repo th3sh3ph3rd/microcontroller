@@ -77,7 +77,6 @@
 #define SELECTOR_RADIUS     2
 #define SELECTOR_Y_START    6
 
-//TODO test new ball shape and remove old code
 //TODO test new walls, wall drawing & collision detection, make collision detection function smaller
 //TODO improve circle drawing, remove aspect ratio macros
 //TODO either implement ellipse or remove it
@@ -924,63 +923,44 @@ static void drawWall(uint8_t wall)
     point0.y = screenImage.walls[wall].yPos+screenDynamics.yShift;
     point1.y = screenImage.walls[wall].yPos+screenDynamics.yShift;
 
-    for (uint8_t i = 0; i < WALL_POINTS; i += 2)
+    /* Start with wall */
+    if (screenImage.walls[wall].points[0] > MAX_GAP_WIDTH)
     {
-        if (i == WALL_POINTS-1)
+        for (uint8_t p = 0; p < WALL_POINTS; p+=2)
         {
-            if (screenImage.walls[wall].points[i] != X_WIDTH-1)
+            if (p == 0)
             {
-                point0.x = screenImage.walls[wall].points[i];
-                point1.x = X_WIDTH-1;    
+                point0.x = 0;    
+                point1.x = screenImage.walls[wall].points[p];
+                glcdDrawLine(point0, point1, &glcdSetPixel);
+            }
+            else
+            {
+                point0.x = screenImage.walls[wall].points[p-1];
+                point1.x = screenImage.walls[wall].points[p];    
                 glcdDrawLine(point0, point1, &glcdSetPixel);
             }
         }
-        else
+    }
+    /* Start with gap */
+    else
+    {
+        for (uint8_t p = 0; p < WALL_POINTS; p+=2)
         {
-            point0.x = screenImage.walls[wall].points[i];
-            point1.x = screenImage.walls[wall].points[i+1];    
-            glcdDrawLine(point0, point1, &glcdSetPixel);
+            if (p == WALL_POINTS-1)
+            {
+                point0.x = screenImage.walls[wall].points[p];
+                point1.x = X_WIDTH-1;    
+                glcdDrawLine(point0, point1, &glcdSetPixel);
+            }
+            else
+            {
+                point0.x = screenImage.walls[wall].points[p];
+                point1.x = screenImage.walls[wall].points[p+1];    
+                glcdDrawLine(point0, point1, &glcdSetPixel);
+            }
         }
     }
-
-//    /* Start with wall */
-//    if (screenImage.walls[wall].points[0] > MAX_GAP_WIDTH)
-//    {
-//        for (uint8_t p = 0; p < WALL_POINTS; p+=2)
-//        {
-//            if (p == 0)
-//            {
-//                point0.x = 0;    
-//                point1.x = screenImage.walls[wall].points[p];
-//                glcdDrawLine(point0, point1, &glcdSetPixel);
-//            }
-//            else
-//            {
-//                point0.x = screenImage.walls[wall].points[p-1];
-//                point1.x = screenImage.walls[wall].points[p];    
-//                glcdDrawLine(point0, point1, &glcdSetPixel);
-//            }
-//        }
-//    }
-//    /* Start with gap */
-//    else
-//    {
-//        for (uint8_t p = 0; p < WALL_POINTS; p+=2)
-//        {
-//            if (p == WALL_POINTS-1)
-//            {
-//                point0.x = screenImage.walls[wall].points[p];
-//                point1.x = X_WIDTH-1;    
-//                glcdDrawLine(point0, point1, &glcdSetPixel);
-//            }
-//            else
-//            {
-//                point0.x = screenImage.walls[wall].points[p];
-//                point1.x = screenImage.walls[wall].points[p+1];    
-//                glcdDrawLine(point0, point1, &glcdSetPixel);
-//            }
-//        }
-//    }
 }
 
 /*
@@ -1034,7 +1014,7 @@ static uint8_t updateBallPos(void)
     /* GAME OVER */
     if (screenImage.ball.y-BALL_RADIUS == TOP)
         return 1;
-
+    
     /* Wall collision detection */
     for (uint8_t w = 0; w < WALLS_ON_SCREEN; w++)
     {
@@ -1042,36 +1022,83 @@ static uint8_t updateBallPos(void)
         if (screenImage.walls[w].yPos >= screenImage.ball.y-BALL_RADIUS &&
             screenImage.walls[w].yPos <= screenImage.ball.y+BALL_RADIUS+1)
         {
-            for (uint8_t p = 0; p < WALL_POINTS; p += 2)
+            /* Start with wall */
+            if (screenImage.walls[w].points[0] > MAX_GAP_WIDTH)
             {
-                /* Detect if a wall is being hit from the top */
-                if (screenImage.walls[w].yPos == screenImage.ball.y+BALL_RADIUS+1)
+                for (uint8_t p = 0; p < WALL_POINTS; p += 2)
                 {
-                    /* Rightmost wall */
-                    if (p == WALL_POINTS-1 &&
-                        screenImage.walls[w].points[p] != X_WIDTH-1 &&
-                        screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS)
+                    /* Detect if a wall is being hit from the top */
+                    if (screenImage.walls[w].yPos == screenImage.ball.y+BALL_RADIUS+1)
                     {
-                        yCollision = 1;
+                        /* Leftmost wall */
+                        if (p == 0 &&
+                            screenImage.walls[w].points[0] >= screenImage.ball.x+BALL_RADIUS)
+                        {
+                            yCollision = 1;
+                            break;
+                        }
+                        /* Inner wall */
+                        else if ((screenImage.walls[w].points[p-1] < screenImage.ball.x-BALL_RADIUS &&
+                                  screenImage.walls[w].points[p] > screenImage.ball.x+BALL_RADIUS) ||
+                                 (screenImage.walls[w].points[p-1] >= screenImage.ball.x-BALL_RADIUS &&
+                                  screenImage.walls[w].points[p-1] <= screenImage.ball.x+BALL_RADIUS) ||
+                                 (screenImage.walls[w].points[p] >= screenImage.ball.x-BALL_RADIUS &&
+                                  screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS))
+                        {
+                            yCollision = 1;
+                            break;
+                        }
+                    }
+                    /* Detect if a wall is being hit from the side */
+                    if (p == 0 &&
+                        screenImage.walls[w].points[0] == screenImage.ball.x-BALL_RADIUS-1)
+                    {
+                        xCollisionR = 1;
                         break;
                     }
-                    /* Inner wall */
-                    else if ((screenImage.walls[w].points[p] < screenImage.ball.x-BALL_RADIUS &&
-                              screenImage.walls[w].points[p+1] > screenImage.ball.x+BALL_RADIUS) ||
-                             (screenImage.walls[w].points[p] >= screenImage.ball.x-BALL_RADIUS &&
-                              screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS) ||
-                             (screenImage.walls[w].points[p+1] >= screenImage.ball.x-BALL_RADIUS &&
-                              screenImage.walls[w].points[p+1] <= screenImage.ball.x+BALL_RADIUS))
+                    else if (screenImage.walls[w].points[p-1] == screenImage.ball.x+BALL_RADIUS+1)
                     {
-                        yCollision = 1;
+                        xCollisionR = 1;
+                        break;
+                    }
+                    else if (screenImage.walls[w].points[p] == screenImage.ball.x-BALL_RADIUS-1)
+                    {
+                        xCollisionL = 1;
                         break;
                     }
                 }
-                /* Detect if a wall is being hit from the side */
-                else
+
+                break;
+            }
+            /* Start with gap */
+            else
+            {
+                for (uint8_t p = 0; p < WALL_POINTS; p += 2)
                 {
+                    /* Detect if a wall is being hit from the top */
+                    if (screenImage.walls[w].yPos == screenImage.ball.y+BALL_RADIUS+1)
+                    {
+                        /* Leftmost wall */
+                        if (p == WALL_POINTS-1 &&
+                            screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS)
+                        {
+                            yCollision = 1;
+                            break;
+                        }
+                        /* Inner wall */
+                        else if ((screenImage.walls[w].points[p] < screenImage.ball.x-BALL_RADIUS &&
+                                  screenImage.walls[w].points[p+1] > screenImage.ball.x+BALL_RADIUS) ||
+                                 (screenImage.walls[w].points[p] >= screenImage.ball.x-BALL_RADIUS &&
+                                  screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS) ||
+                                 (screenImage.walls[w].points[p+1] >= screenImage.ball.x-BALL_RADIUS &&
+                                  screenImage.walls[w].points[p+1] <= screenImage.ball.x+BALL_RADIUS))
+                        {
+                            yCollision = 1;
+                            break;
+                        }
+                    }
+                    /* Detect if a wall is being hit from the side */
                     if (p == WALL_POINTS-1 &&
-                        screenImage.walls[w].points[p] != X_WIDTH-1 &&
                         screenImage.walls[w].points[p] == screenImage.ball.x+BALL_RADIUS+1)
                     {
                         xCollisionR = 1;
@@ -1088,123 +1115,11 @@ static uint8_t updateBallPos(void)
                         break;
                     }
                 }
-            }
 
-            break;
+                break;
+            }
         }
     }
-    
-//    /* Wall collision detection */
-//    for (uint8_t w = 0; w < WALLS_ON_SCREEN; w++)
-//    {
-//        /* Check if wall is on ball level */
-//        if (screenImage.walls[w].yPos >= screenImage.ball.y-BALL_RADIUS &&
-//            screenImage.walls[w].yPos <= screenImage.ball.y+BALL_RADIUS+1)
-//        {
-//            /* Start with wall */
-//            if (screenImage.walls[w].points[0] > MAX_GAP_WIDTH)
-//            {
-//                for (uint8_t p = 0; p < WALL_POINTS; p += 2)
-//                {
-//                    /* Detect if a wall is being hit from the top */
-//                    if (screenImage.walls[w].yPos == screenImage.ball.y+BALL_RADIUS+1)
-//                    {
-//                        /* Leftmost wall */
-//                        if (p == 0 &&
-//                            screenImage.walls[w].points[0] >= screenImage.ball.x+BALL_RADIUS)
-//                        {
-//                            yCollision = 1;
-//                            break;
-//                        }
-//                        /* Inner wall */
-//                        else if ((screenImage.walls[w].points[p-1] < screenImage.ball.x-BALL_RADIUS &&
-//                                  screenImage.walls[w].points[p] > screenImage.ball.x+BALL_RADIUS) ||
-//                                 (screenImage.walls[w].points[p-1] >= screenImage.ball.x-BALL_RADIUS &&
-//                                  screenImage.walls[w].points[p-1] <= screenImage.ball.x+BALL_RADIUS) ||
-//                                 (screenImage.walls[w].points[p] >= screenImage.ball.x-BALL_RADIUS &&
-//                                  screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS))
-//                        {
-//                            yCollision = 1;
-//                            break;
-//                        }
-//                    }
-//                    /* Detect if a wall is being hit from the side */
-//                    else
-//                    {
-//                        if (p == 0 &&
-//                            screenImage.walls[w].points[0] == screenImage.ball.x-BALL_RADIUS-1)
-//                        {
-//                            xCollisionR = 1;
-//                            break;
-//                        }
-//                        else if (screenImage.walls[w].points[p-1] == screenImage.ball.x+BALL_RADIUS+1)
-//                        {
-//                            xCollisionR = 1;
-//                            break;
-//                        }
-//                        else if (screenImage.walls[w].points[p] == screenImage.ball.x-BALL_RADIUS-1)
-//                        {
-//                            xCollisionL = 1;
-//                            break;
-//                        }
-//                    }
-//                }
-//
-//                break;
-//            }
-//            /* Start with gap */
-//            else
-//            {
-//                for (uint8_t p = 0; p < WALL_POINTS; p += 2)
-//                {
-//                    /* Detect if a wall is being hit from the top */
-//                    if (screenImage.walls[w].yPos == screenImage.ball.y+BALL_RADIUS+1)
-//                    {
-//                        /* Leftmost wall */
-//                        if (p == WALL_POINTS-1 &&
-//                            screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS)
-//                        {
-//                            yCollision = 1;
-//                            break;
-//                        }
-//                        /* Inner wall */
-//                        else if ((screenImage.walls[w].points[p] < screenImage.ball.x-BALL_RADIUS &&
-//                                  screenImage.walls[w].points[p+1] > screenImage.ball.x+BALL_RADIUS) ||
-//                                 (screenImage.walls[w].points[p] >= screenImage.ball.x-BALL_RADIUS &&
-//                                  screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS) ||
-//                                 (screenImage.walls[w].points[p+1] >= screenImage.ball.x-BALL_RADIUS &&
-//                                  screenImage.walls[w].points[p+1] <= screenImage.ball.x+BALL_RADIUS))
-//                        {
-//                            yCollision = 1;
-//                            break;
-//                        }
-//                    }
-//                    /* Detect if a wall is being hit from the side */
-//                    else
-//                    {
-//                        if (p == WALL_POINTS-1 &&
-//                            screenImage.walls[w].points[p] == screenImage.ball.x+BALL_RADIUS+1)
-//                        {
-//                            xCollisionR = 1;
-//                            break;
-//                        }
-//                        else if (screenImage.walls[w].points[p] == screenImage.ball.x+BALL_RADIUS+1)
-//                        {
-//                            xCollisionR = 1;
-//                            break;
-//                        }
-//                        else if (screenImage.walls[w].points[p+1] == screenImage.ball.x-BALL_RADIUS-1)
-//                        {
-//                            xCollisionL = 1;
-//                            break;
-//                        }
-//                    }
-//                }
-//
-//                break;
-//            }
-//        }
-//    }
 
     /* Detect if the screen borders have been reached */
     if (screenImage.ball.x-BALL_RADIUS == 0)
@@ -1237,7 +1152,6 @@ static void drawBall(void)
     xy_point p1 = {ball.x+BALL_RADIUS, ball.y}; 
     glcdDrawLine(p0, p1, &glcdSetPixel);
 
-    uint8_t dx = 0;
     for (uint8_t l = 1; l <= BALL_RADIUS; l++)
     {
         glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y-l}, (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y-l}, &glcdSetPixel);
