@@ -78,10 +78,6 @@
 #define SELECTOR_Y_START    6
 
 //TODO collision detection: fails sometimes
-//TODO make collision detection function smaller
-//TODO game sometimes freezes on reconnect
-//TODO accelerometer sometimes not disabled
-//TODO check cyclomatic complexity
 
 //TODO make better makefile or put modules in archives
 
@@ -478,7 +474,7 @@ static task_state_t play(game_state_t *game_state)
         } 
         if (PLAY != gameStates.next)
         {
-            if (wiimote.accStatus == 0 || CONNECT == gameStates.next)
+            if (wiimote.accStatus == 0 || RESET == gameStates.next)
             {
                 /* New highscore entry */
                 enterHighScore();
@@ -767,7 +763,8 @@ static void initLevel(void)
     {
         newWall = rand16() & (WALLS_AVAILABLE-1);
         /* Load new wall from PROGMEM */
-        memcpy_P((void *)screenImage.walls[w].points, &data_walls[newWall], WALL_POINTS);
+        memcpy_P(&screenImage.walls[w].points,
+                 &data_walls[newWall], WALL_POINTS);
         screenImage.walls[w].yPos = yPos;
         drawWall(w);
         yPos += WALL_GAP+1;
@@ -896,7 +893,7 @@ static void displayNewWall(uint8_t yOff)
     uint8_t newWall = rand16() & (WALLS_AVAILABLE-1);
 
     /* Load new wall from PROGMEM */
-    memcpy_P((void *)screenImage.walls[screenImage.topWall].points,
+    memcpy_P(&screenImage.walls[screenImage.topWall].points,
              &data_walls[newWall], WALL_POINTS);
     screenImage.walls[screenImage.topWall].yPos = yOff;
 
