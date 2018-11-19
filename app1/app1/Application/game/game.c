@@ -66,7 +66,7 @@
 #define ACC_DELTA   10
 
 /* Game parameters */
-#define TICK_PERIOD_MS      50
+#define TICK_PERIOD_MS      20
 #define TICKS_PER_SCROLL    10
 #define TICKS_PER_SCORE     2
 #define TICKS_PER_DIFF      20
@@ -114,17 +114,17 @@ static struct
 /* Wiimote status flags */
 static struct
 {
-    uint8_t triedConnect:1;
-    connection_status_t status:1;
-    uint8_t triedSetAcc:1;
-    uint8_t accStatus:1;
+    volatile uint8_t triedConnect:1;
+    volatile connection_status_t status:1;
+    volatile uint8_t triedSetAcc:1;
+    volatile uint8_t accStatus:1;
 } wiimote;
 
 /* Wiimote sensor values */
 static struct
 {
-    uint8_t buttons;
-    uint8_t accX;
+    volatile uint8_t buttons;
+    volatile uint8_t accX;
 } input;
 
 /* Counter variables */
@@ -221,6 +221,11 @@ static void enterHighScore(void);
  */
 void game_init(void)
 {
+    PORTK = 0;
+    DDRK = 0xff;
+    PORTL = 0;
+    DDRL = 0xff;
+
     glcdInit();
     music_init(&musicCB);
     adc_setCallbacks(&rand_feed, &music_setVolume);
@@ -265,23 +270,44 @@ void game_run(void)
             if (workLeft.game!= DONE)
             {
                 if (START == game_state)
+                {
                     workLeft.game = start(&game_state);
+                    PORTL = 0;
+                }
                 else if (CONNECT == game_state)
+                {
                     workLeft.game = connect(&game_state);
+                    PORTL = 2;
+                }
                 else if (SELECTPLAYER == game_state)
+                {
                     workLeft.game = selectPlayer(&game_state);
+                    PORTL = 4;
+                }
                 else if (PLAY == game_state)
+                {
                     workLeft.game = play(&game_state);
+                    PORTL = 8;
+                }
                 else if (GAMEOVER == game_state)
+                {
                     workLeft.game = gameOver(&game_state);
+                    PORTL = 16;
+                }
                 else if (HIGHSCORE == game_state)
+                {
                     workLeft.game = highScore(&game_state);
-
+                    PORTL = 32;
+                }
             }
             if (workLeft.music != DONE)
+            {
+                PORTL = 64;
                 workLeft.music = music_play();
-
+                PORTL = 128;
+            }
         } while (workLeft.game != DONE || workLeft.music != DONE);
+        PORTL = 1;
 
         sleep_cpu();
     }
@@ -330,31 +356,34 @@ static task_state_t connect(game_state_t *game_state)
 {
     if (INIT == gameStates.connect)
     {
+        PORTK = 1 | wiimote.status<<7;
         glcdFillScreen(GLCD_CLEAR);
         displayConnectText(10);
         gameStates.connect = WAIT;
         timer_startTimer3(CONNECT_FRAME_MS, TIMER_REPEAT, &connectAnimCB);
+        PORTK = 2 | wiimote.status<<7;
         return BUSY;
     }
     if (WAIT == gameStates.connect)
     {
         if (wiimote.triedConnect == 0)
         {
-            uint8_t mac[6];
-            memcpy_P(mac, mac_address, 6);
-            if (wiiUserConnect(0, mac, &connectCB) == SUCCESS)
+            PORTK = 4 | wiimote.status<<7;
+            if (wiiUserConnect(0, mac_address, &connectCB) == SUCCESS)
                 wiimote.triedConnect = 1;
+            PORTK = 8 | wiimote.status<<7;
         }
 
         if (CONNECTED == wiimote.status)
         {
+            PORTK = 16 | wiimote.status<<7;
             timer_stopTimer3();
             *game_state = START;
             gameStates.connect = INIT;
             input.buttons = 0;
+            PORTK = 32 | wiimote.status<<7;
         }
     }
-    screenDynamics.yShift = glcdGetYShift();
 
     return DONE;
 }
@@ -462,9 +491,9 @@ static task_state_t play(game_state_t *game_state)
     {
         if (PLAY == gameStates.next)
         {
-            if (DISCONNECTED == wiimote.status)
-                gameStates.next = CONNECT;
-            else if (BUTTON_B & input.buttons)
+            //if (DISCONNECTED == wiimote.status)
+            //    gameStates.next = CONNECT;
+            if (BUTTON_B & input.buttons)
                 gameStates.next = START;
         } 
         if (PLAY != gameStates.next)

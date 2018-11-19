@@ -40,6 +40,13 @@
 #define MAX_X       128
 #define MAX_Y       64
 
+#define busy_wait()             \
+        __asm__ __volatile__(   \
+                "nop\n\t"       \
+                "nop\n\t"       \
+                "nop\n\t"       \
+                "nop\n\t" ::)
+
 typedef enum {
     CONTROLLER_0 = (1<<GLCD_CTRL_CS1),
     CONTROLLER_1 = (1<<GLCD_CTRL_CS0),
@@ -212,7 +219,9 @@ static void halGlcdCtrlWriteData(const controller_t controller,
     /* Prepare for data write access */
     GLCD_DATA_PORT = data;
     GLCD_CTRL_PORT = (GLCD_CTRL_PORT & (1<<GLCD_CTRL_RESET)) | (1<<GLCD_CTRL_RS) | controller;
+    busy_wait();
     GLCD_CTRL_PORT |= (1<<GLCD_CTRL_EN);
+    busy_wait();
 
     GLCD_CTRL_PORT &= ~((1<<GLCD_CTRL_EN)|CONTROLLER_B);
 }
@@ -233,7 +242,9 @@ static uint8_t halGlcdCtrlReadData(const controller_t controller)
     
     /* Prepare for data read access */
     GLCD_CTRL_PORT = (GLCD_CTRL_PORT & (1<<GLCD_CTRL_RESET)) | (1<<GLCD_CTRL_RW) | (1<<GLCD_CTRL_RS) | controller;
+    busy_wait();
     GLCD_CTRL_PORT |= (1<<GLCD_CTRL_EN);
+    busy_wait();
     
     data = GLCD_DATA_PIN;
 
@@ -284,7 +295,9 @@ static void halGlcdCtrlWriteCmd(const controller_t controller,
     /* Prepare for data write access */
     GLCD_DATA_PORT = data;
     GLCD_CTRL_PORT = (GLCD_CTRL_PORT & (1<<GLCD_CTRL_RESET)) | controller;
+    busy_wait();
     GLCD_CTRL_PORT |= (1<<GLCD_CTRL_EN);
+    busy_wait();
    
     GLCD_CTRL_PORT &= ~((1<<GLCD_CTRL_EN)|CONTROLLER_B);
 }
