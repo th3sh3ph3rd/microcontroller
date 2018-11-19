@@ -66,7 +66,7 @@
 #define ACC_DELTA   10
 
 /* Game parameters */
-#define TICK_PERIOD_MS      20
+#define TICK_PERIOD_MS      40
 #define TICKS_PER_SCROLL    10
 #define TICKS_PER_SCORE     2
 #define TICKS_PER_DIFF      20
@@ -88,7 +88,7 @@
 //TODO animate/blink player selector
 //TODO live score display
 
-typedef enum {START, CONNECT, SELECTPLAYER, PLAY, GAMEOVER, HIGHSCORE} game_state_t;
+typedef enum {START, CONNECT, RESET, SELECTPLAYER, PLAY, GAMEOVER, HIGHSCORE} game_state_t;
 typedef enum {INIT, WAIT} static_state_t;
 typedef enum {SETUP, UPDATE, SCROLL, LEVEL, NEXT} tick_state_t;
 
@@ -104,7 +104,7 @@ static struct
 {
     game_state_t next;
     static_state_t start:1;
-    static_state_t connect:1;
+    static_state_t reset:1;
     static_state_t selectPlayer:1;
     static_state_t gameOver:1;
     static_state_t highScore:1;
@@ -194,12 +194,14 @@ static void connectAnimCB(void);
 /* Local functions */
 static task_state_t start(game_state_t *game_state);
 static task_state_t connect(game_state_t *game_state);
+static task_state_t reset(void);
 static task_state_t selectPlayer(game_state_t *game_state);
 static task_state_t play(game_state_t *game_state);
 static task_state_t gameOver(game_state_t *game_state);
 static task_state_t highScore(game_state_t *game_state);
 static void displayStartText(uint8_t yTop);
 static void displayConnectText(uint8_t yTop);
+static void displayResetText(uint8_t yTop);
 static void displaySelectPlayerText(uint8_t yTop);
 static void displayGameOverText(uint8_t yTop);
 static void displayHighScoreText(uint8_t yTop);
@@ -221,16 +223,11 @@ static void enterHighScore(void);
  */
 void game_init(void)
 {
-    PORTK = 0;
-    DDRK = 0xff;
-    PORTL = 0;
-    DDRL = 0xff;
-
     glcdInit();
     music_init(&musicCB);
     adc_setCallbacks(&rand_feed, &music_setVolume);
     adc_init();
-    wiiUserInit(&buttonCB, &accelCB); 
+    while (wiiUserInit(&buttonCB, &accelCB) != SUCCESS); 
     
     /* Initialize the structs */
     wiimote.triedConnect = 0;
@@ -258,7 +255,7 @@ void game_init(void)
  */
 void game_run(void)
 {
-    game_state_t game_state = START;
+    game_state_t game_state = CONNECT;
 
     set_sleep_mode(SLEEP_MODE_IDLE);
     sleep_enable();
@@ -270,44 +267,25 @@ void game_run(void)
             if (workLeft.game!= DONE)
             {
                 if (START == game_state)
-                {
                     workLeft.game = start(&game_state);
-                    PORTL = 0;
-                }
                 else if (CONNECT == game_state)
-                {
                     workLeft.game = connect(&game_state);
-                    PORTL = 2;
-                }
+                else if (RESET == game_state)
+                    workLeft.game = reset();
                 else if (SELECTPLAYER == game_state)
-                {
                     workLeft.game = selectPlayer(&game_state);
-                    PORTL = 4;
-                }
                 else if (PLAY == game_state)
-                {
                     workLeft.game = play(&game_state);
-                    PORTL = 8;
-                }
                 else if (GAMEOVER == game_state)
-                {
                     workLeft.game = gameOver(&game_state);
-                    PORTL = 16;
-                }
                 else if (HIGHSCORE == game_state)
-                {
                     workLeft.game = highScore(&game_state);
-                    PORTL = 32;
-                }
             }
             if (workLeft.music != DONE)
             {
-                PORTL = 64;
                 workLeft.music = music_play();
-                PORTL = 128;
             }
         } while (workLeft.game != DONE || workLeft.music != DONE);
-        PORTL = 1;
 
         sleep_cpu();
     }
@@ -330,7 +308,7 @@ static task_state_t start(game_state_t *game_state)
     if (WAIT == gameStates.start)
     {
         if (DISCONNECTED == wiimote.status)
-            *game_state = CONNECT;
+            *game_state = RESET;
         else if (BUTTON_A & input.buttons)
             *game_state = SELECTPLAYER;
         else if (BUTTON_B & input.buttons)
@@ -354,37 +332,39 @@ static task_state_t start(game_state_t *game_state)
  */
 static task_state_t connect(game_state_t *game_state)
 {
-    if (INIT == gameStates.connect)
-    {
-        PORTK = 1 | wiimote.status<<7;
-        glcdFillScreen(GLCD_CLEAR);
-        displayConnectText(10);
-        gameStates.connect = WAIT;
-        timer_startTimer3(CONNECT_FRAME_MS, TIMER_REPEAT, &connectAnimCB);
-        PORTK = 2 | wiimote.status<<7;
-        return BUSY;
-    }
-    if (WAIT == gameStates.connect)
+    glcdFillScreen(GLCD_CLEAR);
+    displayConnectText(10);
+    timer_startTimer3(CONNECT_FRAME_MS, TIMER_REPEAT, &connectAnimCB);
+
+    while (CONNECTED != wiimote.status)
     {
         if (wiimote.triedConnect == 0)
         {
-            PORTK = 4 | wiimote.status<<7;
-            if (wiiUserConnect(0, mac_address, &connectCB) == SUCCESS)
-                wiimote.triedConnect = 1;
-            PORTK = 8 | wiimote.status<<7;
-        }
-
-        if (CONNECTED == wiimote.status)
-        {
-            PORTK = 16 | wiimote.status<<7;
-            timer_stopTimer3();
-            *game_state = START;
-            gameStates.connect = INIT;
-            input.buttons = 0;
-            PORTK = 32 | wiimote.status<<7;
+            while (wiiUserConnect(0, mac_address, &connectCB) != SUCCESS);
+            wiimote.triedConnect = 1;
         }
     }
+    
+    timer_stopTimer3();
+    *game_state = START;
 
+    return DONE;
+}
+
+/*
+ * @brief               Display the reset screen, called when wiimote disconnected.
+ * @param game_state    Contains the next state after the procedure call.
+ * @return              Returns DONE.
+ */
+static task_state_t reset(void)
+{
+    if (INIT == gameStates.reset)
+    {
+        glcdFillScreen(GLCD_CLEAR);
+        displayResetText(10);
+        gameStates.reset = WAIT;
+    }
+        
     return DONE;
 }
 
@@ -409,7 +389,7 @@ static task_state_t selectPlayer(game_state_t *game_state)
     if (WAIT == gameStates.selectPlayer)
     {
         if (DISCONNECTED == wiimote.status)
-            *game_state = CONNECT;
+            *game_state = RESET;
         else if (BUTTON_A & input.buttons)
             *game_state = PLAY;
         else if (BUTTON_B & input.buttons)
@@ -491,14 +471,14 @@ static task_state_t play(game_state_t *game_state)
     {
         if (PLAY == gameStates.next)
         {
-            //if (DISCONNECTED == wiimote.status)
-            //    gameStates.next = CONNECT;
-            if (BUTTON_B & input.buttons)
+            if (DISCONNECTED == wiimote.status)
+                gameStates.next = RESET;
+            else if (BUTTON_B & input.buttons)
                 gameStates.next = START;
         } 
         if (PLAY != gameStates.next)
         {
-            if (wiimote.accStatus == 0)
+            if (wiimote.accStatus == 0 || CONNECT == gameStates.next)
             {
                 /* New highscore entry */
                 enterHighScore();
@@ -537,7 +517,7 @@ static task_state_t gameOver(game_state_t *game_state)
     if (WAIT == gameStates.gameOver)
     {
         if (DISCONNECTED == wiimote.status)
-            *game_state = CONNECT;
+            *game_state = RESET;
         else if (BUTTON_A & input.buttons)
             *game_state = START;
         else if (BUTTON_B & input.buttons)
@@ -570,7 +550,7 @@ static task_state_t highScore(game_state_t *game_state)
     if (WAIT == gameStates.highScore)
     {
         if (DISCONNECTED == wiimote.status)
-            *game_state = CONNECT;
+            *game_state = RESET;
         else if (BUTTON_A & input.buttons)
             *game_state = START;
 
@@ -691,6 +671,21 @@ static void displayConnectText(uint8_t yTop)
     glcdDrawTextPgm(data_connecting, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
     glcdDrawTextPgm(data_towiimote, startPoint, &Standard5x7, &glcdSetPixel);
+}
+
+/*
+ * @brief   Display the text for the reset screen.
+ * @param y The y coordinate of the top line.
+ */
+static void displayResetText(uint8_t yTop)
+{
+    xy_point startPoint;
+    startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
+    startPoint.x = 10;
+
+    glcdDrawTextPgm(data_disconnected, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(data_reset, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
 /*
