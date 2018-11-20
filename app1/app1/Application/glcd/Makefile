@@ -20,7 +20,7 @@ PRFLAGS     = -m$(MCU)
 
 all: $(FILENAME).o $(OBJECTS)
 
-$(FILENAME).o: $(FILENAME).h $(FILENAME).c
+$(FILENAME).o: $(FILENAME).c
 	$(CCLD) $(CCFLAGS) -c -o $@ $<
 
 %.o: %.c

@@ -7,20 +7,19 @@
 #   install     downloads elf file to mcu
 #
 
-#TODO write sub makefiles
 #TODO make -I, -L and -l generic
 
 FILENAME    = main
-MODULES     = adc font game glcd hal_wt41_fc_uart music rand spi timer
+MODULES     = adc game glcd hal_wt41_fc_uart music rand spi Standard5x7 timer
 ARCHIVES    = mp3 sdcard wiimote
 OBJECTS     = $(FILENAME).o
-OBJECTS	   += $(foreach module,$(MODULES),$(module)/$(module).o)
+OBJECTS	   += $(foreach module,$(MODULES),$(module)/$(module).o) glcd/hal_glcd.o
 
 MCU         = atmega1280
 
 CCLD        = avr-gcc
 CCFLAGS     = -mmcu=$(MCU) -std=gnu99 -Wall -Wextra -Wstrict-prototypes -frename-registers
-CCFLAGS	   += -fshort-enums -fpack-struct -I. -Iadc -Ifont -Igame -Iglcd -Ihal_wt41_fc_uart -Imusic -Ilibmp3 -Ilibwiimote -Irand -Ilibsdcard -Ispi -Itimer
+CCFLAGS	   += -fshort-enums -fpack-struct -I. -Igame
 LDFLAGS     = -mmcu=$(MCU) -Llibmp3 -Llibsdcard -Llibwiimote -lmp3 -lsdcard -lwiimote
 
 PROG        = avrprog2
@@ -34,8 +33,8 @@ $(FILENAME).elf: $(OBJECTS)
 $(FILENAME).o: $(FILENAME).c
 	$(CCLD) $(CCFLAGS) -c -o $@ $<
 
-%.o: %.c
-	$(MAKE) -C $(patsubst %.o,,$@)
+%.o:
+	$(MAKE) -C $(dir $@)
 
 install: $(FILENAME).elf
 	$(PROG) $(PRFLAGS) --flash w:$<

@@ -11,7 +11,7 @@ FILENAME    = hal_wt41_fc_uart
 MCU         = atmega1280
 
 CCLD        = avr-gcc
-CCFLAGS     = -mmcu=$(MCU) -std=gnu99 -Wall -Wextra -Wstrict-prototypes -frename-registers -fshort-enums -fpack-struct -I.
+CCFLAGS     = -mmcu=$(MCU) -std=gnu99 -Wall -Wextra -Wstrict-prototypes -frename-registers -fshort-enums -fpack-struct -I. -I../timer
 LDFLAGS     = -mmcu=$(MCU)
 
 PROG        = avrprog2

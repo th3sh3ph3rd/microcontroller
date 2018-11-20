@@ -7,19 +7,19 @@
 #   install     downloads elf file to mcu
 #
 
-#TODO make -I, -L and -l generic
-
 FILENAME    = main
-MODULES     = adc game glcd hal_wt41_fc_uart music rand spi Standard5x7 timer
-ARCHIVES    = mp3 sdcard wiimote
+#FILENAME    = glcd_test
 OBJECTS     = $(FILENAME).o
-OBJECTS	   += $(foreach module,$(MODULES),$(module)/$(module).o) glcd/hal_glcd.o
+#OBJECTS	   += adc/adc.o font/Standard5x7.o game/game.o hal_wt41_fc_uart/hal_wt41_fc_uart.o music/music.o rand/rand.o spi/spi.o timer/timer.o
+OBJECTS	   += adc/adc.o Standard5x7/Standard5x7.o game/game.o glcd/glcd.o glcd/hal_glcd.o hal_wt41_fc_uart/hal_wt41_fc_uart.o music/music.o rand/rand.o spi/spi.o timer/timer.o
 
 MCU         = atmega1280
 
 CCLD        = avr-gcc
 CCFLAGS     = -mmcu=$(MCU) -std=gnu99 -Wall -Wextra -Wstrict-prototypes -frename-registers
-CCFLAGS	   += -fshort-enums -fpack-struct -I. -Iadc -Ifont -Igame -Iglcd -Ihal_wt41_fc_uart -Imusic -Ilibmp3 -Ilibwiimote -Irand -Ilibsdcard -Ispi -Itimer
+#CCFLAGS	   += -fshort-enums -fpack-struct -I. -Iadc -Ifont -Igame -Ihal_wt41_fc_uart -Imusic -Ilibglcd -Ilibmp3 -Ilibwiimote -Irand -Ilibsdcard -Ispi -Itimer
+CCFLAGS	   += -fshort-enums -fpack-struct -I. -Iadc -IStandard5x7 -Igame -Iglcd -Ihal_wt41_fc_uart -Imusic -Ilibmp3 -Ilibwiimote -Irand -Ilibsdcard -Ispi -Itimer
+#LDFLAGS     = -mmcu=$(MCU) -Llibglcd -Llibmp3 -Llibsdcard -Llibwiimote -lglcd -lmp3 -lsdcard -lwiimote
 LDFLAGS     = -mmcu=$(MCU) -Llibmp3 -Llibsdcard -Llibwiimote -lmp3 -lsdcard -lwiimote
 
 PROG        = avrprog2
@@ -30,11 +30,8 @@ all: $(FILENAME).elf
 $(FILENAME).elf: $(OBJECTS)
 	$(CCLD) -o $@ $(OBJECTS) $(LDFLAGS)
 
-$(FILENAME).o: $(FILENAME).c
+%.o: %.c
 	$(CCLD) $(CCFLAGS) -c -o $@ $<
-
-%.o:
-	$(MAKE) -C $(dir $@)
 
 install: $(FILENAME).elf
 	$(PROG) $(PRFLAGS) --flash w:$<

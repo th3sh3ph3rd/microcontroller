@@ -47,10 +47,10 @@ const unsigned char data_connectFrames[2][4][2] PROGMEM =
 
 /* A set of randomly generated walls for the game */
 #define WALL_POINTS 5
-typedef const unsigned char wall_points_t[WALL_POINTS]; 
+typedef unsigned char wall_points_t[WALL_POINTS]; 
 #define WALLS_AVAILABLE 64
 #define MAX_GAP_WIDTH 12
-wall_points_t data_walls[WALLS_AVAILABLE] PROGMEM =
+const wall_points_t data_walls[WALLS_AVAILABLE] PROGMEM =
 {
     {9,38,49,75,84},
     {43,52,78,89,118},
