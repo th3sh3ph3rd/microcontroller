@@ -56,7 +56,7 @@ static struct
     volatile uint8_t wt41_reset_complete:1;
     volatile uint8_t ringbuffer_lock:1;
     volatile uint8_t CTS_state:1;
-    volatile enum sendstate send_state:3;
+    volatile enum sendstate send_state;
 } flags;
 
 /* Local functions */

@@ -15,108 +15,114 @@
 #include <stdint.h>
 
 /* Common strings*/
-const char data_menu_b[] PROGMEM = "A: Menu";
-const char data_player[] PROGMEM = "Player ";
-const char data_game_name[] PROGMEM = "Falling down ball";
-const char data_play_b[] PROGMEM = "A: Play";
-const char data_highscore_b[] PROGMEM = "B: Highscore";
-const char data_start_b[] PROGMEM = "A:Play B:Highscore";
-const char data_connecting[] PROGMEM = "Connecting";
-const char data_towiimote[] PROGMEM = "to wiimote...";
-const char data_disconnected[] PROGMEM = "Disconnected!";
-const char data_reset[] PROGMEM = "Reset board!";
-const char data_select_b[] PROGMEM = "A:Play B:Menu";
-const char data_pause[] PROGMEM = "Game paused";
-const char data_end_b[] PROGMEM = "A: End game";
-const char data_data_resume_b[] PROGMEM = "B: Resume";
-const char data_gameover[] PROGMEM = "Game over!";
+const char menu_b[] PROGMEM = "A: Menu";
+//const char highscore_b[] PROGMEM = "B: Highscore";
+const char player_1[] PROGMEM = "Player 1";
+const char player_2[] PROGMEM = "Player 2";
+const char player_3[] PROGMEM = "Player 3";
+const char player_4[] PROGMEM = "Player 4";
+const char player_5[] PROGMEM = "Player 5";
 
-/* Connection screen animation */
-struct connectFrame
+/* Start screen */
+#define START_LINES 3
+const char game_name[] PROGMEM = "Falling down ball";
+const char play_b[] PROGMEM = "A: Play";
+const char highscore_b[] PROGMEM = "B: Highscore";
+const char start_b[] PROGMEM = "A:Play B:Highscore";
+PGM_P const data_startText[] PROGMEM =
 {
-    xy_point l0p0;
-    xy_point l0p1;
-    xy_point l1p0;
-    xy_point l1p1;
+    game_name,
+    play_b,
+    highscore_b
 };
-const unsigned char data_connectFrames[2][4][2] PROGMEM =
+
+/* Connect screen */
+#define CONNECT_LINES 2
+const char connecting[] PROGMEM = "Connecting";
+const char towiimote[] PROGMEM = "to wiimote...";
+PGM_P const data_connectText[] PROGMEM =
 {
-    {{53, 40}, {73, 40}, {63, 35}, {63, 45}},
-    {{53, 35}, {73, 45}, {73, 35}, {53, 45}}
+    connecting,
+    towiimote,
+};
+
+/* Select player screen */
+const char select_b[] PROGMEM = "A:Play B:Menu";
+
+/* Pause screen */
+#define PAUSE_LINES 3
+const char pause[] PROGMEM = "Game paused";
+const char end_b[] PROGMEM = "A: End game";
+const char resume_b[] PROGMEM = "B: Resume";
+PGM_P const data_pauseText[] PROGMEM =
+{
+    pause,
+    resume_b,
+    end_b
+};
+
+/* Game over screen */
+#define GAMEOVER_LINES 3
+const char gameover[] PROGMEM = "Game over!";
+PGM_P const data_gameoverText[] PROGMEM =
+{
+    gameover,
+    menu_b,
+    highscore_b
+};
+
+/* Highscore screen */
+#define HIGHSCORE_LINES 6
+PGM_P const data_highscoreText[] PROGMEM =
+{
+    player_1,
+    player_2,
+    player_3,
+    player_4,
+    player_5,
+    menu_b,
 };
 
 /* A set of randomly generated walls for the game */
 #define WALL_POINTS 5
-typedef unsigned char wall_points_t[WALL_POINTS]; 
-#define WALLS_AVAILABLE 64
-#define MAX_GAP_WIDTH 12
-const wall_points_t data_walls[WALLS_AVAILABLE] PROGMEM =
+typedef const unsigned char wall_points_t[WALL_POINTS]; 
+#define WALLS_AVAILABLE 32
+wall_points_t data_walls[WALLS_AVAILABLE] PROGMEM =
 {
-    {9,38,49,75,84},
-    {43,52,78,89,118},
-    {10,36,47,63,73},
-    {54,64,80,91,117},
-    {12,41,49,79,91},
-    {36,48,78,86,115},
-    {8,32,41,60,69},
-    {58,67,86,95,119},
-    {10,25,35,58,67},
-    {60,69,92,102,117},
-    {12,28,38,58,70},
-    {57,69,89,99,115},
-    {9,39,50,71,81},
-    {46,56,77,88,118},
-    {8,36,48,78,88},
-    {39,49,79,91,119},
-    {12,37,45,65,76},
-    {51,62,82,90,115},
-    {10,40,49,80,90},
-    {37,47,78,87,117},
-    {9,32,44,62,71},
-    {56,65,83,95,118},
-    {12,32,42,61,72},
-    {55,66,85,95,115},
-    {11,26,35,50,58},
-    {69,77,92,101,116},
-    {12,32,43,64,76},
-    {51,63,84,95,115},
-    {12,43,54,84,96},
-    {31,43,73,84,115},
-    {12,34,44,74,82},
-    {45,53,83,93,115},
-    {12,32,44,67,78},
-    {49,60,83,95,115},
-    {8,30,40,62,71},
-    {56,65,87,97,119},
-    {8,23,34,59,69},
-    {58,68,93,104,119},
-    {8,32,40,67,76},
-    {51,60,87,95,119},
-    {8,33,45,69,78},
-    {49,58,82,94,119},
-    {12,39,50,69,79},
-    {48,58,77,88,115},
-    {9,39,47,66,78},
-    {49,61,80,88,118},
-    {8,27,39,60,71},
-    {56,67,88,100,119},
-    {10,33,44,67,79},
-    {48,60,83,94,117},
-    {8,36,46,73,81},
-    {46,54,81,91,119},
-    {11,26,34,57,69},
-    {58,70,93,101,116},
-    {11,32,43,69,77},
-    {50,58,84,95,116},
-    {9,25,37,55,63},
-    {64,72,90,102,118},
-    {8,23,35,66,74},
-    {53,61,92,104,119},
-    {11,27,35,55,65},
-    {62,72,92,100,116},
-    {10,25,34,60,69},
-    {58,67,93,102,117}
+	{8,40,69,110,127},
+	{0,17,58,87,119},
+	{15,32,42,84,127},
+	{0,43,85,95,112},
+	{14,45,57,104,127},
+	{0,23,70,82,113},
+	{21,40,50,65,127},
+	{0,62,77,87,106},
+	{17,38,62,116,127},
+	{0,11,65,89,110},
+	{9,46,59,77,127},
+	{0,50,68,81,118},
+	{19,47,67,111,127},
+	{0,16,60,80,108},
+	{2,13,26,103,127},
+	{0,24,101,114,125},
+	{16,43,52,64,127},
+	{0,63,75,84,111},
+	{1,35,46,103,127},
+	{0,24,81,92,126},
+	{13,23,48,61,127},
+	{0,66,79,104,114},
+	{15,48,80,113,127},
+	{0,14,47,79,112},
+	{9,23,34,80,127},
+	{0,47,93,104,118},
+	{1,27,63,79,127},
+	{0,48,64,100,126},
+	{18,31,66,89,127},
+	{0,38,61,96,109},
+	{12,23,34,96,127},
+	{0,31,93,104,115}
 };
 
 #endif
+
 
