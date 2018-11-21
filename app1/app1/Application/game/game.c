@@ -4,7 +4,7 @@
  * @author Jan Nausner <e01614835@student.tuwien.ac.at>
  * @date 2018-11-13
  *
- * Implementation of the game.
+ * Implementation of the falling down ball game.
  *
  */
 
@@ -31,8 +31,6 @@
 #define Y_HEIGHT    64
 #define TOP         0
 #define BOTTOM      Y_HEIGHT-1
-#define RAM_SIZE    8192
-#define RAM_ROWS    RAM_SIZE/Y_HEIGHT
 
 /* Wii button encoding */
 #define BUTTON_2_WII    0x01
@@ -76,12 +74,29 @@
 #define SELECTOR_RADIUS     2
 #define SELECTOR_Y_START    6
 
+//TODO reintegrate music
+//TODO new ball
+//TODO new highscore and initialization
+//TODO use new data header
+//TODO counter initailization and memcpy for loading walls
+//TODO remove uneeded buttons and acceleration values
+//TODO use task type and add comments
+//TODO use new acceleration calculation
+//TODO new walls & collision detection
+//TODO check return value in connection and acc activation
+//TODO integrate connect screen animation
+//TODO implement scroll speed increase correctly
+//TODO use bitfields
+//TODO on enabling/disabling acc check for disconnected to avoid deadlock
+
+//TODO show score on gameover
+
 typedef enum {START, CONNECT, SELECTPLAYER, PLAY, GAMEOVER, HIGHSCORE} game_state_t;
 typedef enum {INIT, WAIT} static_state_t;
 typedef enum {SETUP, UPDATE, SCROLL, LEVEL, NEXT} tick_state_t;
 
 /* WIImote MAC address */
-//TODO move to PROGMEM
+//TODO use external header
 static const uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0xb9, 0xf3, 0x3e };
 
 /* Interrupt flags */
