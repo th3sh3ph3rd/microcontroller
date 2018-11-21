@@ -23,6 +23,7 @@
 
 static uint32_t sdcardBlockAddress = SONG_START;
 static uint8_t spiLock = 0;
+static uint8_t oldVolume;
 
 static uint8_t scaleVolume(uint8_t volume); 
 
