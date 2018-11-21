@@ -66,7 +66,7 @@
 #define ACC_DELTA   10
 
 /* Game parameters */
-#define TICK_PERIOD_MS      40
+#define TICK_PERIOD_MS      30
 #define TICKS_PER_SCROLL    10
 #define TICKS_PER_SCORE     5
 #define TICKS_PER_DIFF      250
@@ -345,7 +345,6 @@ static task_state_t connect(game_state_t *game_state)
             input.buttons = 0;
         }
     }
-    screenDynamics.yShift = glcdGetYShift();;
 
     return DONE;
 }
@@ -434,7 +433,7 @@ static task_state_t play(game_state_t *game_state)
                 *game_state = CONNECT;
                 gameStates.play = NEXT;
             }
-            if (wiiUserSetAccel(0, 1, &setAccelCB) == SUCCESS)
+            else if (wiiUserSetAccel(0, 1, &setAccelCB) == SUCCESS)
                 wiimote.triedSetAcc = 1;
         }
         return BUSY;
@@ -485,7 +484,7 @@ static task_state_t play(game_state_t *game_state)
                     *game_state = CONNECT;
                     gameStates.play = NEXT;
                 }
-                if (wiiUserSetAccel(0, 0, &setAccelCB) == SUCCESS)
+                else if (wiiUserSetAccel(0, 0, &setAccelCB) == SUCCESS)
                     wiimote.triedSetAcc = 1;
             }
         }
