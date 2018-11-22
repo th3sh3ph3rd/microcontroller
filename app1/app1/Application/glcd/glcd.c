@@ -169,9 +169,22 @@ void glcdDrawRect(const xy_point p1, const xy_point p2,
                   void (*drawPx)(const uint8_t, const uint8_t))
 {
     glcdDrawLine(p1, (xy_point) {p2.x, p1.y}, drawPx);
-    glcdDrawLine((xy_point) {p1.x, p2.y}, p2, drawPx);
-    glcdDrawLine(p1, (xy_point) {p1.x, p2.y}, drawPx);
-    glcdDrawLine((xy_point) {p2.x, p1.y}, p2, drawPx);
+
+    /* Only draw second horizontal line if rect higher than 1 */
+    if (p1.y > p2.y || p2.y > p1.y)
+        glcdDrawLine((xy_point) {p1.x, p2.y}, p2, drawPx);
+
+    /* Only draw vertical edges if rect higher than 2px */
+    if (p1.y > p2.y && (p1.y - p2.y) > 2)
+    {
+        glcdDrawLine((xy_point) {p1.x, p1.y-1}, (xy_point) {p1.x, p2.y+1}, drawPx);
+        glcdDrawLine((xy_point) {p2.x, p1.y-1}, (xy_point) {p2.x, p2.y+1}, drawPx);
+    }
+    else if (p2.y > p1.y && (p2.y - p1.y) > 2)
+    {
+        glcdDrawLine((xy_point) {p1.x, p1.y+1}, (xy_point) {p1.x, p2.y-1}, drawPx);
+        glcdDrawLine((xy_point) {p2.x, p1.y+1}, (xy_point) {p2.x, p2.y-1}, drawPx);
+    }
 }
 
 /**

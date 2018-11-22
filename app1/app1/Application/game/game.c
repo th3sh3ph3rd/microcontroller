@@ -80,10 +80,6 @@
 #define LINE_SPACING        10
 #define LINE_MARGIN         10
 
-//TODO test glcd
-//TODO remove glcd todos
-//TODO finish new makefile
-
 typedef enum {START, CONNECT, SELECTPLAYER, PLAY, GAMEOVER, HIGHSCORE} game_state_t;
 typedef enum {INIT, WAIT} static_state_t;
 typedef enum {SETUP, UPDATE, SCROLL, LEVEL, NEXT} tick_state_t;
