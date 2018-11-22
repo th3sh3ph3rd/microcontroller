@@ -4,7 +4,7 @@
  * @author Jan Nausner <e01614835@student.tuwien.ac.at>
  * @date 2018-11-13
  *
- * Implementation of the falling down ball game.
+ * Implementation of the game.
  *
  */
 
@@ -25,14 +25,14 @@
 #include <timer.h>
 #include <music.h>
 #include <data.h>
-#include <mac.h>
-#include <task.h>
 #include <game.h>
 
 #define X_WIDTH     128
 #define Y_HEIGHT    64
 #define TOP         0
 #define BOTTOM      Y_HEIGHT-1
+#define RAM_SIZE    8192
+#define RAM_ROWS    RAM_SIZE/Y_HEIGHT
 
 /* Wii button encoding */
 #define BUTTON_2_WII    0x01
@@ -66,54 +66,50 @@
 #define ACC_DELTA   10
 
 /* Game parameters */
-#define TICK_PERIOD_MS      40
-#define TICKS_PER_SCROLL    9
-#define TICKS_PER_SCORE     5
-#define TICKS_PER_DIFF      100
-#define MAX_DIFFICULTY      2
+#define TICKS_PER_SCROLL    10
+#define TICKS_PER_SCORE     20
+#define TICKS_PER_DIFF      20
 #define WALL_GAP            15
-#define BALL_RADIUS         2
+#define BALL_RADIUS         3
 #define GRAVITY             1
 #define PLAYERNUM           5
 #define SELECTOR_RADIUS     2
 #define SELECTOR_Y_START    6
-#define LINE_SPACING        10
-#define LINE_MARGIN         10
-
-//TODO test glcd
-//TODO remove glcd todos
-//TODO finish new makefile
 
 typedef enum {START, CONNECT, SELECTPLAYER, PLAY, GAMEOVER, HIGHSCORE} game_state_t;
 typedef enum {INIT, WAIT} static_state_t;
 typedef enum {SETUP, UPDATE, SCROLL, LEVEL, NEXT} tick_state_t;
 
+/* WIImote MAC address */
+//TODO move to PROGMEM
+static const uint8_t mac[6] = { 0x58, 0xbd, 0xa3, 0x54, 0xfb, 0xaa };
+
 /* Interrupt flags */
 static struct
 {
-    volatile task_state_t game;
-    volatile task_state_t music;
+    volatile uint8_t game;
+    volatile uint8_t music;
 } workLeft;
 
 /* State variables */
 static struct
 {
     game_state_t next;
-    static_state_t start:1;
-    static_state_t connect:1;
-    static_state_t selectPlayer:1;
-    static_state_t gameOver:1;
-    static_state_t highScore:1;
+    static_state_t start;
+    static_state_t connect;
+    static_state_t selectPlayer;
+    static_state_t gameOver;
+    static_state_t highScore;
     tick_state_t play;
 } gameStates;
 
 /* Wiimote status flags */
 static struct
 {
-    uint8_t triedConnect:1;
-    connection_status_t status:1;
-    uint8_t triedSetAcc:1;
-    uint8_t accStatus:1;
+    uint8_t triedConnect;
+    connection_status_t status;
+    uint8_t triedSetAcc;
+    uint8_t accStatus;
 } wiimote;
 
 /* Wiimote sensor values */
@@ -121,6 +117,8 @@ static struct
 {
     uint8_t buttons;
     uint8_t accX;
+    uint8_t accY;
+    uint8_t accZ;
 } input;
 
 /* Counter variables */
@@ -161,23 +159,13 @@ static struct
 } screenDynamics;
 
 /* Player data */
-struct highScoreEntry
-{
-    int8_t player;
-    uint16_t score;
-};
 static struct
 {
     uint8_t currPlayer;
     uint16_t currScore;
-    struct highScoreEntry highScore[PLAYERNUM];
+    uint16_t highScore[PLAYERNUM];
 } playerData;
 
-/* Connect screen animation figure */
-#define CONNECT_FRAMES 2
-#define CONNECT_FRAME_MS 350
-
-uint8_t currFrame;
 /* Callback functions */
 static void gameTimerCB(void);
 static void musicCB(void);
@@ -185,15 +173,14 @@ static void buttonCB(uint8_t wii, uint16_t buttonStates);
 static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z);
 static void connectCB(uint8_t wii, connection_status_t status);
 static void setAccelCB(uint8_t wii, error_t status);
-static void connectAnimCB(void);
 
 /* Local functions */
-static task_state_t start(game_state_t *game_state);
-static task_state_t connect(game_state_t *game_state);
-static task_state_t selectPlayer(game_state_t *game_state);
-static task_state_t play(game_state_t *game_state);
-static task_state_t gameOver(game_state_t *game_state);
-static task_state_t highScore(game_state_t *game_state);
+static uint8_t start(game_state_t *game_state);
+static uint8_t connect(game_state_t *game_state);
+static uint8_t selectPlayer(game_state_t *game_state);
+static uint8_t play(game_state_t *game_state);
+static uint8_t gameOver(game_state_t *game_state);
+static uint8_t highScore(game_state_t *game_state);
 static void displayStartText(uint8_t y_top);
 static void displayConnectText(uint8_t y_top);
 static void displaySelectPlayerText(uint8_t y_top);
@@ -210,7 +197,6 @@ static void calcBallAcc(void);
 static uint8_t updateBallPos(void);
 static void drawBall(void);
 static void clearBall(void);
-static void enterHighScore(void);
 
 /**
  * @brief       Initialize the game user interface.
@@ -231,35 +217,28 @@ void game_init(void)
     screenDynamics.yShift = glcdGetYShift();
 
     for (uint8_t p = 0; p < PLAYERNUM; p++)
-    {
-        playerData.highScore[p].player = -1;
-        playerData.highScore[p].score = 0;
-    }
+        playerData.highScore[p] = 0;
 
     workLeft.game = 0;
     workLeft.music = 0;
 
+    timer_startTimer1(50, TIMER_REPEAT, &gameTimerCB);
     
     sei();
 }
 
-/*
- * @brief       Run the game. This procedure switches between the music and game tasks.
- */
 void game_run(void)
 {
     game_state_t game_state = START;
 
     set_sleep_mode(SLEEP_MODE_IDLE);
     sleep_enable();
-    
-    timer_startTimer1(TICK_PERIOD_MS, TIMER_REPEAT, &gameTimerCB);
 
     for (;;)
     {
         do
         {
-            if (workLeft.game != DONE)
+            if (workLeft.game != 0)
             {
                 if (START == game_state)
                     workLeft.game = start(&game_state);
@@ -275,28 +254,23 @@ void game_run(void)
                     workLeft.game = highScore(&game_state);
 
             }
-            if (workLeft.music != DONE)
+            if (workLeft.music != 0)
                 workLeft.music = music_play();
 
-        } while (workLeft.game != DONE || workLeft.music != DONE);
+        } while (workLeft.game != 0 || workLeft.music != 0);
 
         sleep_cpu();
     }
 }
 
-/*
- * @brief               Display the start screen of the game.
- * @param game_state    Contains the next state after the procedure call.
- * @return              The task state is returned, either DONE or BUSY.
- */
-static task_state_t start(game_state_t *game_state)
+static uint8_t start(game_state_t *game_state)
 {
     if (INIT == gameStates.start)
     {
         glcdFillScreen(GLCD_CLEAR);
-        displayStartText(LINE_SPACING);
+        displayStartText(10);
         gameStates.start = WAIT;
-        return BUSY;
+        return 1;
     }
     if (WAIT == gameStates.start)
     {
@@ -314,62 +288,50 @@ static task_state_t start(game_state_t *game_state)
         }
     }
 
-    return DONE;
+    return 0;
 }
 
-/*
- * @brief               Display the connect screen of the game and waits
- *                      for a successful wiimote connection.
- * @param game_state    Contains the next state after the procedure call.
- * @return              Returns DONE.
- */
-static task_state_t connect(game_state_t *game_state)
+static uint8_t connect(game_state_t *game_state)
 {
     if (INIT == gameStates.connect)
     {
         glcdFillScreen(GLCD_CLEAR);
-        displayConnectText(LINE_SPACING);
+        displayConnectText(10);
         gameStates.connect = WAIT;
-        timer_startTimer3(CONNECT_FRAME_MS, TIMER_REPEAT, &connectAnimCB);
-        return BUSY;
+        return 1;
     }
     if (WAIT == gameStates.connect)
     {
         if (wiimote.triedConnect == 0)
         {
-            if(wiiUserConnect(0, mac_address, &connectCB) == SUCCESS)
-                wiimote.triedConnect = 1;
+            wiiUserConnect(0, mac, &connectCB);
+            wiimote.triedConnect = 1;
         }
 
         if (CONNECTED == wiimote.status)
         {
-            timer_stopTimer3();
             *game_state = START;
             gameStates.connect = INIT;
             input.buttons = 0;
         }
     }
+    screenDynamics.yShift = glcdGetYShift();;
 
-    return DONE;
+    return 0;
 }
 
-/*
- * @brief               Lets the user select a player.
- * @param game_state    Contains the next state after the procedure call.
- * @return              The task state is returned, either DONE or BUSY.
- */
-static task_state_t selectPlayer(game_state_t *game_state)
+static uint8_t selectPlayer(game_state_t *game_state)
 {
     uint8_t lastPlayer;
 
     if (INIT == gameStates.selectPlayer)
     {
         glcdFillScreen(GLCD_CLEAR);
-        displaySelectPlayerText(LINE_SPACING);
+        displaySelectPlayerText(10);
         moveSelector(0, 0);
         playerData.currPlayer = 0;
         gameStates.selectPlayer = WAIT;
-        return BUSY;
+        return 1;
     }
     if (WAIT == gameStates.selectPlayer)
     {
@@ -379,7 +341,6 @@ static task_state_t selectPlayer(game_state_t *game_state)
             *game_state = PLAY;
         else if (BUTTON_B & input.buttons)
             *game_state = START;
-        /* Move cursor up */
         else if (BUTTON_U & input.buttons)
         {
             lastPlayer = playerData.currPlayer;
@@ -390,7 +351,6 @@ static task_state_t selectPlayer(game_state_t *game_state)
             moveSelector(lastPlayer, playerData.currPlayer);
             input.buttons &= ~BUTTON_U;
         }
-        /* Move cursor down */
         else if (BUTTON_D & input.buttons)
         {
             lastPlayer = playerData.currPlayer;
@@ -409,16 +369,17 @@ static task_state_t selectPlayer(game_state_t *game_state)
         }
     }
 
-    return DONE;
+    return 0;
 }
 
-/*
- * @brief               The main game function. Takes user input and updates
- *                      the screen accordingly.
- * @param game_state    Contains the next state after the procedure call.
- * @return              The task state is returned, either DONE or BUSY.
+/**
+ * @brief               Completes one tick of the game user interface, consisting of fetching user input
+ *                      and updating the picture on the screen accordingly.
+ * @param game_state    The game state after calling the function is stored here. Must not be NULL.
+ * @return              The function returns a non-zero value if there is still something to do and 0 if
+ *                      all tasks of one tick have been completed.
  */
-static task_state_t play(game_state_t *game_state)
+static uint8_t play(game_state_t *game_state)
 {   
     if (SETUP == gameStates.play)
     {
@@ -430,36 +391,29 @@ static task_state_t play(game_state_t *game_state)
             input.buttons = 0;
             gameStates.play = UPDATE;
         }
-        /* Enable accelerometer */
         else
         {
-            /* Avoid deadlock */
-            if (DISCONNECTED == wiimote.status)
-            {
-                *game_state = CONNECT;
-                gameStates.play = NEXT;
-            }
-            else if (wiiUserSetAccel(0, 1, &setAccelCB) == SUCCESS)
-                wiimote.triedSetAcc = 1;
+            wiimote.triedSetAcc = 1;
+            wiiUserSetAccel(0, 1, &setAccelCB);   
         }
-        return BUSY;
+        return 1;
     }
     if (UPDATE == gameStates.play)
     {
         playUpdate();
-        return BUSY;
+        return 1;
     } 
     if (SCROLL == gameStates.play)
     {
         playScroll();
-        return BUSY;
+        return 1;
     }
     if (LEVEL == gameStates.play)
     {
         gameStates.play = NEXT;
         clearWall(screenImage.topWall);
         displayNewWall(BOTTOM);
-        return BUSY;
+        return 1;
     }
     if (NEXT == gameStates.play)
     {
@@ -472,48 +426,37 @@ static task_state_t play(game_state_t *game_state)
         } 
         if (PLAY != gameStates.next)
         {
-            if (wiimote.accStatus == 0 || CONNECT == gameStates.next)
+            if (wiimote.accStatus == 0)
             {
                 /* New highscore entry */
-                enterHighScore();
+                if (playerData.currScore > playerData.highScore[playerData.currPlayer])
+                    playerData.highScore[playerData.currPlayer] = playerData.currScore;
                 
                 *game_state = gameStates.next;
                 gameStates.play = SETUP;
                 input.buttons = 0;
             }
-            /* Disable accelerometer */
             else
             {
-                /* Avoid deadlock */
-                if (DISCONNECTED == wiimote.status)
-                {
-                    *game_state = CONNECT;
-                    gameStates.play = NEXT;
-                }
-                else if (wiiUserSetAccel(0, 0, &setAccelCB) == SUCCESS)
-                    wiimote.triedSetAcc = 1;
+                wiimote.triedSetAcc = 1;
+                wiiUserSetAccel(0, 0, &setAccelCB);   
             }
         }
         else
             gameStates.play = UPDATE;
     }
     
-    return DONE;
+    return 0;
 }
 
-/*
- * @brief               Displays the game over message.
- * @param game_state    Contains the next state after the procedure call.
- * @return              The task state is returned, either DONE or BUSY.
- */
-static task_state_t gameOver(game_state_t *game_state)
+static uint8_t gameOver(game_state_t *game_state)
 {
     if (INIT == gameStates.gameOver)
     {
         glcdFillScreen(GLCD_CLEAR);
-        displayGameOverText(LINE_SPACING);
+        displayGameOverText(10);
         gameStates.gameOver = WAIT;
-        return BUSY;
+        return 1;
     }
     if (WAIT == gameStates.gameOver)
     {
@@ -531,22 +474,17 @@ static task_state_t gameOver(game_state_t *game_state)
         }
     }
     
-    return DONE;
+    return 0;
 }
 
-/*
- * @brief               Diplays the current highscore table (max. 5 entries).
- * @param game_state    Contains the next state after the procedure call.
- * @return              The task state is returned, either DONE or BUSY.
- */
-static task_state_t highScore(game_state_t *game_state)
+static uint8_t highScore(game_state_t *game_state)
 {
     if (INIT == gameStates.highScore)
     {
         glcdFillScreen(GLCD_CLEAR);
-        displayHighScoreText(LINE_SPACING);
+        displayHighScoreText(10);
         gameStates.highScore = WAIT;
-        return BUSY;
+        return 1;
     }
     if (WAIT == gameStates.highScore)
     {
@@ -562,208 +500,149 @@ static task_state_t highScore(game_state_t *game_state)
         }
     }
 
-    return DONE;
+    return 0;
 }
 
-/*
- * @brief   Callback function for the main game timer. Set a flag on interrupt.
- */
 static void gameTimerCB(void)
 {
     workLeft.game = 1;
 }
 
-/*
- * @brief   Callback function for the mp3 module. Set a flag on interrupt.
- */
 static void musicCB(void)
 {
     workLeft.music = 1;
 }
 
-/*
- * @brief   Callback function for the wiimote buttons.
- */
 static void buttonCB(uint8_t wii, uint16_t buttonStates)
 {
-    (void) wii;
-
-    if (buttonStates & BUTTON_A_WII)
+    if ((buttonStates & BUTTON_1_WII) && !(input.buttons & BUTTON_1))
+        input.buttons |= BUTTON_1;
+    if ((buttonStates & BUTTON_2_WII) && !(input.buttons & BUTTON_2))
+        input.buttons |= BUTTON_2;
+    if ((buttonStates & BUTTON_A_WII) && !(input.buttons & BUTTON_A))
         input.buttons |= BUTTON_A;
-    if (buttonStates & BUTTON_B_WII)
+    if ((buttonStates & BUTTON_B_WII) && !(input.buttons & BUTTON_B))
         input.buttons |= BUTTON_B;
-    if (buttonStates & BUTTON_D_WII)
+    if ((buttonStates & BUTTON_L_WII) && !(input.buttons & BUTTON_L))
+        input.buttons |= BUTTON_L;
+    if ((buttonStates & BUTTON_R_WII) && !(input.buttons & BUTTON_R))
+        input.buttons |= BUTTON_R;
+    if ((buttonStates & BUTTON_D_WII) && !(input.buttons & BUTTON_D))
         input.buttons |= BUTTON_D;
-    if (buttonStates & BUTTON_U_WII)
+    if ((buttonStates & BUTTON_U_WII) && !(input.buttons & BUTTON_U))
         input.buttons |= BUTTON_U;
 }
 
-/*
- * @brief   Callback function for the wiimote accelerometer.
- */
 static void accelCB(uint8_t wii, uint16_t x, uint16_t y, uint16_t z)
 {
-    (void) wii;
-    (void) y;
-    (void) z;
-
     input.accX = x>>2;
+    input.accY = y>>1;
+    input.accZ = z>>1;
 }
 
-/*
- * @brief   Callback function for enabling/disabling the wiimote accelerometer.
- */
 static void connectCB(uint8_t wii, connection_status_t status)
 {
-    (void) wii;
-    
     wiimote.status = status;
     wiimote.triedConnect = 0;
 }
 
-/*
- * @brief   Callback function for enabling/disabling the wiimote accelerometer.
- */
 static void setAccelCB(uint8_t wii, error_t status)
 {
-    (void) wii;
-    (void) status;
-    
     wiimote.accStatus = !wiimote.accStatus;
     wiimote.triedSetAcc = 0;
 }
 
-/*
- * @brief   Display a little animation on the connect screen.
- */
-static void connectAnimCB(void)
-{
-    struct connectFrame frame;
-    memcpy_P(&frame, &data_connectFrames[currFrame], sizeof(struct connectFrame));
-    glcdDrawLine(frame.l0p0,
-                 frame.l0p1,
-                 &glcdClearPixel);
-    glcdDrawLine(frame.l1p0,
-                 frame.l1p1,
-                 &glcdClearPixel);
-    currFrame = !currFrame;
-    memcpy_P(&frame, &data_connectFrames[currFrame], sizeof(struct connectFrame));
-    glcdDrawLine(frame.l0p0,
-                 frame.l0p1,
-                 &glcdSetPixel);
-    glcdDrawLine(frame.l1p0,
-                 frame.l1p1,
-                 &glcdSetPixel);
-}
-
-/*
- * @brief   Display the text for the start screen.
- * @param y The y coordinate of the top line.
- */
 static void displayStartText(uint8_t yTop)
 {
     xy_point startPoint;
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
-    startPoint.x = LINE_MARGIN;
+    startPoint.x = 10;
 
-    glcdDrawTextPgm(data_game_name, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+LINE_SPACING) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(data_play_b, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+LINE_SPACING) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(data_highscore_b, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(game_name, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(play_b, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(highscore_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
-/*
- * @brief   Display the text for the connect screen.
- * @param y The y coordinate of the top line.
- */
 static void displayConnectText(uint8_t yTop)
 {
     xy_point startPoint;
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
-    startPoint.x = LINE_MARGIN;
+    startPoint.x = 10;
 
-    glcdDrawTextPgm(data_connecting, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+LINE_SPACING) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(data_towiimote, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(connecting, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(towiimote, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
-/*
- * @brief   Display the text for the select player screen.
- * @param y The y coordinate of the top line.
- */
 static void displaySelectPlayerText(uint8_t yTop)
 {
     xy_point startPoint;
-    char plStr[9];
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
-    startPoint.x = LINE_MARGIN;
+    startPoint.x = 10;
 
-    for (uint8_t p = 0; p < PLAYERNUM; p++)
-    {
-        memset(plStr, 0, 9);
-        strcpy_P(plStr, data_player);
-        sprintf(plStr+7, "%u", p+1);
-        glcdDrawText(plStr, startPoint, &Standard5x7, &glcdSetPixel);
-        startPoint.y = (startPoint.y+LINE_SPACING) & (Y_HEIGHT-1);
-    }
-    
-    glcdDrawTextPgm(data_select_b, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(player_1, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(player_2, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(player_3, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(player_4, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(player_5, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(select_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
-/*
- * @brief   Display the text for the game over screen.
- * @param y The y coordinate of the top line.
- */
 static void displayGameOverText(uint8_t yTop)
 {
-    char goStr[16];
     xy_point startPoint;
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
-    startPoint.x = LINE_MARGIN;
+    startPoint.x = 10;
 
-    glcdDrawTextPgm(data_gameover, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+LINE_SPACING) & (Y_HEIGHT-1);
-    memset(goStr, 0, 16);
-    strcpy_P(goStr, data_score);
-    sprintf(goStr+7, "%u", playerData.currScore);
-    glcdDrawText(goStr, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+LINE_SPACING) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(data_menu_b, startPoint, &Standard5x7, &glcdSetPixel);
-    startPoint.y = (startPoint.y+LINE_SPACING) & (Y_HEIGHT-1);
-    glcdDrawTextPgm(data_highscore_b, startPoint, &Standard5x7, &glcdSetPixel);
+    glcdDrawTextPgm(gameover, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(menu_b, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(highscore_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
-/*
- * @brief   Display the current highscore table.
- * @param y The y coordinate of the top line.
- */
 static void displayHighScoreText(uint8_t yTop)
 {
     char hsStr[16];
     xy_point startPoint;
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
-    startPoint.x = LINE_MARGIN;
-
-    for (uint8_t p = 0; p < PLAYERNUM; p++)
-    {
-        if (playerData.highScore[p].player < 0)
-            break;
-
-        memset(hsStr, 0, 16);
-        strcpy_P(hsStr, data_player);
-        sprintf(hsStr+7, "%d: %u", playerData.highScore[p].player+1, playerData.highScore[p].score);
-        glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
-        startPoint.y = (startPoint.y+LINE_SPACING) & (Y_HEIGHT-1);
-    }
-   
-    startPoint.y = ((screenDynamics.yShift+yTop) & (Y_HEIGHT-1)) + LINE_SPACING*PLAYERNUM;
-    glcdDrawTextPgm(data_menu_b, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.x = 10;
+    
+    memset(hsStr, 0, 16);
+    strcpy_P(hsStr, player_1);
+    sprintf(hsStr+8, ": %u", playerData.highScore[0]);
+    glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    memset(hsStr, 0, 16);
+    strcpy_P(hsStr, player_2);
+    sprintf(hsStr+8, ": %u", playerData.highScore[1]);
+    glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    memset(hsStr, 0, 16);
+    strcpy_P(hsStr, player_3);
+    sprintf(hsStr+8, ": %u", playerData.highScore[2]);
+    glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    memset(hsStr, 0, 16);
+    strcpy_P(hsStr, player_4);
+    sprintf(hsStr+8, ": %u", playerData.highScore[3]);
+    glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    memset(hsStr, 0, 16);
+    strcpy_P(hsStr, player_5);
+    sprintf(hsStr+8, ": %u", playerData.highScore[4]);
+    glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
+    startPoint.y = (startPoint.y+10) & (Y_HEIGHT-1);
+    glcdDrawTextPgm(menu_b, startPoint, &Standard5x7, &glcdSetPixel);
 }
 
-/*
- * @brief   Procedure to initialise the screen with the ball and a new random level.
- */
 static void initLevel(void)
 {
     uint8_t newWall;
@@ -774,8 +653,7 @@ static void initLevel(void)
     {
         newWall = rand16() & (WALLS_AVAILABLE-1);
         /* Load new wall from PROGMEM */
-        memcpy_P(&screenImage.walls[w].points,
-                 &data_walls[newWall], WALL_POINTS);
+        memcpy_P((void *)screenImage.walls[w].points, &data_walls[newWall], WALL_POINTS);
         screenImage.walls[w].yPos = yPos;
         drawWall(w);
         yPos += WALL_GAP+1;
@@ -791,33 +669,23 @@ static void initLevel(void)
     tickCnt.scroll = TICKS_PER_SCROLL-1;
     tickCnt.diffDiv = TICKS_PER_DIFF-1;
     tickCnt.diff = 0;
-    tickCnt.score = TICKS_PER_SCORE-1;
+    tickCnt.score = TICKS_PER_SCROLL-1;
     tickCnt.level = WALL_GAP;
 
     playerData.currScore = 0;
 }
 
-/*
- * @brief       This function moves the selector on the select player screen.
- * @param curr  Currently selected player.
- * @param next  Next selected player.
- */
 static void moveSelector(uint8_t curr, uint8_t next)
 {
     xy_point selector;
     
     selector.x = 4;
-    selector.y = SELECTOR_Y_START+screenDynamics.yShift+LINE_SPACING*curr; 
+    selector.y = SELECTOR_Y_START+screenDynamics.yShift+10*curr; 
     glcdDrawCircle(selector, SELECTOR_RADIUS, &glcdClearPixel);
-    selector.y = SELECTOR_Y_START+screenDynamics.yShift+LINE_SPACING*next; 
+    selector.y = SELECTOR_Y_START+screenDynamics.yShift+10*next; 
     glcdDrawCircle(selector, SELECTOR_RADIUS, &glcdSetPixel); 
 }
 
-/*
- * @brief   This procedure performs the necessary updates of a game tick.
- *          The scroll, score and difficulty counters are updated and the
- *          ball is moved to its new position.
- */
 static void playUpdate(void)
 {
     if (tickCnt.scroll >= tickCnt.scrollDiv)
@@ -831,7 +699,6 @@ static void playUpdate(void)
         tickCnt.scroll++;
     }
     
-    /* Update player score */
     if (tickCnt.score == TICKS_PER_SCORE-1)
     {
         playerData.currScore++;
@@ -840,11 +707,10 @@ static void playUpdate(void)
     else
         tickCnt.score++;
     
-    /* Increase game difficulty */
-    if (tickCnt.diff == tickCnt.diffDiv && tickCnt.scrollDiv >= MAX_DIFFICULTY)
+    if (tickCnt.diff == tickCnt.diffDiv && tickCnt.scrollDiv > 1)
     {
         tickCnt.scrollDiv--;
-        tickCnt.diffDiv = TICKS_PER_DIFF;
+        tickCnt.diffDiv += TICKS_PER_DIFF;
         tickCnt.diff = 0;
     }
     else
@@ -860,10 +726,6 @@ static void playUpdate(void)
     drawBall();
 }
 
-/*
- * @brief   This procedure performs the scrolling of the screen. The
- *          internally stored ball an wall positions are updated accordingly.
- */
 static void playScroll(void)
 {
     if (tickCnt.level == WALL_GAP)
@@ -882,7 +744,6 @@ static void playScroll(void)
     else
         screenDynamics.yShift++;
 
-    /* Adapt y position of walls and ball on shift */
     for (uint8_t w = 0; w < WALLS_ON_SCREEN; w++)
     {
         if (screenImage.walls[w].yPos == 0)
@@ -904,7 +765,7 @@ static void displayNewWall(uint8_t yOff)
     uint8_t newWall = rand16() & (WALLS_AVAILABLE-1);
 
     /* Load new wall from PROGMEM */
-    memcpy_P(&screenImage.walls[screenImage.topWall].points,
+    memcpy_P((void *)screenImage.walls[screenImage.topWall].points,
              &data_walls[newWall], WALL_POINTS);
     screenImage.walls[screenImage.topWall].yPos = yOff;
 
@@ -916,10 +777,6 @@ static void displayNewWall(uint8_t yOff)
         screenImage.topWall++;
 }
 
-/*
- * @brief       Draws a level wall on the screen.
- * @param wall  The index of the wall in the screenImage.
- */
 static void drawWall(uint8_t wall)
 {
     xy_point point0, point1;
@@ -947,10 +804,6 @@ static void drawWall(uint8_t wall)
     }
 }
 
-/*
- * @brief       Draws a level wall on the screen.
- * @param wall  The index of the wall in the screenImage.
- */
 static void clearWall(uint8_t wall)
 {
     xy_point point0, point1;
@@ -958,14 +811,11 @@ static void clearWall(uint8_t wall)
     point0.y = screenImage.walls[wall].yPos+screenDynamics.yShift;
     point1.y = screenImage.walls[wall].yPos+screenDynamics.yShift;
     point0.x = 0;
-    point1.x = X_WIDTH-1;
+    point1.x = 127;
     
     glcdDrawLine(point0, point1, &glcdClearPixel);
 }
 
-/*
- * @brief   Calculate the ball acceleration according to the accelerometer data.
- */
 static void calcBallAcc(void)
 {
     if (input.accX >= X_MID-ACC_DELTA && 
@@ -975,7 +825,8 @@ static void calcBallAcc(void)
        return;
     }
 
-    if (input.accX > 0x81)
+    if (input.accX > 0x81 &&
+        input.accZ > Z_MIN)
     {
         screenDynamics.ballDynamics.xAcc = 1;
         return;
@@ -984,11 +835,6 @@ static void calcBallAcc(void)
     screenDynamics.ballDynamics.xAcc = -1;
 }
 
-/*
- * @brief   This function performs collision detection for the ball and
- *          sets the balls next position accordingly.
- * @return  On game over 1 is returned, else 0.
- */
 static uint8_t updateBallPos(void)
 {
     uint8_t xCollisionL = 0;
@@ -996,7 +842,7 @@ static uint8_t updateBallPos(void)
     uint8_t yCollision = 0;
 
     /* GAME OVER */
-    if (screenImage.ball.y-BALL_RADIUS == TOP)
+    if (screenImage.ball.y-BALL_RADIUS-1 == TOP)
         return 1;
 
     /* Wall collision detection */
@@ -1008,17 +854,14 @@ static uint8_t updateBallPos(void)
         {
             for (uint8_t p = 0; p < WALL_POINTS; p += 2)
             {
-                /* Detect if a wall is being hit from the top */
                 if (screenImage.walls[w].yPos == screenImage.ball.y+BALL_RADIUS+1)
                 {
-                    if (p == WALL_POINTS-1)
+                    if (p == WALL_POINTS-1 &&
+                        screenImage.walls[w].points[p] != X_WIDTH-1 &&
+                        screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS)
                     {
-                        if (screenImage.walls[w].points[p] != X_WIDTH-1 &&
-                            screenImage.walls[w].points[p] <= screenImage.ball.x+BALL_RADIUS)
-                        {
-                            yCollision = 1;
-                            break;
-                        }
+                        yCollision = 1;
+                        break;
                     }
                     else if ((screenImage.walls[w].points[p] < screenImage.ball.x-BALL_RADIUS &&
                               screenImage.walls[w].points[p+1] > screenImage.ball.x+BALL_RADIUS) ||
@@ -1031,25 +874,25 @@ static uint8_t updateBallPos(void)
                         break;
                     }
                 }
-                /* Detect if a wall is being hit from the side */
-                if (p == WALL_POINTS-1)
+                else
                 {
-                    if (screenImage.walls[w].points[p] != X_WIDTH-1 &&
+                    if (p == WALL_POINTS-1 &&
+                        screenImage.walls[w].points[p] != X_WIDTH-1 &&
                         screenImage.walls[w].points[p] == screenImage.ball.x+BALL_RADIUS+1)
                     {
                         xCollisionR = 1;
                         break;
                     }
-                }
-                else if (screenImage.walls[w].points[p] == screenImage.ball.x+BALL_RADIUS+1)
-                {
-                    xCollisionR = 1;
-                    break;
-                }
-                else if (screenImage.walls[w].points[p+1] == screenImage.ball.x-BALL_RADIUS-1)
-                {
-                    xCollisionL = 1;
-                    break;
+                    else if (screenImage.walls[w].points[p] == screenImage.ball.x+BALL_RADIUS+1)
+                    {
+                        xCollisionR = 1;
+                        break;
+                    }
+                    else if (screenImage.walls[w].points[p+1] == screenImage.ball.x-BALL_RADIUS-1)
+                    {
+                        xCollisionL = 1;
+                        break;
+                    }
                 }
             }
 
@@ -1057,9 +900,9 @@ static uint8_t updateBallPos(void)
         }
     }
 
-    if (screenImage.ball.x-BALL_RADIUS == 0)
+    if (screenImage.ball.x-BALL_RADIUS-1 == 0)
         xCollisionL = 1;
-    else if (screenImage.ball.x+BALL_RADIUS == X_WIDTH-1)
+    else if (screenImage.ball.x+BALL_RADIUS+1 == X_WIDTH-1)
         xCollisionR = 1;
 
     if ((!xCollisionL && !xCollisionR) ||
@@ -1068,90 +911,30 @@ static uint8_t updateBallPos(void)
         screenImage.ball.x += screenDynamics.ballDynamics.xAcc;
 
     if (!yCollision &&
-        screenImage.ball.y+BALL_RADIUS < BOTTOM)
+        screenImage.ball.y+BALL_RADIUS+1 < BOTTOM)
         screenImage.ball.y += screenDynamics.ballDynamics.yAcc;
 
     return 0;
 }
 
-/*
- * @brief   Draw the ball to the screen on its current position.
- */
 static void drawBall(void)
 {
     xy_point ball;
     ball.x = screenImage.ball.x;
     ball.y = screenImage.ball.y+screenDynamics.yShift;
 
-    xy_point p0 = {ball.x-BALL_RADIUS, ball.y};
-    xy_point p1 = {ball.x+BALL_RADIUS, ball.y}; 
-    glcdDrawLine(p0, p1, &glcdSetPixel);
-
-    for (uint8_t l = 1; l <= BALL_RADIUS; l++)
-    {
-        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y-l}, (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y-l}, &glcdSetPixel);
-        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y+l}, (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y+l}, &glcdSetPixel);
-    }
+    for (uint8_t r = 1; r <= BALL_RADIUS; r++)
+        glcdDrawCircle(ball, r, &glcdSetPixel);
 }
 
-/*
- * @brief   Erase the ball from the screen.
- */
 static void clearBall(void)
 {
     xy_point ball;
     ball.x = screenImage.ball.x;
     ball.y = screenImage.ball.y+screenDynamics.yShift;
-   
-    xy_point p0 = {ball.x-BALL_RADIUS, ball.y};
-    xy_point p1 = {ball.x+BALL_RADIUS, ball.y}; 
-    glcdDrawLine(p0, p1, &glcdClearPixel);
-
-    for (uint8_t l = 1; l <= BALL_RADIUS; l++)
-    {
-        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y-l}, (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y-l}, &glcdClearPixel);
-        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y+l}, (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y+l}, &glcdClearPixel);
-    }
+    
+    for (uint8_t r = 1; r <= BALL_RADIUS; r++)
+        glcdDrawCircle(ball, r, &glcdClearPixel);
 }
 
-/*
- * @brief   Check if the current score belongs in the highscore
- *          table and place it on the appropriate position.
- */
-static void enterHighScore(void)
-{
-    int8_t hsEntryIdx = -1;
-    /* Check if a new highscore has been reached */
-    for (uint8_t p = 0; p < PLAYERNUM; p++)
-    {
-        if (playerData.highScore[p].player < 0 && playerData.currScore > 0)
-        {
-            playerData.highScore[p].player = playerData.currPlayer;
-            playerData.highScore[p].score = playerData.currScore;
-            return;
-        }
-        if (playerData.currScore > playerData.highScore[p].score)
-        {
-            hsEntryIdx = p;
-            break;
-        }
-    }
-    /* Place the highscore entry on the appropriate table position */
-    if (hsEntryIdx >= 0)
-    {
-        for (uint8_t p = PLAYERNUM-1; p >= hsEntryIdx; p--)
-        {
-            if (p == hsEntryIdx)
-            {
-                playerData.highScore[p].player = playerData.currPlayer;
-                playerData.highScore[p].score = playerData.currScore;
-            }
-            else
-            {
-                playerData.highScore[p].player = playerData.highScore[p-1].player;
-                playerData.highScore[p].score = playerData.highScore[p-1].score;
-            }
-        }
-    }
-}
 

@@ -323,7 +323,6 @@ void glcdDrawText(const char *text, const xy_point p, const font* f,
 {
     uint8_t x = p.x;
 
-    //TODO maybe get rid of division
     for (uint8_t c = 0; c < X_MAX/f->charSpacing; c++)
     {
         if (text[c] == '\0')
@@ -346,7 +345,6 @@ void glcdDrawTextPgm(PGM_P text, const xy_point p, const font* f,
 {
     uint8_t x = p.x;
 
-    //TODO maybe get rid of division
     for (uint8_t c = 0; c < X_MAX/f->charSpacing; c++)
     {
         char character = pgm_read_byte(&text[c]);

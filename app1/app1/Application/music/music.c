@@ -23,7 +23,7 @@
 
 static uint32_t sdcardBlockAddress = SONG_START;
 static uint8_t spiLock = 0;
-static uint8_t oldVolume;
+static uint8_t oldVolume = 3;
 
 static uint8_t scaleVolume(uint8_t volume); 
 
@@ -45,7 +45,6 @@ task_state_t music_play(void)
 {
     sdcard_block_t musicBuffer;
 
-    //if (!mp3Busy() && sdcardBlockAddress < (SONG_START + SONG_LENGTH))
     if (!mp3Busy())
     {
         spiLock = 1;
@@ -71,9 +70,12 @@ task_state_t music_play(void)
 void music_setVolume(uint8_t volumeRaw)
 {
     uint8_t newVolume = scaleVolume(volumeRaw);
-    /* Only set the volume if the spi is not used by other functions */
-    if (spiLock == 0)
+    /* Only set the volume if it has changed and if the spi is not used by other functions */
+    if (newVolume != oldVolume && spiLock == 0)
+    {
         mp3SetVolume(newVolume);
+        oldVolume = newVolume;
+    }
 }
 
 /**
