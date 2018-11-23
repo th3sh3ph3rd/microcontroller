@@ -91,6 +91,7 @@ void glcdDrawLine(const xy_point p1, const xy_point p2,
 {
     if (abs(p2.y - p1.y) < abs(p2.x - p1.x))
     {
+        /* Reverse coordinates */
         if (p1.x > p2.x)
             drawLineLow(p2, p1, drawPx);
         else
@@ -98,6 +99,7 @@ void glcdDrawLine(const xy_point p1, const xy_point p2,
     }
     else
     {
+        /* Reverse coordinates */
         if (p1.y > p2.y)
             drawLineHigh(p2, p1, drawPx);
         else
@@ -105,6 +107,7 @@ void glcdDrawLine(const xy_point p1, const xy_point p2,
     }
 }
 
+/* Plot lines with low gradient */
 static void drawLineLow(const xy_point p1, const xy_point p2,
                         void (*drawPx)(const uint8_t, const uint8_t))
 {
@@ -112,17 +115,22 @@ static void drawLineLow(const xy_point p1, const xy_point p2,
     dx = p2.x - p1.x;
     dy = p2.y - p1.y;
     yi = 1;
+    
+    /* Falling line */
     if (dy < 0)
     {
         yi = -1;
         dy = -dy;
     }
+
+    /* How many pixels in a line */
     d = 2*dy - dx;
     y = p1.y;
 
     for (uint8_t x = p1.x; x <= p2.x; x++)
     {
         drawPx(x, y);
+        /* Update y coordinate */
         if (d > 0)
         {
             d -= 2*dx;
@@ -132,6 +140,7 @@ static void drawLineLow(const xy_point p1, const xy_point p2,
     }
 }
 
+/* Plot lines with steep gradient */
 static void drawLineHigh(const xy_point p1, const xy_point p2,
                          void (*drawPx)(const uint8_t, const uint8_t))
 {
@@ -139,17 +148,22 @@ static void drawLineHigh(const xy_point p1, const xy_point p2,
     dx = p2.x - p1.x;
     dy = p2.y - p1.y;
     xi = 1;
+
+    /* Falling line */
     if (dy < 0)
     {
         xi = -1;
         dx = -dx;
     }
+
+    /* How many pixels in a line */
     d = 2*dx - dy;
     x = p1.x;
 
     for (uint8_t y = p1.y; y <= p2.y; y++)
     {
         drawPx(x, y);
+        /* Update x coordinate */
         if (d > 0)
         {
             d -= 2*dy;
@@ -230,8 +244,10 @@ void glcdDrawCircle(const xy_point c, const uint8_t radius,
     int8_t dy = 1;
     int8_t error = dx - (radius << 1);
 
+    /* Draw circle segments in counterclockwise order starting from (r, 0) */
     while (x >= y)
     {
+        /* Draw circle outline */
         drawPx(c.x + x, c.y + y);
         drawPx(c.x + y, c.y + x);
         drawPx(c.x - y, c.y + x);
@@ -241,6 +257,7 @@ void glcdDrawCircle(const xy_point c, const uint8_t radius,
         drawPx(c.x + y, c.y - x);
         drawPx(c.x + x, c.y - y);
 
+        /* Calculate error function and decide if x/y need to be updated */
         if (error <= 0)
         {
             y++;
@@ -312,9 +329,11 @@ void glcdDrawChar(const char c, const xy_point p, const font* f,
     if (c < f->startChar || c > f->endChar)
         return;
 
+    /* Calculate charcter offset for font table */
     uint16_t charIndex = ((c - f->startChar) * f->width);
     for (uint8_t pn = 0; pn < f->width; pn++)
     {
+        /* Read character from PROGMEM */
         char page = pgm_read_byte(&(f->font[charIndex+pn]));
         for (uint8_t y = 0; y < 8; y++)
         {
