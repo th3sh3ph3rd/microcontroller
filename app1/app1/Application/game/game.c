@@ -172,8 +172,8 @@ static struct
 /* Connect screen animation figure */
 #define CONNECT_FRAMES 2
 #define CONNECT_FRAME_MS 350
-
 uint8_t currFrame;
+
 /* Callback functions */
 static void gameTimerCB(void);
 static void musicCB(void);
@@ -234,8 +234,7 @@ void game_init(void)
 
     workLeft.game = 0;
     workLeft.music = 0;
-
-    
+ 
     sei();
 }
 
@@ -248,7 +247,10 @@ void game_run(void)
 
     set_sleep_mode(SLEEP_MODE_IDLE);
     sleep_enable();
-    
+   
+    PORTK = 0;
+    DDRK = 0xff;
+
     timer_startTimer1(TICK_PERIOD_MS, TIMER_REPEAT, &gameTimerCB);
 
     for (;;)
@@ -321,6 +323,7 @@ static task_state_t start(game_state_t *game_state)
  */
 static task_state_t connect(game_state_t *game_state)
 {
+    PORTK = 128;
     if (INIT == gameStates.connect)
     {
         glcdFillScreen(GLCD_CLEAR);
@@ -476,6 +479,7 @@ static task_state_t play(game_state_t *game_state)
     {
         if (PLAY == gameStates.next)
         {
+            PORTK = 1;
             if (DISCONNECTED == wiimote.status)
                 gameStates.next = CONNECT;
             else if (BUTTON_H & input.buttons)
@@ -504,17 +508,21 @@ static task_state_t play(game_state_t *game_state)
 //                else if (wiiUserSetAccel(0, 0, &setAccelCB) == SUCCESS)
 //                    wiimote.triedSetAcc = 1;
 //            }
+
+            PORTK = 2;
             /* New highscore entry */
             enterHighScore();
             
             *game_state = gameStates.next;
             gameStates.play = SETUP;
             input.buttons = 0;
+            PORTK = 4;
         }
         else
             gameStates.play = UPDATE;
     }
-    
+   
+    PORTK = 8;
     return DONE;
 }
 
@@ -527,6 +535,7 @@ static task_state_t gameOver(game_state_t *game_state)
 {
     if (INIT == gameStates.gameOver)
     {
+        PORTK = 16;
         glcdFillScreen(GLCD_CLEAR);
         displayGameOverText(LINE_SPACING);
         gameStates.gameOver = WAIT;
@@ -534,6 +543,7 @@ static task_state_t gameOver(game_state_t *game_state)
     }
     if (WAIT == gameStates.gameOver)
     {
+        PORTK = 32;
         if (DISCONNECTED == wiimote.status)
             *game_state = CONNECT;
         else if (BUTTON_H & input.buttons)
@@ -548,6 +558,7 @@ static task_state_t gameOver(game_state_t *game_state)
         }
     }
     
+    PORTK = 64;
     return DONE;
 }
 

@@ -17,7 +17,7 @@
 /* Sample ADC3 and ADC2 in differential mode with 200x amplification */
 #define ADMUX_DIF   (1<<MUX3)|(1<<MUX2)|(1<<MUX1)|(1<<MUX0)
 /* Set timer frequency to ~200Hz if used with a prescaler of 1024, so every channel gets read every ~10ms */
-#define OCV         38
+#define OCV         78
 
 enum adc_state {DIF, POT};
 static volatile enum adc_state state;
