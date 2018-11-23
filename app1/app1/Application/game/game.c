@@ -66,7 +66,7 @@
 #define ACC_DELTA   10
 
 /* Game parameters */
-#define TICK_PERIOD_MS      40
+#define TICK_PERIOD_MS      30
 #define TICKS_PER_SCROLL    9
 #define TICKS_PER_SCORE     5
 #define TICKS_PER_DIFF      100
@@ -247,9 +247,6 @@ void game_run(void)
 
     set_sleep_mode(SLEEP_MODE_IDLE);
     sleep_enable();
-   
-    PORTK = 0;
-    DDRK = 0xff;
 
     timer_startTimer1(TICK_PERIOD_MS, TIMER_REPEAT, &gameTimerCB);
 
@@ -323,7 +320,6 @@ static task_state_t start(game_state_t *game_state)
  */
 static task_state_t connect(game_state_t *game_state)
 {
-    PORTK = 128;
     if (INIT == gameStates.connect)
     {
         glcdFillScreen(GLCD_CLEAR);
@@ -344,18 +340,10 @@ static task_state_t connect(game_state_t *game_state)
 
         if (CONNECTED == wiimote.status)
         {
-            if (wiimote.accStatus == 1)
-            {
-                timer_stopTimer3();
-                *game_state = START;
-                gameStates.connect = INIT;
-                input.buttons = 0;
-            }
-            else if (wiimote.triedSetAcc == 0)
-            {
-                if (wiiUserSetAccel(0, 1, &setAccelCB) == SUCCESS)
-                    wiimote.triedSetAcc = 1;
-            }
+            timer_stopTimer3();
+            *game_state = START;
+            gameStates.connect = INIT;
+            input.buttons = 0;
         }
     }
 
@@ -432,30 +420,19 @@ static task_state_t play(game_state_t *game_state)
     if (SETUP == gameStates.play)
     {
         gameStates.next = PLAY;
-        glcdFillScreen(GLCD_CLEAR);
-        initLevel();
-        input.buttons = 0;
-        gameStates.play = UPDATE;
-        
-//        if (wiimote.accStatus == 1)
-//        {
-//            glcdFillScreen(GLCD_CLEAR);
-//            initLevel();
-//            input.buttons = 0;
-//            gameStates.play = UPDATE;
-//        }
-//        /* Enable accelerometer */
-//        else
-//        {
-//            /* Avoid deadlock */
-//            if (DISCONNECTED == wiimote.status)
-//            {
-//                *game_state = CONNECT;
-//                gameStates.play = NEXT;
-//            }
-//            else if (wiiUserSetAccel(0, 1, &setAccelCB) == SUCCESS)
-//                wiimote.triedSetAcc = 1;
-//        }
+        if (wiimote.accStatus == 1)
+        {
+            glcdFillScreen(GLCD_CLEAR);
+            initLevel();
+            input.buttons = 0;
+            gameStates.play = UPDATE;
+        }
+        /* Enable accelerometer */
+        else if (wiimote.triedSetAcc == 0)
+        {
+            if (wiiUserSetAccel(0, 1, &setAccelCB) == SUCCESS)
+                wiimote.triedSetAcc = 1;
+        }
         return BUSY;
     }
     if (UPDATE == gameStates.play)
@@ -479,7 +456,6 @@ static task_state_t play(game_state_t *game_state)
     {
         if (PLAY == gameStates.next)
         {
-            PORTK = 1;
             if (DISCONNECTED == wiimote.status)
                 gameStates.next = CONNECT;
             else if (BUTTON_H & input.buttons)
@@ -487,42 +463,26 @@ static task_state_t play(game_state_t *game_state)
         } 
         if (PLAY != gameStates.next)
         {
-//            if (wiimote.accStatus == 0 || CONNECT == gameStates.next)
-//            {
-//                /* New highscore entry */
-//                enterHighScore();
-//                
-//                *game_state = gameStates.next;
-//                gameStates.play = SETUP;
-//                input.buttons = 0;
-//            }
-//            /* Disable accelerometer */
-//            else
-//            {
-//                /* Avoid deadlock */
-//                if (DISCONNECTED == wiimote.status)
-//                {
-//                    *game_state = CONNECT;
-//                    gameStates.play = NEXT;
-//                }
-//                else if (wiiUserSetAccel(0, 0, &setAccelCB) == SUCCESS)
-//                    wiimote.triedSetAcc = 1;
-//            }
-
-            PORTK = 2;
-            /* New highscore entry */
-            enterHighScore();
-            
-            *game_state = gameStates.next;
-            gameStates.play = SETUP;
-            input.buttons = 0;
-            PORTK = 4;
+            if (wiimote.accStatus == 0 || CONNECT == gameStates.next)
+            {
+                /* New highscore entry */
+                enterHighScore();
+                
+                *game_state = gameStates.next;
+                gameStates.play = SETUP;
+                input.buttons = 0;
+            }
+            /* Disable accelerometer */
+            else if (wiimote.triedSetAcc == 0)
+            {
+                if (wiiUserSetAccel(0, 0, &setAccelCB) == SUCCESS)
+                    wiimote.triedSetAcc = 1;
+            }
         }
         else
             gameStates.play = UPDATE;
     }
    
-    PORTK = 8;
     return DONE;
 }
 
@@ -535,7 +495,6 @@ static task_state_t gameOver(game_state_t *game_state)
 {
     if (INIT == gameStates.gameOver)
     {
-        PORTK = 16;
         glcdFillScreen(GLCD_CLEAR);
         displayGameOverText(LINE_SPACING);
         gameStates.gameOver = WAIT;
@@ -543,7 +502,6 @@ static task_state_t gameOver(game_state_t *game_state)
     }
     if (WAIT == gameStates.gameOver)
     {
-        PORTK = 32;
         if (DISCONNECTED == wiimote.status)
             *game_state = CONNECT;
         else if (BUTTON_H & input.buttons)
@@ -558,7 +516,6 @@ static task_state_t gameOver(game_state_t *game_state)
         }
     }
     
-    PORTK = 64;
     return DONE;
 }
 
@@ -1129,8 +1086,10 @@ static void drawBall(void)
 
     for (uint8_t l = 1; l <= BALL_RADIUS; l++)
     {
-        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y-l}, (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y-l}, &glcdSetPixel);
-        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y+l}, (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y+l}, &glcdSetPixel);
+        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y-l},
+                     (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y-l}, &glcdSetPixel);
+        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y+l},
+                     (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y+l}, &glcdSetPixel);
     }
 }
 
@@ -1149,8 +1108,10 @@ static void clearBall(void)
 
     for (uint8_t l = 1; l <= BALL_RADIUS; l++)
     {
-        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y-l}, (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y-l}, &glcdClearPixel);
-        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y+l}, (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y+l}, &glcdClearPixel);
+        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y-l},
+                     (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y-l}, &glcdClearPixel);
+        glcdDrawLine((xy_point) {ball.x+l-BALL_RADIUS-1, ball.y+l},
+                     (xy_point) {ball.x-l+BALL_RADIUS+1, ball.y+l}, &glcdClearPixel);
     }
 }
 
@@ -1160,38 +1121,23 @@ static void clearBall(void)
  */
 static void enterHighScore(void)
 {
-    int8_t hsEntryIdx = -1;
-    /* Check if a new highscore has been reached */
-    for (uint8_t p = 0; p < PLAYERNUM; p++)
+    int8_t p = PLAYERNUM-1;
+
+    while (p >= 0 && playerData.currScore > playerData.highScore[p].score)
     {
-        if (playerData.highScore[p].player < 0 && playerData.currScore > 0)
+        if (p == PLAYERNUM-1)
         {
+            playerData.highScore[PLAYERNUM-1].player = playerData.currPlayer;
+            playerData.highScore[PLAYERNUM-1].score = playerData.currScore;
+        }
+        else
+        {
+            playerData.highScore[p+1].player = playerData.highScore[p].player;
+            playerData.highScore[p+1].score = playerData.highScore[p].score;
             playerData.highScore[p].player = playerData.currPlayer;
             playerData.highScore[p].score = playerData.currScore;
-            return;
         }
-        if (playerData.currScore > playerData.highScore[p].score)
-        {
-            hsEntryIdx = p;
-            break;
-        }
-    }
-    /* Place the highscore entry on the appropriate table position */
-    if (hsEntryIdx >= 0)
-    {
-        for (uint8_t p = PLAYERNUM-1; p >= hsEntryIdx; p--)
-        {
-            if (p == hsEntryIdx)
-            {
-                playerData.highScore[p].player = playerData.currPlayer;
-                playerData.highScore[p].score = playerData.currScore;
-            }
-            else
-            {
-                playerData.highScore[p].player = playerData.highScore[p-1].player;
-                playerData.highScore[p].score = playerData.highScore[p-1].score;
-            }
-        }
+        p--;
     }
 }
 
