@@ -11,6 +11,7 @@
 typedef enum {
 	SPI_PRESCALER_128	= 3,
 	SPI_PRESCALER_4		= 0,
+	SPI_PRESCALER_16	= 1,
 } spi_prescaler_t;
 
 void spiInit(void);
