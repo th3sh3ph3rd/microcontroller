@@ -39,6 +39,7 @@
 #define BUTTON_1_WII    0x02
 #define BUTTON_B_WII    0x04
 #define BUTTON_A_WII    0x08
+#define BUTTON_H_WII    0x80
 #define BUTTON_L_WII    (0x01<<8)
 #define BUTTON_R_WII    (0x02<<8)
 #define BUTTON_D_WII    (0x04<<8)
@@ -49,10 +50,9 @@
 #define BUTTON_2    0x02
 #define BUTTON_A    0x04
 #define BUTTON_B    0x08
-#define BUTTON_L    0x10
-#define BUTTON_R    0x20
-#define BUTTON_D    0x40
-#define BUTTON_U    0x80
+#define BUTTON_H    0x10
+#define BUTTON_D    0x20
+#define BUTTON_U    0x40
 
 /* Accelerometer corner values */
 #define X_MIN       0x66
@@ -217,7 +217,7 @@ void game_init(void)
     music_init(&musicCB);
     adc_setCallbacks(&rand_feed, &music_setVolume);
     adc_init();
-    wiiUserInit(&buttonCB, &accelCB); 
+    while (wiiUserInit(&buttonCB, &accelCB) != SUCCESS); 
     
     /* Initialize the structs */
     wiimote.triedConnect = 0;
@@ -298,9 +298,9 @@ static task_state_t start(game_state_t *game_state)
     {
         if (DISCONNECTED == wiimote.status)
             *game_state = CONNECT;
-        else if (BUTTON_A & input.buttons)
+        else if (BUTTON_1 & input.buttons)
             *game_state = SELECTPLAYER;
-        else if (BUTTON_B & input.buttons)
+        else if (BUTTON_2 & input.buttons)
             *game_state = HIGHSCORE;
 
         if (START != *game_state)
@@ -326,6 +326,8 @@ static task_state_t connect(game_state_t *game_state)
         glcdFillScreen(GLCD_CLEAR);
         displayConnectText(LINE_SPACING);
         gameStates.connect = WAIT;
+        wiimote.accStatus = 0;
+        wiimote.triedSetAcc = 0;
         timer_startTimer3(CONNECT_FRAME_MS, TIMER_REPEAT, &connectAnimCB);
         return BUSY;
     }
@@ -339,10 +341,18 @@ static task_state_t connect(game_state_t *game_state)
 
         if (CONNECTED == wiimote.status)
         {
-            timer_stopTimer3();
-            *game_state = START;
-            gameStates.connect = INIT;
-            input.buttons = 0;
+            if (wiimote.accStatus == 1)
+            {
+                timer_stopTimer3();
+                *game_state = START;
+                gameStates.connect = INIT;
+                input.buttons = 0;
+            }
+            else if (wiimote.triedSetAcc == 0)
+            {
+                if (wiiUserSetAccel(0, 1, &setAccelCB) == SUCCESS)
+                    wiimote.triedSetAcc = 1;
+            }
         }
     }
 
@@ -419,25 +429,30 @@ static task_state_t play(game_state_t *game_state)
     if (SETUP == gameStates.play)
     {
         gameStates.next = PLAY;
-        if (wiimote.accStatus == 1)
-        {
-            glcdFillScreen(GLCD_CLEAR);
-            initLevel();
-            input.buttons = 0;
-            gameStates.play = UPDATE;
-        }
-        /* Enable accelerometer */
-        else
-        {
-            /* Avoid deadlock */
-            if (DISCONNECTED == wiimote.status)
-            {
-                *game_state = CONNECT;
-                gameStates.play = NEXT;
-            }
-            else if (wiiUserSetAccel(0, 1, &setAccelCB) == SUCCESS)
-                wiimote.triedSetAcc = 1;
-        }
+        glcdFillScreen(GLCD_CLEAR);
+        initLevel();
+        input.buttons = 0;
+        gameStates.play = UPDATE;
+        
+//        if (wiimote.accStatus == 1)
+//        {
+//            glcdFillScreen(GLCD_CLEAR);
+//            initLevel();
+//            input.buttons = 0;
+//            gameStates.play = UPDATE;
+//        }
+//        /* Enable accelerometer */
+//        else
+//        {
+//            /* Avoid deadlock */
+//            if (DISCONNECTED == wiimote.status)
+//            {
+//                *game_state = CONNECT;
+//                gameStates.play = NEXT;
+//            }
+//            else if (wiiUserSetAccel(0, 1, &setAccelCB) == SUCCESS)
+//                wiimote.triedSetAcc = 1;
+//        }
         return BUSY;
     }
     if (UPDATE == gameStates.play)
@@ -463,32 +478,38 @@ static task_state_t play(game_state_t *game_state)
         {
             if (DISCONNECTED == wiimote.status)
                 gameStates.next = CONNECT;
-            else if (BUTTON_B & input.buttons)
+            else if (BUTTON_H & input.buttons)
                 gameStates.next = START;
         } 
         if (PLAY != gameStates.next)
         {
-            if (wiimote.accStatus == 0 || CONNECT == gameStates.next)
-            {
-                /* New highscore entry */
-                enterHighScore();
-                
-                *game_state = gameStates.next;
-                gameStates.play = SETUP;
-                input.buttons = 0;
-            }
-            /* Disable accelerometer */
-            else
-            {
-                /* Avoid deadlock */
-                if (DISCONNECTED == wiimote.status)
-                {
-                    *game_state = CONNECT;
-                    gameStates.play = NEXT;
-                }
-                else if (wiiUserSetAccel(0, 0, &setAccelCB) == SUCCESS)
-                    wiimote.triedSetAcc = 1;
-            }
+//            if (wiimote.accStatus == 0 || CONNECT == gameStates.next)
+//            {
+//                /* New highscore entry */
+//                enterHighScore();
+//                
+//                *game_state = gameStates.next;
+//                gameStates.play = SETUP;
+//                input.buttons = 0;
+//            }
+//            /* Disable accelerometer */
+//            else
+//            {
+//                /* Avoid deadlock */
+//                if (DISCONNECTED == wiimote.status)
+//                {
+//                    *game_state = CONNECT;
+//                    gameStates.play = NEXT;
+//                }
+//                else if (wiiUserSetAccel(0, 0, &setAccelCB) == SUCCESS)
+//                    wiimote.triedSetAcc = 1;
+//            }
+            /* New highscore entry */
+            enterHighScore();
+            
+            *game_state = gameStates.next;
+            gameStates.play = SETUP;
+            input.buttons = 0;
         }
         else
             gameStates.play = UPDATE;
@@ -515,9 +536,9 @@ static task_state_t gameOver(game_state_t *game_state)
     {
         if (DISCONNECTED == wiimote.status)
             *game_state = CONNECT;
-        else if (BUTTON_A & input.buttons)
+        else if (BUTTON_H & input.buttons)
             *game_state = START;
-        else if (BUTTON_B & input.buttons)
+        else if (BUTTON_2 & input.buttons)
             *game_state = HIGHSCORE;
 
         if (GAMEOVER != *game_state)
@@ -548,7 +569,7 @@ static task_state_t highScore(game_state_t *game_state)
     {
         if (DISCONNECTED == wiimote.status)
             *game_state = CONNECT;
-        else if (BUTTON_A & input.buttons)
+        else if (BUTTON_H & input.buttons)
             *game_state = START;
 
         if (HIGHSCORE != *game_state)
@@ -588,6 +609,12 @@ static void buttonCB(uint8_t wii, uint16_t buttonStates)
         input.buttons |= BUTTON_A;
     if (buttonStates & BUTTON_B_WII)
         input.buttons |= BUTTON_B;
+    if (buttonStates & BUTTON_1_WII)
+        input.buttons |= BUTTON_1;
+    if (buttonStates & BUTTON_2_WII)
+        input.buttons |= BUTTON_2;
+    if (buttonStates & BUTTON_H_WII)
+        input.buttons |= BUTTON_H;
     if (buttonStates & BUTTON_D_WII)
         input.buttons |= BUTTON_D;
     if (buttonStates & BUTTON_U_WII)
@@ -742,6 +769,7 @@ static void displayHighScoreText(uint8_t yTop)
 {
     uint8_t slen = strlen_P(data_player);
     char hsStr[slen+9];
+
     xy_point startPoint;
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
     startPoint.x = LINE_MARGIN;

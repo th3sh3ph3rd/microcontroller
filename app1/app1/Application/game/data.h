@@ -15,20 +15,14 @@
 #include <stdint.h>
 
 /* Common strings*/
-const char data_menu_b[] PROGMEM = "A: Menu";
+const char data_menu_b[] PROGMEM = "Home: Menu";
 const char data_player[] PROGMEM = "Player ";
 const char data_game_name[] PROGMEM = "Falling down ball";
-const char data_play_b[] PROGMEM = "A: Play";
-const char data_highscore_b[] PROGMEM = "B: Highscore";
-const char data_start_b[] PROGMEM = "A:Play B:Highscore";
+const char data_play_b[] PROGMEM = "1: Play";
+const char data_highscore_b[] PROGMEM = "2: Highscore";
 const char data_connecting[] PROGMEM = "Connecting";
 const char data_towiimote[] PROGMEM = "to wiimote...";
-const char data_disconnected[] PROGMEM = "Disconnected!";
-const char data_reset[] PROGMEM = "Reset board!";
 const char data_select_b[] PROGMEM = "A:Play B:Menu";
-const char data_pause[] PROGMEM = "Game paused";
-const char data_end_b[] PROGMEM = "A: End game";
-const char data_data_resume_b[] PROGMEM = "B: Resume";
 const char data_gameover[] PROGMEM = "Game over!";
 const char data_score[] PROGMEM = "Score: ";
 
