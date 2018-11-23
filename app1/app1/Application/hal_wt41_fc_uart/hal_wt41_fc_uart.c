@@ -165,12 +165,11 @@ error_t halWT41FcUartSend(uint8_t byte)
  */
 static void processRingbuffer(void)
 {
+    uint8_t data;
+
     do
     {
-        sei();
-        recvCallback(rbuf.data[rbuf.end]);
-        cli();
-        
+        data = rbuf.data[rbuf.end];
         rbuf.end = (rbuf.end + 1) & (RBUF_SZ - 1);
 
         rbuf.len--;
@@ -180,6 +179,10 @@ static void processRingbuffer(void)
             PORTJ &= ~(1<<CTS_PIN);
             flags.CTS_state = 0;
         }
+        
+        sei();
+        recvCallback(data);
+        cli();
     } while (rbuf.len > 0);
 }
 

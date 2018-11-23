@@ -690,16 +690,18 @@ static void displayConnectText(uint8_t yTop)
  */
 static void displaySelectPlayerText(uint8_t yTop)
 {
+    uint8_t slen = strlen_P(data_player);
+    char plStr[slen+2];
+
     xy_point startPoint;
-    char plStr[9];
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
     startPoint.x = LINE_MARGIN;
 
     for (uint8_t p = 0; p < PLAYERNUM; p++)
     {
-        memset(plStr, 0, 9);
+        memset(plStr, 0, slen+2);
         strcpy_P(plStr, data_player);
-        sprintf(plStr+7, "%u", p+1);
+        sprintf(plStr+slen, "%u", p+1);
         glcdDrawText(plStr, startPoint, &Standard5x7, &glcdSetPixel);
         startPoint.y = (startPoint.y+LINE_SPACING) & (Y_HEIGHT-1);
     }
@@ -713,16 +715,18 @@ static void displaySelectPlayerText(uint8_t yTop)
  */
 static void displayGameOverText(uint8_t yTop)
 {
-    char goStr[16];
+    uint8_t slen = strlen_P(data_score);
+    char goStr[slen+6];
+
     xy_point startPoint;
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
     startPoint.x = LINE_MARGIN;
 
     glcdDrawTextPgm(data_gameover, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+LINE_SPACING) & (Y_HEIGHT-1);
-    memset(goStr, 0, 16);
+    memset(goStr, 0, slen+6);
     strcpy_P(goStr, data_score);
-    sprintf(goStr+7, "%u", playerData.currScore);
+    sprintf(goStr+slen, "%u", playerData.currScore);
     glcdDrawText(goStr, startPoint, &Standard5x7, &glcdSetPixel);
     startPoint.y = (startPoint.y+LINE_SPACING) & (Y_HEIGHT-1);
     glcdDrawTextPgm(data_menu_b, startPoint, &Standard5x7, &glcdSetPixel);
@@ -736,7 +740,8 @@ static void displayGameOverText(uint8_t yTop)
  */
 static void displayHighScoreText(uint8_t yTop)
 {
-    char hsStr[16];
+    uint8_t slen = strlen_P(data_player);
+    char hsStr[slen+9];
     xy_point startPoint;
     startPoint.y = (screenDynamics.yShift+yTop) & (Y_HEIGHT-1);
     startPoint.x = LINE_MARGIN;
@@ -746,9 +751,9 @@ static void displayHighScoreText(uint8_t yTop)
         if (playerData.highScore[p].player < 0)
             break;
 
-        memset(hsStr, 0, 16);
+        memset(hsStr, 0, slen+9);
         strcpy_P(hsStr, data_player);
-        sprintf(hsStr+7, "%d: %u", playerData.highScore[p].player+1, playerData.highScore[p].score);
+        sprintf(hsStr+slen, "%d: %u", playerData.highScore[p].player+1, playerData.highScore[p].score);
         glcdDrawText(hsStr, startPoint, &Standard5x7, &glcdSetPixel);
         startPoint.y = (startPoint.y+LINE_SPACING) & (Y_HEIGHT-1);
     }

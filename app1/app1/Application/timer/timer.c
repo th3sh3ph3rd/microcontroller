@@ -226,6 +226,9 @@ void timer_stopTimer5(void)
     timer5.state = AVAILABLE;
 }
 
+/*
+ * @brief Decide if timer needs to be stopped an call the registered callback.
+ */
 ISR(TIMER1_COMPA_vect, ISR_BLOCK)
 {
     if (TIMER_SINGLE == timer1.mode)
