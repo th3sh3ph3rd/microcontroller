@@ -89,6 +89,7 @@ void glcdInvertPixel(const uint8_t x, const uint8_t y)
 void glcdDrawLine(const xy_point p1, const xy_point p2,
                   void (*drawPx)(const uint8_t, const uint8_t))
 {
+    /* Draw a flat line */
     if (abs(p2.y - p1.y) < abs(p2.x - p1.x))
     {
         /* Reverse coordinates */
@@ -97,6 +98,7 @@ void glcdDrawLine(const xy_point p1, const xy_point p2,
         else
             drawLineLow(p1, p2, drawPx);
     }
+    /* Draw a steep line */
     else
     {
         /* Reverse coordinates */
@@ -112,6 +114,8 @@ static void drawLineLow(const xy_point p1, const xy_point p2,
                         void (*drawPx)(const uint8_t, const uint8_t))
 {
     int8_t dx, dy, yi, d, y;
+    
+    /* Calculate the gradients on the respective axes */
     dx = p2.x - p1.x;
     dy = p2.y - p1.y;
     yi = 1;
@@ -123,20 +127,23 @@ static void drawLineLow(const xy_point p1, const xy_point p2,
         dy = -dy;
     }
 
-    /* How many pixels in a line */
-    d = 2*dy - dx;
+    /* Line gradient error */
+    d = (dy << 1) - dx;
     y = p1.y;
 
     for (uint8_t x = p1.x; x <= p2.x; x++)
     {
         drawPx(x, y);
-        /* Update y coordinate */
+
+        /* Perform gradient error correction by moving in y direction */
         if (d > 0)
         {
-            d -= 2*dx;
+            d -= dx << 1;
             y += yi;
         }
-        d += 2*dy;
+
+        /* Update the error function */
+        d += dy << 1;
     }
 }
 
@@ -145,31 +152,36 @@ static void drawLineHigh(const xy_point p1, const xy_point p2,
                          void (*drawPx)(const uint8_t, const uint8_t))
 {
     int8_t dx, dy, xi, d, x;
+
+    /* Calculate the gradients on the respective axes */
     dx = p2.x - p1.x;
     dy = p2.y - p1.y;
     xi = 1;
 
     /* Falling line */
-    if (dy < 0)
+    if (dx < 0)
     {
         xi = -1;
         dx = -dx;
     }
 
-    /* How many pixels in a line */
-    d = 2*dx - dy;
+    /* Line gradient error */
+    d = (dx << 1) - dy;
     x = p1.x;
 
     for (uint8_t y = p1.y; y <= p2.y; y++)
     {
         drawPx(x, y);
-        /* Update x coordinate */
+
+        /* Perform gradient error correction by moving in x direction */
         if (d > 0)
         {
-            d -= 2*dy;
+            d -= dy << 1;
             x += xi;
         }
-        d += 2*dx;
+
+        /* Update the error function */
+        d += dx << 1;
     }
 }
 
@@ -242,12 +254,14 @@ void glcdDrawCircle(const xy_point c, const uint8_t radius,
     uint8_t y = 0;
     int8_t dx = 1;
     int8_t dy = 1;
+
+    /* Calculate radius error function */
     int8_t error = dx - (radius << 1);
 
     /* Draw circle segments in counterclockwise order starting from (r, 0) */
     while (x >= y)
     {
-        /* Draw circle outline */
+        /* Draw circle segment */
         drawPx(c.x + x, c.y + y);
         drawPx(c.x + y, c.y + x);
         drawPx(c.x - y, c.y + x);
@@ -257,13 +271,15 @@ void glcdDrawCircle(const xy_point c, const uint8_t radius,
         drawPx(c.x + y, c.y - x);
         drawPx(c.x + x, c.y - y);
 
-        /* Calculate error function and decide if x/y need to be updated */
+        /* Perform radius error correction in y direction and update error function */
         if (error <= 0)
         {
             y++;
             error += dy;
             dy += 2;
         }
+
+        /* Perform radius error correction in x direction and update error function */
         if (error > 0)
         {
             x--;
