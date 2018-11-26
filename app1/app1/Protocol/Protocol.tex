@@ -99,13 +99,13 @@ from the implementation proposal in the protocol.
 %---------------------------------------------------------------------------
 
 \bConnections{What}{}
-J12 & Connected to GND \\ \hline
-J14 & EXT \\ \hline
-J15 & PF0 \\ \hline
-LEDs & Off \\ \hline
-GLCD backlight & On \\ \hline
-PORT switches & Off \\ \hline
-PORT jumpers & Pull down \\
+J12 & Connected to VCC \\
+J14 & EXT \\
+J15 & PF0 \\
+LEDs & Off \\
+GLCD backlight & On \\
+PORT switches & Off \\
+PORT jumpers & Pull down 
 \eConnections
 
 Write down all things we need to know to get your program running on our board.
@@ -166,21 +166,7 @@ Explain your modules.
 \subsection{HAL GLCD}
 %---------------------------------------------------------------------------
 
-%***************************************************************************
-\section{UART}
-%***************************************************************************
 
-%***************************************************************************
-\section{Rand}
-%***************************************************************************
-
-%***************************************************************************
-\section{ADC}
-%***************************************************************************
-
-%***************************************************************************
-\section{Timer}
-%***************************************************************************
 
 %***************************************************************************
 \section{...explain your application modules ...}
@@ -196,27 +182,34 @@ Explain your modules.
 \section{Problems}
 %***************************************************************************
 
-One problem that was encountered during the development of the application
-was the faulty function \emph{wiiUserSetAccel}. In the specification it was
-stated that using this function it would be possible to either turn the wiimote
-accelerometer on or off. Unfortunately this behavior was not reflected in the
-implementation, which only turned the accelerometer on, regardless of the value
-of the \emph{enable} parameter.
+One problem that was encountered during the development of the application was the faulty
+function wiiUserSetAccel. In the specification it was stated that using this function it would be
+4possible to either turn the wiimote accelerometer on or off. Unfortunately this behavior was
+not reflected in the implementation, which only turned the accelerometer on, regardless of the
+value of the enable parameter.
 
-Another difficulty concerned the interpretation of the accelerometer data. It
-took some time and thinking to derive a simple and fast algorithm for wiimote
-tilt detection which did not require the use of complex numerics or even 
-floating point arithmetic. To understand the principal behavior of an
-accelerometer, the following article was consulted: http://bildr.org/2011/04/sensing-orientation-with-the-adxl335-arduino/.
+Another difficulty concerned the interpretation of the accelerometer data. It took some
+time and thinking to derive a simple and fast algorithm for wiimote tilt detection which
+did not require the use of complex numerics or even floating point arithmetic. To un-
+derstand the principal behavior of an accelerometer, the following article was consulted:
+http://bildr.org/2011/04/sensing-orientation-with-the-adxl335-arduino/.
 
-A lot of time had to be in invested in figuring out how to communicate with 
-the GLCD module. The exact timing and pin level sequence had to be found out 
-by trial-and-error, as the datasheets for the hardware were not completely 
-accurate.
+A lot of time had to be in invested in figuring out how to communicate with the GLCD
+module. The exact timing and pin level sequence had to be found out by trial-and-error, as the
+datasheets for the hardware were not completely accurate.
+
+Finally, just before uploading the solution a bug was discovered, where the program started to
+freeze or reset the board after running a considerably long time. After many hours of debugging
+the error was found to be hidden in a for loop counting from high to low numbers. The problem
+was that one part of the loop condition was checking for the index to be greater or equal to
+zero and with the index being an unsigned integer, this sometimes resulted in an endless loop.
 
 %***************************************************************************
 \section{Work}
 %***************************************************************************
+
+Estimate the work you put into solving the Application.
+You can add additional points, if you like.
 
 \begin{tabular}{|l|c|c|}\hline
 	Task & Assumption (IP) & Reality \\ \hline
@@ -224,15 +217,14 @@ accurate.
 	reading manuals, datasheets &  5 h &  5 h\\
 	program design              & 10 h &  6 h\\
 	programming                 & 20 h & 16 h\\
-	debugging                   & 20 h & 44 h\\
-	questions, protocol         &  5 h &  4 h\\ \hline
+	debugging                   & 20 h & 60 h\\
+	protocol                    & 5  h &  4 h\\ \hline
 
-	\textbf{Total}              & 60 h & 75 h\\ \hline
+	\textbf{Total}              & 60 h & 91 h\\ \hline
 \end{tabular}
 
 
 %***************************************************************************
 \newpage
 \end{document}
-
 
