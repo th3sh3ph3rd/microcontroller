@@ -105,37 +105,95 @@ J15 & PF0 \\
 LEDs & Off \\
 GLCD backlight & On \\
 PORT switches & Off \\
-PORT jumpers & Pull down 
+PORT jumpers & Pull down \\ 
 \eConnections
 
-Write down all things we need to know to get your program running on our board.
-All non-standard external connections, all switches your program needs, \dots
-If we cannot figure out how we get your program running, we can not give you
-	points for it.
-
+The mp3-SD module needs to be connected as per specification and the bluetooth
+module needs to be connected to PORTJ.
 
 %---------------------------------------------------------------------------
 \subsection{Design Decisions}
 %---------------------------------------------------------------------------
 
-Here comes the design decisions that you made during programming.
+For abstraction and compartementalization purposes, the application is split
+up into many independant submodules, as proposed in the specification. Furthermore 
+it was decided to implement a standalone timer module, which abstracts the timer
+hardware and allows to start timers by just specifiying the period in ms.
+Also the main application was not put in the main file, but rather in a 
+seperate game module, connecting all the necessary driver modules, handling
+the game logic and task switching. This leads to a clean main.c file, without
+many includes or ISRs and just two function calls, one for setup and one for
+running the main application loop. Another major design decision was to 
+precompute a number of random walls with a python script for the game and store
+them in the flash and later load them randomly in order to trade storage for 
+computation time.
 
 %---------------------------------------------------------------------------
 \subsection{Specialities}
 %---------------------------------------------------------------------------
 
-Does you solution have something special (positive or negative)?
+The application is very reactive to user input and runs smoothly. Also the
+user interface controls can be considered as intuitive or is appropriately
+explained with text. By partitioning the big background task into many subtasks
+it is prevented that one task monopolizes the CPU, leading to clear music 
+playback, responsive controls and smooth gameplay. Also on the screen showing
+an ongoing connection attempt between MCU and wiimote an animation was included
+to signifiy the user that the application is still progressing. The former
+mentioned timer library can also be listed as a speciality, as it handles the
+hardware in an intuitive way for the programmer and also checks if hardware
+is not allocated multiple times.
 
+The gameplay itself might be a bit boring, as it might be a littlebit too
+easy for some people's taste. This could be improved by integrating harder
+platforms (less or smaller gaps) and supporting even higher scroll speeds.
+But this would be the task of a game UX specialist rather than that of a 
+computer engineer to be.
 
 %***************************************************************************
 \section{Main Application}
 %***************************************************************************
 
-Describe your application.
+As described above, the code for the main application is not located in the
+main.c file but in a seperate game.c file. When the application is started,
+music starts playing and the
+the program checks for a present bluetooth connection and if the remote is
+disconnted it initates a new connection. Provided the correct MAC-address
+was entered in the mac.h file, after several secondes the program switches
+to the start screen, implying a successful connection to the wiimote. On the
+start screen the user is presented with two options: either start playing the
+game or view the highscore table. If the highscore table is selected, it will
+be empty as no persistent storage was implemented.
 
+When the "Play" option is
+selected, the user is presented a screen, where a player can be selected, using
+the up and down arrows on the wiimote. At this point, the user can choose to
+go back to the start screen or to start playing the game.
 
+Upon entering the
+game, the screen is filled with random walls, the ball is placed on the bottom
+and the accelerometer in the wiimote is enabled in order to allow steering the
+ball. The level immediately starts scrolling and placing new random walls. The
+ball can be moved in x direction by holding the wiimote in an orientation similar
+to how one would hold a TV remote and by tilting in right or left. Gameplay is
+as described in the specification, the ball cannot move out of the visible 
+field, falls down if not blocked by platforms or the bottom and the game is lost
+if the ball touches the top. The game either ends when the game-over condition is
+met or when the home button is pressed, which leads back to the start screen.
+In both cases the current score is placed in the highscore table if it is 
+sufficiently high and the accelerometer is disabled again. In case the player 
+was defeated, a game-over screen with the achieved score is shown. The user
+can chose to go back to the start screen or to directly view the highscore
+table sorted in descending order.
 
-
+The main application is driven by a gametick timer which fires every 30 ms.
+On every gametick, the user input from the wiimote is checked in order to
+determine if the app needs to move to another screen. In the game a few
+additional tasks need to be executed. First, the screen is updated by moving
+the ball according to the user input after performing collision detection and
+checking if the game has been lost. By using timer divisor counters, the screen
+scrolls after several gameticks and after shifting out a wall, a new random
+wall is drawn on the screen. The score counter and the difficulty (scrolling
+speed) are also updated by using timer divisor counters.
 
 %***************************************************************************
 \section{Music Playback}
@@ -145,15 +203,41 @@ Describe your application.
 \subsection{SPI}
 %---------------------------------------------------------------------------
 
-Explain your modules.
+The SPI module was implemented mostly by following the examples given on
+pages 198-199 of the ATmega1280 manual. The module uses busy-waiting rather
+than interrupts and the SPI is configured to be in master mode.
 
 %---------------------------------------------------------------------------
 \subsection{Playback}
 %---------------------------------------------------------------------------
 
+Music playback is implemented in music.c by reading a 32 bit block of data from the SD 
+card and sending it to the mp3 module. The function immediately returns, so
+that the game task can proceed in the meanwhile, but is called repeatedly
+until the buffer of th mp3 module is full. After the end of the selected song
+has been reached, it starts playing all over again. The music module also 
+provides a function to set the volume on the mp3 board, which linearizes the
+input value and can be used as a callback for the ADC module. Note that the
+volume is only set in case the actual value has changed and if the spi is not
+used by the music playback task.
 
 %***************************************************************************
-\section{LC--Display}
+\section{ADC}
+%***************************************************************************
+
+The ADC is required to fullfill two tasks: reading the the onboard
+potentiometer to set the music volume and providing entropy for the PRNG
+module. This is achived by setting the ADC to auto trigger mode, triggering
+it every ~200 Hz, and alternatingly reading the potentiometer and the floating
+pins, which produces an update of the respective values approximately every
+10 ms. When the trigger timer interrupt arrives the ADC is enabled (required
+if differential mode is used in combination with auto triggering according
+to the manual). After finishing the conversion (ADC interrupt) the result
+is read, the ADC disabled, the ADC MUX gets set to read from the next source
+and the ADC result is passed to the appropriate callback.
+
+%***************************************************************************
+\section{GLCD--Display}
 %***************************************************************************
 
 %---------------------------------------------------------------------------
@@ -166,17 +250,31 @@ Explain your modules.
 \subsection{HAL GLCD}
 %---------------------------------------------------------------------------
 
-
-
 %***************************************************************************
-\section{...explain your application modules ...}
+\section{PRNG}
 %***************************************************************************
 
+The pseudorandom number generator implements the linear feedback shift register
+algorithm suggested by the PRNG manual using volatile inline assmbler. This
+assembler block needs to be atomic, as it makes heavy use of the carry flag 
+and requires 16 bit arithmetic. It provides functions for feeding entropy and 
+for extracting pseudorandom numbers from the LFSR.
+
 %***************************************************************************
-\section{...the above were only examples}
+\section{Timer abstraction}
 %***************************************************************************
 
+The timer moduel provides abstraction for timers 1, 3, 4 and 5. The user can
+specify how long the timer should count in milliseconds and if the timer should
+only be fired once or if it should run periodically. The output compare registers
+and prescaler values are set accordingly. The module also offers the option to
+stop a periodic timer, which can be used for implementing animations for 
+example. The module also provides feedback if the requested timer is available
+or already in use.
 
+%***************************************************************************
+\section{UART}
+%***************************************************************************
 
 %***************************************************************************
 \section{Problems}
