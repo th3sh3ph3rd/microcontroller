@@ -6,7 +6,7 @@
 
 uint8_t ovfCnt;
 uint16_t inpCapReg;
-uint32_t interval;
+uint16_t interval;
 uint8_t seconds;
 uint8_t hundreths;
 
@@ -57,22 +57,26 @@ ISR(TIMER1_CAPT_vect, ISR_BLOCK)
     inpCapReg = ICR1;
     PORTD &= ~(1<<ICP1);
     TCNT1 = 0;
-    interval = 0xffff * ovfCnt;
-    ovfCnt = 0;
+    ICR1 = 0;
+    //interval = 0xffff * ovfCnt;
 
-    interval = (interval + inpCapReg) / 1562;
-    PORTB = interval;
+    PORTC = ovfCnt;
+
+    interval = 42 * ovfCnt + inpCapReg / 1562;
+    PORTB = inpCapReg;
     
-    interval = (interval + inpCapReg);
+    //interval = (interval + inpCapReg);
 
-    interval /= 1562;
+    //interval /= 1562;
 
     seconds = interval / 10;
     hundreths = interval % 10;
 
-    if (interval > 99)
+    if (interval > 99 || ovfCnt > 3)
         PORTA = 0xff;
     else
         PORTA = (hundreths<<4) | seconds;
+    
+    ovfCnt = 0;
 }
 
