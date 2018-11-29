@@ -83,11 +83,11 @@
 %***************************************************************************
 % remove the following lines from your own protocol file!
 %***************************************************************************
-\noindent
-\textbf{Note:} This template is provided to show you how \LaTeX{} works and may
-not contain all subsections your protocol should contain.\\
-\textbf{Note:} You can, and in fact should, reuse appropriate parts
-from the implementation proposal in the protocol.
+%\noindent
+%\textbf{Note:} This template is provided to show you how \LaTeX{} works and may
+%not contain all subsections your protocol should contain.\\
+%\textbf{Note:} You can, and in fact should, reuse appropriate parts
+%from the implementation proposal in the protocol.
 
 
 %***************************************************************************
@@ -124,8 +124,8 @@ seperate game module, connecting all the necessary driver modules, handling
 the game logic and task switching. This leads to a clean main.c file, without
 many includes or ISRs and just two function calls, one for setup and one for
 running the main application loop. Another major design decision was to 
-precompute a number of random walls with a python script for the game and store
-them in the flash and later load them randomly in order to trade storage for 
+precompute a number of random walls with a python script (randomWalls.py) for the game and store
+them in the flash to later load them randomly in order to trade storage for 
 computation time.
 
 %---------------------------------------------------------------------------
@@ -133,17 +133,17 @@ computation time.
 %---------------------------------------------------------------------------
 
 The application is very reactive to user input and runs smoothly. Also the
-user interface controls can be considered as intuitive or is appropriately
+user interface controls can be considered as intuitive or are appropriately
 explained with text. By partitioning the big background task into many subtasks
 it is prevented that one task monopolizes the CPU, leading to clear music 
 playback, responsive controls and smooth gameplay. Also on the screen showing
 an ongoing connection attempt between MCU and wiimote an animation was included
-to signifiy the user that the application is still progressing. The former
+to signifiy the user that the application is still progressing (this could be a place to award bonus points). The former
 mentioned timer library can also be listed as a speciality, as it handles the
 hardware in an intuitive way for the programmer and also checks if hardware
-is not allocated multiple times.
+is not allocated multiple times (another place for potentially awarding bonus points).
 
-The gameplay itself might be a bit boring, as it might be a littlebit too
+The gameplay itself can be considered a bit boring, as it might be a littlebit too
 easy for some people's taste. This could be improved by integrating harder
 platforms (less or smaller gaps) and supporting even higher scroll speeds.
 But this would be the task of a game UX specialist rather than that of a 
@@ -155,7 +155,7 @@ computer engineer to be.
 
 As described above, the code for the main application is not located in the
 main.c file but in a seperate game.c file. When the application is started,
-music starts playing and the
+music starts playing,
 the program checks for a present bluetooth connection and if the remote is
 disconnted it initates a new connection. Provided the correct MAC-address
 was entered in the mac.h file, after several secondes the program switches
@@ -174,7 +174,7 @@ game, the screen is filled with random walls, the ball is placed on the bottom
 and the accelerometer in the wiimote is enabled in order to allow steering the
 ball. The level immediately starts scrolling and placing new random walls. The
 ball can be moved in x direction by holding the wiimote in an orientation similar
-to how one would hold a TV remote and by tilting in right or left. Gameplay is
+to how one would hold a TV remote and by tilting it right or left. Gameplay is
 as described in the specification, the ball cannot move out of the visible 
 field, falls down if not blocked by platforms or the bottom and the game is lost
 if the ball touches the top. The game either ends when the game-over condition is
@@ -183,7 +183,7 @@ In both cases the current score is placed in the highscore table if it is
 sufficiently high and the accelerometer is disabled again. In case the player 
 was defeated, a game-over screen with the achieved score is shown. The user
 can chose to go back to the start screen or to directly view the highscore
-table sorted in descending order.
+table, sorted in descending order.
 
 The main application is driven by a gametick timer which fires every 30 ms.
 On every gametick, the user input from the wiimote is checked in order to
@@ -218,7 +218,7 @@ until the buffer of th mp3 module is full. After the end of the selected song
 has been reached, it starts playing all over again. The music module also 
 provides a function to set the volume on the mp3 board, which linearizes the
 input value and can be used as a callback for the ADC module. Note that the
-volume is only set in case the actual value has changed and if the spi is not
+volume is only set in case the value has actually changed and if the SPI is not
 used by the music playback task.
 
 %***************************************************************************
@@ -244,19 +244,47 @@ and the ADC result is passed to the appropriate callback.
 \subsection{GLCD}
 %---------------------------------------------------------------------------
 
-Explain your modules.
+The GLCD module provides high-level functions for drawing and writing on the
+display. It relies on functions for setting, clearing and inverting single
+pixels. This functions need to first read the respective memory page before performing
+a pixel operation, as the state of the other pixels in the page must be preserved.
+The functions for drawing lines and circles implement the Bresenham Line Algorithm (https://en.wikipedia.org/wiki/Bresenham\%27s\_line\_algorithm)
+and the Midpoint Circle Algorithm 
+(https://en.wikipedia.org/wiki/Midpoint\_circle\_algorithm). Empty and filled
+rectangles are composed of single lines, where several cases must be considered
+so that no pixel gets drawn twice in order for the invert operation to
+function correctly. In order to draw characters, it is required to set a pointer
+to the correct entry in the font array and then draw the respective pixels
+forming the character. The text writing functions call the character
+drawing function for every character in a string and discard any symbols not
+fitting on a given line.
 
 %---------------------------------------------------------------------------
 \subsection{HAL GLCD}
 %---------------------------------------------------------------------------
+
+The HAL GLCD module handles communication with the GLCD controller and implements
+four basic operations: reading and writing data, sending commands and reading
+the status bits. Before carrying out the first three cases, it must be ensured
+that the GLCD is reset and not busy, which is ensured by busy waiting until
+the corresponding status bits are set. After writing data or commands and 
+before reading data, the respective control bits are set, the correct controller is selected and the enable flag is
+toggled as per timing diagram in the datasheet, which is realized by waiting
+with a few NOPs. The high level read, write and address-setting functions
+abstract away the fact that the GLCD in fact uses two seperate controllers
+by maintaining an internal state which controller needs to be used. This
+state is updated upon crossing memory boundaries. The y-shift is set with
+a dedicated command and the current value is tracked by an internal variable.
+The read function needs to perform two read operations where the first result
+is discarded, as the controllers require a dummy read.
 
 %***************************************************************************
 \section{PRNG}
 %***************************************************************************
 
 The pseudorandom number generator implements the linear feedback shift register
-algorithm suggested by the PRNG manual using volatile inline assmbler. This
-assembler block needs to be atomic, as it makes heavy use of the carry flag 
+algorithm suggested by the PRNG manual using volatile inline assembler. This
+assembler block needs to be atomic, as it makes heavy use of the carry bit 
 and requires 16 bit arithmetic. It provides functions for feeding entropy and 
 for extracting pseudorandom numbers from the LFSR.
 
@@ -268,13 +296,29 @@ The timer moduel provides abstraction for timers 1, 3, 4 and 5. The user can
 specify how long the timer should count in milliseconds and if the timer should
 only be fired once or if it should run periodically. The output compare registers
 and prescaler values are set accordingly. The module also offers the option to
-stop a periodic timer, which can be used for implementing animations for 
-example. The module also provides feedback if the requested timer is available
-or already in use.
+stop a periodic timer, which can for example be used for implementing animations. 
+The module also provides feedback if the requested timer is available or already in use.
 
 %***************************************************************************
 \section{UART}
 %***************************************************************************
+
+The UART's baudrate is set to 1 M using double transmission speed. If a new
+byte is received, the RX ISR puts it in the ringbuffer and calls the
+processRingbuffer procedure (only once, ensured by lock flags), which empties
+the buffer by calling the receive callback in the background. If the buffer fill level reaches a certain
+limit, the CTS line is set to signify the bluetooth module that transmission
+should be halted. If a byte should be sent, there are three cases which need
+to be checked before sending. First, reset must be completed. If this is not
+the case, the byte to be sent gets buffered and sending is tried again upon
+reset completion. Second, it must be assured that the RTS hardware flow control
+flag is not set by the blutooth module. Otherwise, sending is postponed again
+and a pin change interrupt gets activated on the RTS pin. If the corresponding ISR
+is executed, sending of the buffered byte is tried again and the PCINT disabled.
+Finally, the UART data register must be empty. If it is not, the UART data register
+interrupt is enabled and upon triggering, sending is tried again. If nothing
+blocks the send procedure, the byte is sent and the UDRINT enabled. On
+execution of the corresponding ISR the send callback is called.
 
 %***************************************************************************
 \section{Problems}
@@ -282,9 +326,9 @@ or already in use.
 
 One problem that was encountered during the development of the application was the faulty
 function wiiUserSetAccel. In the specification it was stated that using this function it would be
-4possible to either turn the wiimote accelerometer on or off. Unfortunately this behavior was
+possible to either turn the wiimote accelerometer on or off. Unfortunately this behavior was
 not reflected in the implementation, which only turned the accelerometer on, regardless of the
-value of the enable parameter.
+value provided to the enable parameter.
 
 Another difficulty concerned the interpretation of the accelerometer data. It took some
 time and thinking to derive a simple and fast algorithm for wiimote tilt detection which
@@ -305,9 +349,6 @@ zero and with the index being an unsigned integer, this sometimes resulted in an
 %***************************************************************************
 \section{Work}
 %***************************************************************************
-
-Estimate the work you put into solving the Application.
-You can add additional points, if you like.
 
 \begin{tabular}{|l|c|c|}\hline
 	Task & Assumption (IP) & Reality \\ \hline
