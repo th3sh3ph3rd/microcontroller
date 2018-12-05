@@ -1,0 +1,3 @@
+[submodule "app2/tinyos_ws18"]
+	path = app2/tinyos_ws18
+	url = ssh://m01614835@ssh.tilab.tuwien.ac.at/opt/mcvl/tinyos_ws18.git
