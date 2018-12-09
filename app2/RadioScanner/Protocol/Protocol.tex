@@ -1,0 +1,186 @@
+%***************************************************************************
+% MCLab Protocol Template
+%
+% Embedded Computing Systems Group
+% Institute of Computer Engineering
+% TU Vienna
+%
+%---------------------------------------------------------------------------
+% Vers.	Author	Date	Changes
+% 1.0	bw	10.3.06	first version
+% 1.1	bw	25.4.06	listing is in a different directory
+% 1.2	bw	24.5.06	tutor has to be listed on title page
+% 1.3	bw	16.6.06	statement about no plagiarism on title page (sign it!)
+%---------------------------------------------------------------------------
+% Author names:
+%       bw      Bettina Weiss
+%***************************************************************************
+
+\documentclass[12pt,a4paper,titlepage,oneside]{article}
+\usepackage{graphicx}            % fuer Bilder
+\usepackage{listings}            % fuer Programmlistings
+%\usepackage{german}              % fuer deutsche Umbrueche
+\usepackage[latin1]{inputenc}    % fuer Umlaute
+\usepackage{times}               % PDF files look good on screen
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{fullpage}
+\usepackage{style}
+
+%***************************************************************************
+% note: the template is in English, but you can use German for your
+% protocol as well; in that case, remove the comment from the
+% \usepackage{german} line above
+%***************************************************************************
+
+
+%***************************************************************************
+% enter your data into the following fields
+%***************************************************************************
+\newcommand{\Vorname}{IhrVorname/Your First Name}
+\newcommand{\Nachname}{IhrNachname/YourSurname}
+\newcommand{\MatrNr}{3333333}
+\newcommand{\Email}{e3333333@student.tuwien.ac.at}
+\newcommand{\Part}{I}
+\newcommand{\Tutor}{NameIhresTutors/NameOfYourTutor}
+%***************************************************************************
+
+
+%---------------------------------------------------------------------------
+% include all the stuff that is the same for all protocols and students
+\input ProtocolHeader.tex
+%---------------------------------------------------------------------------
+
+\begin{document}
+
+%---------------------------------------------------------------------------
+% create titlepage and table of contents
+\MakeTitleAndTOC
+%---------------------------------------------------------------------------
+
+
+%***************************************************************************
+% This is where your protocol starts
+%***************************************************************************
+
+%***************************************************************************
+% remove the following lines from your own protocol file!
+%***************************************************************************
+\noindent
+\textbf{Note:} This template is provided to show you how \LaTeX{} works and may
+not contain all subsections your protocol should contain.
+
+
+
+%***************************************************************************
+\section{Overview}
+%***************************************************************************
+
+%---------------------------------------------------------------------------
+\subsection{Connections,  External Pullups/Pulldowns}
+%---------------------------------------------------------------------------
+Example:
+\bConnections{What}{}
+PORTC & external Pulldown enabled on PC0,3-5,7 \\
+J12 & Connected to VCC \\
+\eConnections
+
+Write down all things we need to know to get your program running on our board.
+All non-standard external connections, all switches your program needs, \dots
+If we cannot figure out how we get your program running, we can not give you
+points for it.
+
+
+%---------------------------------------------------------------------------
+\subsection{Design Decisions}
+%---------------------------------------------------------------------------
+
+Here comes the design decisions that you made during programming.
+
+%---------------------------------------------------------------------------
+\subsection{Specialities}
+%---------------------------------------------------------------------------
+
+Does you solution have something special (positive or negative)?
+
+
+%***************************************************************************
+\section{Main Application}
+%***************************************************************************
+
+Describe your application.
+
+
+%***************************************************************************
+\section{Communication}
+%***************************************************************************
+
+%---------------------------------------------------------------------------
+\subsection{UDP}
+%---------------------------------------------------------------------------
+
+Explain your modules.
+
+%***************************************************************************
+\section{FMCLick}
+%***************************************************************************
+
+%---------------------------------------------------------------------------
+\subsection{PS/2}
+%---------------------------------------------------------------------------
+
+
+%***************************************************************************
+\section{...explain your application modules ...}
+%***************************************************************************
+
+%***************************************************************************
+\section{...the above were only examples}
+%***************************************************************************
+
+
+%***************************************************************************
+\section{Problems}
+%***************************************************************************
+
+Put all problems you encountered into this section.
+This is important information, which allows us to determine where there are
+problems.
+(Don't worry, we don't take points.)
+
+
+%***************************************************************************
+\section{Work}
+%***************************************************************************
+
+Estimate the work you put into solving the Application.
+
+\begin{tabular}{|l|c|c|}\hline
+	Task & Time spent \\ \hline
+
+	reading manuals, datasheets &  5 h\\
+	program design              &  5 h\\
+	programming                 & 10 h\\
+	debugging                   & 45 h\\
+	questions, protocol         &  5 h\\ \hline
+
+	\textbf{Total}              & 75 h\\ \hline
+\end{tabular}
+
+
+
+%***************************************************************************
+\section{Theory Tasks}
+%***************************************************************************
+Copy the theory task specification from the app 2 specification!
+
+% Your answers should be brief but complete
+
+
+
+
+%***************************************************************************
+\newpage
+\end{document}
+

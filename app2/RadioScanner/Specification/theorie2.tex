@@ -1,0 +1,92 @@
+In the theory task we want you to develop argumentation skills that
+     allow you to reason about the problem you have to solve and the
+     solution you are designing.
+Clear presentation of ideas is crucial for communication with team
+     members, bosses, customers, etc.
+This time we want you to prove your answers mathematically (by
+     induction).
+Points are solely awarded for proper mathematical argumentation.\\
+\\
+%%%%%%%%%%%%%%%%% new tasks %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%555
+Setting:
+
+A set of $n$ motes $\{p_1,\cdots,p_n\}$ is scattered in an area to broadcast data.
+For simplicity, assume that every mote $p_i$ starts with a unique data sample $i$.
+That is, mote $p_1$ starts with $1$, mote $p_2$ with $2$, and so on.
+
+Communication is divided into several subsequent rounds and happens wirelessly via broadcasts.
+Starting with round $r=1$, in each round every mote $i$ sends a broadcast message $m_i(r)$ to the system.
+Broadcasting happens in zero time and all motes receive messages just before the next round starts.
+A message $m_i(r)$ sent in round $r$ is the set of known data samples $S_i$. 
+For example the message $m_1(1)$ sent by mote $1$ in round $1$ is $S_1=\{1\}$.
+After receiving messages in some round $r$ mote $i$ updates the set of known data samples. 
+E.g., if mote $p_i$ receives a message $m_j(r)$ from mote $p_j$ $S_i=S_i\cup S_j$.
+This update is done for all received messages in each round.
+
+This round-based communication can be modelled with a communication graph $G_r$
+where each node in the graph represents a mote. 
+A directed edge $(i,j)$ in $G_r$ represents that the message sent by mote $p_i$ in round $r$ was sucessfully received by mote $p_j$ in round $r$. 
+
+\subsection*{Tasks} 
+
+\begin{enumerate} 
+	\item \pts{3 Points}{Strongly connected communication:}
+		Assume that, because of message loss, not every message sent by a mote
+		is received by every other mote. 
+		The only guarantee the motes have is that in every round the
+		communication graph is strongly connected.
+		Show that after $n$ rounds of communication that data sample $1$ is part of every set $s_i$, i.e., $1 \in \bigcap_{i=1}^n S_i $.
+\begin{figure}[h!]
+\centering
+	\begin{tikzpicture}
+		\draw (0, 0.5) node (p1)    {$p_1$};
+		\draw (-1, -1) node (p2)    {$p_2$};
+		\draw (1, -1) node (p3)    {$p_3$};
+		\draw[->] (p1) -- (p2);
+		\draw[->] (p2) -- (p3);
+		\draw[->] (p3) -- (p1);
+
+		\draw (4, 0.5) node (p1)    {$p_1$};
+		\draw (3, -1) node (p2)    {$p_2$};
+		\draw (5, -1) node (p3)    {$p_3$};
+		\draw[<->] (p1) -- (p2);
+		\draw[<->] (p2) -- (p3);
+		\draw[<->] (p3) -- (p1);
+
+		\draw (8, 0.5) node (p1)    {$p_1$};
+		\draw (7, -1) node (p2)    {$p_2$};
+		\draw (9, -1) node (p3)    {$p_3$};
+		\draw[<->] (p1) -- (p2);
+		\draw[<->] (p2) -- (p3);	
+	\end{tikzpicture}
+	\caption{Example for $n=3$: three strongly connected graphs}
+\end{figure}
+	%\item \pts{1 Points}{Strongly connected communication extended:} 
+	%	Under the same conditions as befor,
+	%	how many rounds does it take for all motes to send the local unique data sample to all other motes \textbf(at most) (i.e. show that it is possible for $x$ rounds and not for $x-1$).
+	\item \pts{2 Points}{Rooted tree communication:} Assume that,
+		because of message loss, not every message send by a mote is received
+		by every other mote. The only guarantee the motes have is that in every round
+		the communication graph is a rooted tree, i.e., there exists at least one mote (the so called root mote) that has a directed path (a sequence of edges) to every other mote in $G_r$. Note that 		the root mote can be a different mote in every round.
+		Show that after $n^2$ rounds of communication there exists a data sample $i$ that is part of every set $S_j$, i.e., $\{i\} \in \bigcap_{j=1}^n S_j $.
+\begin{figure}[h!]
+\centering
+	\begin{tikzpicture}
+		\draw (0, 0.5) node (p1)    {\textcolor{red}{$p_1$}};
+		\draw (-1, -1) node (p2)    {$p_2$};
+		\draw (1, -1)  node (p3)    {$p_3$};
+		\draw[->] (p1) -- (p2);
+		\draw[->] (p2) -- (p3);
+
+
+		\draw (4, 0.5) node (p1)    {$p_1$};
+		\draw (3, -1) node (p2)    {\textcolor{red}{$p_2$}};
+		\draw (5, -1) node (p3)    {$p_3$};
+		\draw[->] (p2) -- (p3);
+		\draw[->] (p2) -- (p1);
+
+	\end{tikzpicture}
+	\caption{Example for $n=3$: two rooted trees}
+\end{figure}
+\end{enumerate}
+

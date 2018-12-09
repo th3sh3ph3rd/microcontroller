@@ -1,0 +1,36 @@
+%***************************************************************************
+% MCLab Listing Template
+%
+% Embedded Computing Systems Group
+% Institute of Computer Engineering
+% TU Vienna
+%
+%---------------------------------------------------------------------------
+% Vers. Author Date     Changes
+% 1.0   mp     23.3.15  first version based on protocol template
+% 1.1   mp     11.5.15  changes to style of code listings
+%---------------------------------------------------------------------------
+% Author names:
+%       mp      Martin Perner
+%***************************************************************************
+
+\documentclass[12pt,a4paper,titlepage,oneside]{article}
+\usepackage{graphicx}            % fuer Bilder
+\usepackage{listings}            % fuer Programmlistings
+%\usepackage{german}              % fuer deutsche Umbrueche
+\usepackage[latin1]{inputenc}    % fuer Umlaute
+\usepackage{times}               % PDF files look good on screen
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{fullpage}
+\usepackage{style}
+
+
+\renewcommand*{\thepage}{A-\arabic{page}}
+
+\begin{document}
+\appendix
+\include{listings}
+\end{document}
+
