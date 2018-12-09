@@ -1,0 +1,1040 @@
+
+build/bigAVR6_1280/main.exe:     file format elf32-avr
+
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	0c 94 75 00 	jmp	0xea	; 0xea <__ctors_end>
+   4:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+   8:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+   c:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  10:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  14:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  18:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  1c:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  20:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  24:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  28:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  2c:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  30:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  34:	0c 94 cc 03 	jmp	0x798	; 0x798 <__vector_13>
+  38:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  3c:	0c 94 0b 04 	jmp	0x816	; 0x816 <__vector_15>
+  40:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  44:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  48:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  4c:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  50:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  54:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  58:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  5c:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  60:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  64:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  68:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  6c:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  70:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  74:	0c 94 54 03 	jmp	0x6a8	; 0x6a8 <__vector_29>
+  78:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  7c:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  80:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  84:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  88:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  8c:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  90:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  94:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  98:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  9c:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  a0:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  a4:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  a8:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  ac:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  b0:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  b4:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  b8:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  bc:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  c0:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  c4:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  c8:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  cc:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  d0:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  d4:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  d8:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  dc:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+  e0:	0c 94 94 00 	jmp	0x128	; 0x128 <__bad_interrupt>
+
+000000e4 <McuSleepC__atm128PowerBits>:
+  e4:	00 02 0e 06 0c 04                                   ......
+
+000000ea <__ctors_end>:
+  ea:	11 24       	eor	r1, r1
+  ec:	1f be       	out	0x3f, r1	; 63
+  ee:	cf ef       	ldi	r28, 0xFF	; 255
+  f0:	d1 e2       	ldi	r29, 0x21	; 33
+  f2:	de bf       	out	0x3e, r29	; 62
+  f4:	cd bf       	out	0x3d, r28	; 61
+
+000000f6 <__do_copy_data>:
+  f6:	12 e0       	ldi	r17, 0x02	; 2
+  f8:	a0 e0       	ldi	r26, 0x00	; 0
+  fa:	b2 e0       	ldi	r27, 0x02	; 2
+  fc:	e2 ef       	ldi	r30, 0xF2	; 242
+  fe:	f9 e0       	ldi	r31, 0x09	; 9
+ 100:	00 e0       	ldi	r16, 0x00	; 0
+ 102:	0b bf       	out	0x3b, r16	; 59
+ 104:	02 c0       	rjmp	.+4      	; 0x10a <__do_copy_data+0x14>
+ 106:	07 90       	elpm	r0, Z+
+ 108:	0d 92       	st	X+, r0
+ 10a:	a2 30       	cpi	r26, 0x02	; 2
+ 10c:	b1 07       	cpc	r27, r17
+ 10e:	d9 f7       	brne	.-10     	; 0x106 <__do_copy_data+0x10>
+
+00000110 <__do_clear_bss>:
+ 110:	22 e0       	ldi	r18, 0x02	; 2
+ 112:	a2 e0       	ldi	r26, 0x02	; 2
+ 114:	b2 e0       	ldi	r27, 0x02	; 2
+ 116:	01 c0       	rjmp	.+2      	; 0x11a <.do_clear_bss_start>
+
+00000118 <.do_clear_bss_loop>:
+ 118:	1d 92       	st	X+, r1
+
+0000011a <.do_clear_bss_start>:
+ 11a:	af 32       	cpi	r26, 0x2F	; 47
+ 11c:	b2 07       	cpc	r27, r18
+ 11e:	e1 f7       	brne	.-8      	; 0x118 <.do_clear_bss_loop>
+ 120:	0e 94 15 04 	call	0x82a	; 0x82a <main>
+ 124:	0c 94 f7 04 	jmp	0x9ee	; 0x9ee <_exit>
+
+00000128 <__bad_interrupt>:
+ 128:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
+
+0000012c <SchedulerBasicP__popTask>:
+ 12c:	80 91 29 02 	lds	r24, 0x0229	; 0x800229 <SchedulerBasicP__m_head>
+ 130:	8f 3f       	cpi	r24, 0xFF	; 255
+ 132:	69 f0       	breq	.+26     	; 0x14e <SchedulerBasicP__popTask+0x22>
+ 134:	e8 2f       	mov	r30, r24
+ 136:	f0 e0       	ldi	r31, 0x00	; 0
+ 138:	ea 5f       	subi	r30, 0xFA	; 250
+ 13a:	fd 4f       	sbci	r31, 0xFD	; 253
+ 13c:	90 81       	ld	r25, Z
+ 13e:	90 93 29 02 	sts	0x0229, r25	; 0x800229 <SchedulerBasicP__m_head>
+ 142:	9f 3f       	cpi	r25, 0xFF	; 255
+ 144:	11 f4       	brne	.+4      	; 0x14a <SchedulerBasicP__popTask+0x1e>
+ 146:	90 93 2e 02 	sts	0x022E, r25	; 0x80022e <SchedulerBasicP__m_tail>
+ 14a:	9f ef       	ldi	r25, 0xFF	; 255
+ 14c:	90 83       	st	Z, r25
+ 14e:	08 95       	ret
+
+00000150 <SchedulerBasicP__TaskBasic__postTask>:
+ 150:	9f b7       	in	r25, 0x3f	; 63
+ 152:	f8 94       	cli
+ 154:	e8 2f       	mov	r30, r24
+ 156:	f0 e0       	ldi	r31, 0x00	; 0
+ 158:	ea 5f       	subi	r30, 0xFA	; 250
+ 15a:	fd 4f       	sbci	r31, 0xFD	; 253
+ 15c:	20 81       	ld	r18, Z
+ 15e:	2f 3f       	cpi	r18, 0xFF	; 255
+ 160:	c9 f4       	brne	.+50     	; 0x194 <SchedulerBasicP__TaskBasic__postTask+0x44>
+ 162:	21 e0       	ldi	r18, 0x01	; 1
+ 164:	30 e0       	ldi	r19, 0x00	; 0
+ 166:	e0 91 2e 02 	lds	r30, 0x022E	; 0x80022e <SchedulerBasicP__m_tail>
+ 16a:	e8 17       	cp	r30, r24
+ 16c:	11 f0       	breq	.+4      	; 0x172 <SchedulerBasicP__TaskBasic__postTask+0x22>
+ 16e:	20 e0       	ldi	r18, 0x00	; 0
+ 170:	30 e0       	ldi	r19, 0x00	; 0
+ 172:	23 2b       	or	r18, r19
+ 174:	79 f4       	brne	.+30     	; 0x194 <SchedulerBasicP__TaskBasic__postTask+0x44>
+ 176:	20 91 29 02 	lds	r18, 0x0229	; 0x800229 <SchedulerBasicP__m_head>
+ 17a:	2f 3f       	cpi	r18, 0xFF	; 255
+ 17c:	19 f4       	brne	.+6      	; 0x184 <SchedulerBasicP__TaskBasic__postTask+0x34>
+ 17e:	80 93 29 02 	sts	0x0229, r24	; 0x800229 <SchedulerBasicP__m_head>
+ 182:	04 c0       	rjmp	.+8      	; 0x18c <SchedulerBasicP__TaskBasic__postTask+0x3c>
+ 184:	f0 e0       	ldi	r31, 0x00	; 0
+ 186:	ea 5f       	subi	r30, 0xFA	; 250
+ 188:	fd 4f       	sbci	r31, 0xFD	; 253
+ 18a:	80 83       	st	Z, r24
+ 18c:	80 93 2e 02 	sts	0x022E, r24	; 0x80022e <SchedulerBasicP__m_tail>
+ 190:	80 e0       	ldi	r24, 0x00	; 0
+ 192:	01 c0       	rjmp	.+2      	; 0x196 <SchedulerBasicP__TaskBasic__postTask+0x46>
+ 194:	85 e0       	ldi	r24, 0x05	; 5
+ 196:	9f bf       	out	0x3f, r25	; 63
+ 198:	08 95       	ret
+
+0000019a <Atm1280AlarmSyncP__0__checkAlarm>:
+ 19a:	2f b7       	in	r18, 0x3f	; 63
+ 19c:	f8 94       	cli
+ 19e:	80 91 04 02 	lds	r24, 0x0204	; 0x800204 <Atm1280AlarmSyncP__0__set>
+ 1a2:	88 23       	and	r24, r24
+ 1a4:	09 f1       	breq	.+66     	; 0x1e8 <Atm1280AlarmSyncP__0__checkAlarm+0x4e>
+ 1a6:	40 91 0a 02 	lds	r20, 0x020A	; 0x80020a <Atm1280AlarmSyncP__0__t0>
+ 1aa:	50 91 0b 02 	lds	r21, 0x020B	; 0x80020b <Atm1280AlarmSyncP__0__t0+0x1>
+ 1ae:	60 91 0c 02 	lds	r22, 0x020C	; 0x80020c <Atm1280AlarmSyncP__0__t0+0x2>
+ 1b2:	70 91 0d 02 	lds	r23, 0x020D	; 0x80020d <Atm1280AlarmSyncP__0__t0+0x3>
+ 1b6:	80 91 20 02 	lds	r24, 0x0220	; 0x800220 <Atm1280AlarmSyncP__0__dt>
+ 1ba:	90 91 21 02 	lds	r25, 0x0221	; 0x800221 <Atm1280AlarmSyncP__0__dt+0x1>
+ 1be:	a0 91 22 02 	lds	r26, 0x0222	; 0x800222 <Atm1280AlarmSyncP__0__dt+0x2>
+ 1c2:	b0 91 23 02 	lds	r27, 0x0223	; 0x800223 <Atm1280AlarmSyncP__0__dt+0x3>
+ 1c6:	84 0f       	add	r24, r20
+ 1c8:	95 1f       	adc	r25, r21
+ 1ca:	a6 1f       	adc	r26, r22
+ 1cc:	b7 1f       	adc	r27, r23
+ 1ce:	40 91 0f 02 	lds	r20, 0x020F	; 0x80020f <Atm1280AlarmSyncP__0__now>
+ 1d2:	50 91 10 02 	lds	r21, 0x0210	; 0x800210 <Atm1280AlarmSyncP__0__now+0x1>
+ 1d6:	60 91 11 02 	lds	r22, 0x0211	; 0x800211 <Atm1280AlarmSyncP__0__now+0x2>
+ 1da:	70 91 12 02 	lds	r23, 0x0212	; 0x800212 <Atm1280AlarmSyncP__0__now+0x3>
+ 1de:	84 17       	cp	r24, r20
+ 1e0:	95 07       	cpc	r25, r21
+ 1e2:	a6 07       	cpc	r26, r22
+ 1e4:	b7 07       	cpc	r27, r23
+ 1e6:	11 f0       	breq	.+4      	; 0x1ec <Atm1280AlarmSyncP__0__checkAlarm+0x52>
+ 1e8:	2f bf       	out	0x3f, r18	; 63
+ 1ea:	08 95       	ret
+ 1ec:	10 92 04 02 	sts	0x0204, r1	; 0x800204 <Atm1280AlarmSyncP__0__set>
+ 1f0:	2f bf       	out	0x3f, r18	; 63
+ 1f2:	82 e0       	ldi	r24, 0x02	; 2
+ 1f4:	0c 94 a8 00 	jmp	0x150	; 0x150 <SchedulerBasicP__TaskBasic__postTask>
+
+000001f8 <HplAtm1280AdcP__HplAtm1280Adc__getAdmux>:
+ 1f8:	ec e7       	ldi	r30, 0x7C	; 124
+ 1fa:	f0 e0       	ldi	r31, 0x00	; 0
+ 1fc:	20 81       	ld	r18, Z
+ 1fe:	80 91 7b 00 	lds	r24, 0x007B	; 0x80007b <__TEXT_REGION_LENGTH__+0x7e007b>
+ 202:	30 81       	ld	r19, Z
+ 204:	90 81       	ld	r25, Z
+ 206:	88 70       	andi	r24, 0x08	; 8
+ 208:	88 0f       	add	r24, r24
+ 20a:	88 0f       	add	r24, r24
+ 20c:	2f 71       	andi	r18, 0x1F	; 31
+ 20e:	82 2b       	or	r24, r18
+ 210:	35 fb       	bst	r19, 5
+ 212:	22 27       	eor	r18, r18
+ 214:	20 f9       	bld	r18, 0
+ 216:	20 fb       	bst	r18, 0
+ 218:	86 f9       	bld	r24, 6
+ 21a:	92 95       	swap	r25
+ 21c:	96 95       	lsr	r25
+ 21e:	96 95       	lsr	r25
+ 220:	93 70       	andi	r25, 0x03	; 3
+ 222:	29 2f       	mov	r18, r25
+ 224:	27 95       	ror	r18
+ 226:	22 27       	eor	r18, r18
+ 228:	27 95       	ror	r18
+ 22a:	82 2b       	or	r24, r18
+ 22c:	96 95       	lsr	r25
+ 22e:	08 95       	ret
+
+00000230 <BusyWaitMicroC__BusyWait__wait.constprop.22>:
+ 230:	8d e7       	ldi	r24, 0x7D	; 125
+ 232:	90 e0       	ldi	r25, 0x00	; 0
+ 234:	01 97       	sbiw	r24, 0x01	; 1
+ 236:	01 96       	adiw	r24, 0x01	; 1
+ 238:	01 97       	sbiw	r24, 0x01	; 1
+ 23a:	01 96       	adiw	r24, 0x01	; 1
+ 23c:	01 97       	sbiw	r24, 0x01	; 1
+ 23e:	01 96       	adiw	r24, 0x01	; 1
+ 240:	01 97       	sbiw	r24, 0x01	; 1
+ 242:	c1 f7       	brne	.-16     	; 0x234 <BusyWaitMicroC__BusyWait__wait.constprop.22+0x4>
+ 244:	08 95       	ret
+
+00000246 <AdcP__sample>:
+ 246:	0f 93       	push	r16
+ 248:	1f 93       	push	r17
+ 24a:	cf 93       	push	r28
+ 24c:	df 93       	push	r29
+ 24e:	80 91 2c 02 	lds	r24, 0x022C	; 0x80022c <AdcP__client>
+ 252:	88 23       	and	r24, r24
+ 254:	09 f4       	brne	.+2      	; 0x258 <AdcP__sample+0x12>
+ 256:	3f c0       	rjmp	.+126    	; 0x2d6 <AdcP__sample+0x90>
+ 258:	10 e0       	ldi	r17, 0x00	; 0
+ 25a:	d0 e0       	ldi	r29, 0x00	; 0
+ 25c:	cf e1       	ldi	r28, 0x1F	; 31
+ 25e:	0f b7       	in	r16, 0x3f	; 63
+ 260:	f8 94       	cli
+ 262:	80 91 2d 02 	lds	r24, 0x022D	; 0x80022d <Atm1280AdcP__f>
+ 266:	8e 7f       	andi	r24, 0xFE	; 254
+ 268:	80 93 2d 02 	sts	0x022D, r24	; 0x80022d <Atm1280AdcP__f>
+ 26c:	0e 94 fc 00 	call	0x1f8	; 0x1f8 <HplAtm1280AdcP__HplAtm1280Adc__getAdmux>
+ 270:	28 2f       	mov	r18, r24
+ 272:	2f 73       	andi	r18, 0x3F	; 63
+ 274:	88 1f       	adc	r24, r24
+ 276:	88 27       	eor	r24, r24
+ 278:	88 1f       	adc	r24, r24
+ 27a:	91 70       	andi	r25, 0x01	; 1
+ 27c:	99 0f       	add	r25, r25
+ 27e:	89 2b       	or	r24, r25
+ 280:	81 13       	cpse	r24, r17
+ 282:	02 c0       	rjmp	.+4      	; 0x288 <AdcP__sample+0x42>
+ 284:	91 e0       	ldi	r25, 0x01	; 1
+ 286:	2c 13       	cpse	r18, r28
+ 288:	90 e0       	ldi	r25, 0x00	; 0
+ 28a:	80 91 2d 02 	lds	r24, 0x022D	; 0x80022d <Atm1280AdcP__f>
+ 28e:	90 fb       	bst	r25, 0
+ 290:	81 f9       	bld	r24, 1
+ 292:	9c 2f       	mov	r25, r28
+ 294:	9f 73       	andi	r25, 0x3F	; 63
+ 296:	99 0f       	add	r25, r25
+ 298:	99 0f       	add	r25, r25
+ 29a:	83 70       	andi	r24, 0x03	; 3
+ 29c:	89 2b       	or	r24, r25
+ 29e:	80 93 2d 02 	sts	0x022D, r24	; 0x80022d <Atm1280AdcP__f>
+ 2a2:	11 11       	cpse	r17, r1
+ 2a4:	c0 64       	ori	r28, 0x40	; 64
+ 2a6:	c0 93 7c 00 	sts	0x007C, r28	; 0x80007c <__TEXT_REGION_LENGTH__+0x7e007c>
+ 2aa:	80 91 7b 00 	lds	r24, 0x007B	; 0x80007b <__TEXT_REGION_LENGTH__+0x7e007b>
+ 2ae:	87 7f       	andi	r24, 0xF7	; 247
+ 2b0:	80 93 7b 00 	sts	0x007B, r24	; 0x80007b <__TEXT_REGION_LENGTH__+0x7e007b>
+ 2b4:	90 91 2d 02 	lds	r25, 0x022D	; 0x80022d <Atm1280AdcP__f>
+ 2b8:	8d 2f       	mov	r24, r29
+ 2ba:	88 60       	ori	r24, 0x08	; 8
+ 2bc:	80 61       	ori	r24, 0x10	; 16
+ 2be:	90 fb       	bst	r25, 0
+ 2c0:	85 f9       	bld	r24, 5
+ 2c2:	80 64       	ori	r24, 0x40	; 64
+ 2c4:	80 68       	ori	r24, 0x80	; 128
+ 2c6:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
+ 2ca:	0f bf       	out	0x3f, r16	; 63
+ 2cc:	df 91       	pop	r29
+ 2ce:	cf 91       	pop	r28
+ 2d0:	1f 91       	pop	r17
+ 2d2:	0f 91       	pop	r16
+ 2d4:	08 95       	ret
+ 2d6:	d7 e0       	ldi	r29, 0x07	; 7
+ 2d8:	11 e0       	ldi	r17, 0x01	; 1
+ 2da:	c0 e0       	ldi	r28, 0x00	; 0
+ 2dc:	c0 cf       	rjmp	.-128    	; 0x25e <AdcP__sample+0x18>
+
+000002de <VirtualizeTimerC__0__fireTimers>:
+ 2de:	8f 92       	push	r8
+ 2e0:	9f 92       	push	r9
+ 2e2:	af 92       	push	r10
+ 2e4:	bf 92       	push	r11
+ 2e6:	cf 92       	push	r12
+ 2e8:	df 92       	push	r13
+ 2ea:	ef 92       	push	r14
+ 2ec:	ff 92       	push	r15
+ 2ee:	0f 93       	push	r16
+ 2f0:	1f 93       	push	r17
+ 2f2:	cf 93       	push	r28
+ 2f4:	40 91 1d 02 	lds	r20, 0x021D	; 0x80021d <VirtualizeTimerC__0__m_timers+0x8>
+ 2f8:	41 ff       	sbrs	r20, 1
+ 2fa:	6a c0       	rjmp	.+212    	; 0x3d0 <VirtualizeTimerC__0__fireTimers+0xf2>
+ 2fc:	c0 90 15 02 	lds	r12, 0x0215	; 0x800215 <VirtualizeTimerC__0__m_timers>
+ 300:	d0 90 16 02 	lds	r13, 0x0216	; 0x800216 <VirtualizeTimerC__0__m_timers+0x1>
+ 304:	e0 90 17 02 	lds	r14, 0x0217	; 0x800217 <VirtualizeTimerC__0__m_timers+0x2>
+ 308:	f0 90 18 02 	lds	r15, 0x0218	; 0x800218 <VirtualizeTimerC__0__m_timers+0x3>
+ 30c:	80 90 19 02 	lds	r8, 0x0219	; 0x800219 <VirtualizeTimerC__0__m_timers+0x4>
+ 310:	90 90 1a 02 	lds	r9, 0x021A	; 0x80021a <VirtualizeTimerC__0__m_timers+0x5>
+ 314:	a0 90 1b 02 	lds	r10, 0x021B	; 0x80021b <VirtualizeTimerC__0__m_timers+0x6>
+ 318:	b0 90 1c 02 	lds	r11, 0x021C	; 0x80021c <VirtualizeTimerC__0__m_timers+0x7>
+ 31c:	8b 01       	movw	r16, r22
+ 31e:	9c 01       	movw	r18, r24
+ 320:	0c 19       	sub	r16, r12
+ 322:	1d 09       	sbc	r17, r13
+ 324:	2e 09       	sbc	r18, r14
+ 326:	3f 09       	sbc	r19, r15
+ 328:	08 15       	cp	r16, r8
+ 32a:	19 05       	cpc	r17, r9
+ 32c:	2a 05       	cpc	r18, r10
+ 32e:	3b 05       	cpc	r19, r11
+ 330:	08 f4       	brcc	.+2      	; 0x334 <VirtualizeTimerC__0__fireTimers+0x56>
+ 332:	4e c0       	rjmp	.+156    	; 0x3d0 <VirtualizeTimerC__0__fireTimers+0xf2>
+ 334:	40 ff       	sbrs	r20, 0
+ 336:	05 c0       	rjmp	.+10     	; 0x342 <VirtualizeTimerC__0__fireTimers+0x64>
+ 338:	84 2f       	mov	r24, r20
+ 33a:	8d 7f       	andi	r24, 0xFD	; 253
+ 33c:	80 93 1d 02 	sts	0x021D, r24	; 0x80021d <VirtualizeTimerC__0__m_timers+0x8>
+ 340:	0e c0       	rjmp	.+28     	; 0x35e <VirtualizeTimerC__0__fireTimers+0x80>
+ 342:	b7 01       	movw	r22, r14
+ 344:	a6 01       	movw	r20, r12
+ 346:	48 0d       	add	r20, r8
+ 348:	59 1d       	adc	r21, r9
+ 34a:	6a 1d       	adc	r22, r10
+ 34c:	7b 1d       	adc	r23, r11
+ 34e:	40 93 15 02 	sts	0x0215, r20	; 0x800215 <VirtualizeTimerC__0__m_timers>
+ 352:	50 93 16 02 	sts	0x0216, r21	; 0x800216 <VirtualizeTimerC__0__m_timers+0x1>
+ 356:	60 93 17 02 	sts	0x0217, r22	; 0x800217 <VirtualizeTimerC__0__m_timers+0x2>
+ 35a:	70 93 18 02 	sts	0x0218, r23	; 0x800218 <VirtualizeTimerC__0__m_timers+0x3>
+ 35e:	9f b7       	in	r25, 0x3f	; 63
+ 360:	f8 94       	cli
+ 362:	80 91 02 02 	lds	r24, 0x0202	; 0x800202 <__data_end>
+ 366:	81 11       	cpse	r24, r1
+ 368:	27 c0       	rjmp	.+78     	; 0x3b8 <VirtualizeTimerC__0__fireTimers+0xda>
+ 36a:	81 e0       	ldi	r24, 0x01	; 1
+ 36c:	80 93 02 02 	sts	0x0202, r24	; 0x800202 <__data_end>
+ 370:	10 92 24 02 	sts	0x0224, r1	; 0x800224 <ArbiterP__0__reqResId>
+ 374:	9f bf       	out	0x3f, r25	; 63
+ 376:	9f b7       	in	r25, 0x3f	; 63
+ 378:	f8 94       	cli
+ 37a:	80 91 7a 00 	lds	r24, 0x007A	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
+ 37e:	80 68       	ori	r24, 0x80	; 128
+ 380:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
+ 384:	9f bf       	out	0x3f, r25	; 63
+ 386:	cf b7       	in	r28, 0x3f	; 63
+ 388:	f8 94       	cli
+ 38a:	80 91 00 02 	lds	r24, 0x0200	; 0x800200 <ArbiterP__0__resId>
+ 38e:	81 30       	cpi	r24, 0x01	; 1
+ 390:	89 f4       	brne	.+34     	; 0x3b4 <VirtualizeTimerC__0__fireTimers+0xd6>
+ 392:	80 91 02 02 	lds	r24, 0x0202	; 0x800202 <__data_end>
+ 396:	81 30       	cpi	r24, 0x01	; 1
+ 398:	21 f4       	brne	.+8      	; 0x3a2 <VirtualizeTimerC__0__fireTimers+0xc4>
+ 39a:	80 e0       	ldi	r24, 0x00	; 0
+ 39c:	0e 94 a8 00 	call	0x150	; 0x150 <SchedulerBasicP__TaskBasic__postTask>
+ 3a0:	09 c0       	rjmp	.+18     	; 0x3b4 <VirtualizeTimerC__0__fireTimers+0xd6>
+ 3a2:	82 30       	cpi	r24, 0x02	; 2
+ 3a4:	39 f4       	brne	.+14     	; 0x3b4 <VirtualizeTimerC__0__fireTimers+0xd6>
+ 3a6:	80 91 24 02 	lds	r24, 0x0224	; 0x800224 <ArbiterP__0__reqResId>
+ 3aa:	80 93 00 02 	sts	0x0200, r24	; 0x800200 <ArbiterP__0__resId>
+ 3ae:	83 e0       	ldi	r24, 0x03	; 3
+ 3b0:	80 93 02 02 	sts	0x0202, r24	; 0x800202 <__data_end>
+ 3b4:	cf bf       	out	0x3f, r28	; 63
+ 3b6:	0c c0       	rjmp	.+24     	; 0x3d0 <VirtualizeTimerC__0__fireTimers+0xf2>
+ 3b8:	80 91 24 02 	lds	r24, 0x0224	; 0x800224 <ArbiterP__0__reqResId>
+ 3bc:	88 23       	and	r24, r24
+ 3be:	39 f0       	breq	.+14     	; 0x3ce <VirtualizeTimerC__0__fireTimers+0xf0>
+ 3c0:	80 91 14 02 	lds	r24, 0x0214	; 0x800214 <RoundRobinResourceQueueC__0__resQ>
+ 3c4:	80 fd       	sbrc	r24, 0
+ 3c6:	03 c0       	rjmp	.+6      	; 0x3ce <VirtualizeTimerC__0__fireTimers+0xf0>
+ 3c8:	81 60       	ori	r24, 0x01	; 1
+ 3ca:	80 93 14 02 	sts	0x0214, r24	; 0x800214 <RoundRobinResourceQueueC__0__resQ>
+ 3ce:	9f bf       	out	0x3f, r25	; 63
+ 3d0:	83 e0       	ldi	r24, 0x03	; 3
+ 3d2:	cf 91       	pop	r28
+ 3d4:	1f 91       	pop	r17
+ 3d6:	0f 91       	pop	r16
+ 3d8:	ff 90       	pop	r15
+ 3da:	ef 90       	pop	r14
+ 3dc:	df 90       	pop	r13
+ 3de:	cf 90       	pop	r12
+ 3e0:	bf 90       	pop	r11
+ 3e2:	af 90       	pop	r10
+ 3e4:	9f 90       	pop	r9
+ 3e6:	8f 90       	pop	r8
+ 3e8:	0c 94 a8 00 	jmp	0x150	; 0x150 <SchedulerBasicP__TaskBasic__postTask>
+
+000003ec <SchedulerBasicP__TaskBasic__runTask>:
+ 3ec:	cf 92       	push	r12
+ 3ee:	df 92       	push	r13
+ 3f0:	ef 92       	push	r14
+ 3f2:	ff 92       	push	r15
+ 3f4:	0f 93       	push	r16
+ 3f6:	1f 93       	push	r17
+ 3f8:	cf 93       	push	r28
+ 3fa:	df 93       	push	r29
+ 3fc:	81 30       	cpi	r24, 0x01	; 1
+ 3fe:	51 f1       	breq	.+84     	; 0x454 <__LOCK_REGION_LENGTH__+0x54>
+ 400:	38 f0       	brcs	.+14     	; 0x410 <__LOCK_REGION_LENGTH__+0x10>
+ 402:	82 30       	cpi	r24, 0x02	; 2
+ 404:	09 f4       	brne	.+2      	; 0x408 <__LOCK_REGION_LENGTH__+0x8>
+ 406:	48 c0       	rjmp	.+144    	; 0x498 <__LOCK_REGION_LENGTH__+0x98>
+ 408:	83 30       	cpi	r24, 0x03	; 3
+ 40a:	09 f4       	brne	.+2      	; 0x40e <__LOCK_REGION_LENGTH__+0xe>
+ 40c:	96 c0       	rjmp	.+300    	; 0x53a <__LOCK_REGION_LENGTH__+0x13a>
+ 40e:	3e c1       	rjmp	.+636    	; 0x68c <__LOCK_REGION_LENGTH__+0x28c>
+ 410:	8f b7       	in	r24, 0x3f	; 63
+ 412:	f8 94       	cli
+ 414:	90 91 24 02 	lds	r25, 0x0224	; 0x800224 <ArbiterP__0__reqResId>
+ 418:	90 93 00 02 	sts	0x0200, r25	; 0x800200 <ArbiterP__0__resId>
+ 41c:	93 e0       	ldi	r25, 0x03	; 3
+ 41e:	90 93 02 02 	sts	0x0202, r25	; 0x800202 <__data_end>
+ 422:	8f bf       	out	0x3f, r24	; 63
+ 424:	80 91 00 02 	lds	r24, 0x0200	; 0x800200 <ArbiterP__0__resId>
+ 428:	81 11       	cpse	r24, r1
+ 42a:	01 c0       	rjmp	.+2      	; 0x42e <__LOCK_REGION_LENGTH__+0x2e>
+ 42c:	80 98       	cbi	0x10, 0	; 16
+ 42e:	80 91 00 02 	lds	r24, 0x0200	; 0x800200 <ArbiterP__0__resId>
+ 432:	81 11       	cpse	r24, r1
+ 434:	2b c1       	rjmp	.+598    	; 0x68c <__LOCK_REGION_LENGTH__+0x28c>
+ 436:	81 e0       	ldi	r24, 0x01	; 1
+ 438:	80 93 13 02 	sts	0x0213, r24	; 0x800213 <AdcP__state>
+ 43c:	10 92 2c 02 	sts	0x022C, r1	; 0x80022c <AdcP__client>
+ 440:	df 91       	pop	r29
+ 442:	cf 91       	pop	r28
+ 444:	1f 91       	pop	r17
+ 446:	0f 91       	pop	r16
+ 448:	ff 90       	pop	r15
+ 44a:	ef 90       	pop	r14
+ 44c:	df 90       	pop	r13
+ 44e:	cf 90       	pop	r12
+ 450:	0c 94 23 01 	jmp	0x246	; 0x246 <AdcP__sample>
+ 454:	10 92 13 02 	sts	0x0213, r1	; 0x800213 <AdcP__state>
+ 458:	d0 91 1e 02 	lds	r29, 0x021E	; 0x80021e <AdcP__val>
+ 45c:	90 91 2c 02 	lds	r25, 0x022C	; 0x80022c <AdcP__client>
+ 460:	91 11       	cpse	r25, r1
+ 462:	14 c1       	rjmp	.+552    	; 0x68c <__LOCK_REGION_LENGTH__+0x28c>
+ 464:	cf b7       	in	r28, 0x3f	; 63
+ 466:	f8 94       	cli
+ 468:	90 91 02 02 	lds	r25, 0x0202	; 0x800202 <__data_end>
+ 46c:	93 30       	cpi	r25, 0x03	; 3
+ 46e:	89 f4       	brne	.+34     	; 0x492 <__LOCK_REGION_LENGTH__+0x92>
+ 470:	90 91 00 02 	lds	r25, 0x0200	; 0x800200 <ArbiterP__0__resId>
+ 474:	91 11       	cpse	r25, r1
+ 476:	0d c0       	rjmp	.+26     	; 0x492 <__LOCK_REGION_LENGTH__+0x92>
+ 478:	90 91 14 02 	lds	r25, 0x0214	; 0x800214 <RoundRobinResourceQueueC__0__resQ>
+ 47c:	91 11       	cpse	r25, r1
+ 47e:	ce c0       	rjmp	.+412    	; 0x61c <__LOCK_REGION_LENGTH__+0x21c>
+ 480:	80 93 00 02 	sts	0x0200, r24	; 0x800200 <ArbiterP__0__resId>
+ 484:	10 92 02 02 	sts	0x0202, r1	; 0x800202 <__data_end>
+ 488:	80 91 7a 00 	lds	r24, 0x007A	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
+ 48c:	8f 77       	andi	r24, 0x7F	; 127
+ 48e:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
+ 492:	cf bf       	out	0x3f, r28	; 63
+ 494:	d2 b9       	out	0x02, r29	; 2
+ 496:	fa c0       	rjmp	.+500    	; 0x68c <__LOCK_REGION_LENGTH__+0x28c>
+ 498:	80 91 0e 02 	lds	r24, 0x020E	; 0x80020e <AlarmToTimerC__0__m_oneshot>
+ 49c:	81 11       	cpse	r24, r1
+ 49e:	41 c0       	rjmp	.+130    	; 0x522 <__LOCK_REGION_LENGTH__+0x122>
+ 4a0:	40 91 25 02 	lds	r20, 0x0225	; 0x800225 <AlarmToTimerC__0__m_dt>
+ 4a4:	50 91 26 02 	lds	r21, 0x0226	; 0x800226 <AlarmToTimerC__0__m_dt+0x1>
+ 4a8:	60 91 27 02 	lds	r22, 0x0227	; 0x800227 <AlarmToTimerC__0__m_dt+0x2>
+ 4ac:	70 91 28 02 	lds	r23, 0x0228	; 0x800228 <AlarmToTimerC__0__m_dt+0x3>
+ 4b0:	2f b7       	in	r18, 0x3f	; 63
+ 4b2:	f8 94       	cli
+ 4b4:	c0 90 0a 02 	lds	r12, 0x020A	; 0x80020a <Atm1280AlarmSyncP__0__t0>
+ 4b8:	d0 90 0b 02 	lds	r13, 0x020B	; 0x80020b <Atm1280AlarmSyncP__0__t0+0x1>
+ 4bc:	e0 90 0c 02 	lds	r14, 0x020C	; 0x80020c <Atm1280AlarmSyncP__0__t0+0x2>
+ 4c0:	f0 90 0d 02 	lds	r15, 0x020D	; 0x80020d <Atm1280AlarmSyncP__0__t0+0x3>
+ 4c4:	80 91 20 02 	lds	r24, 0x0220	; 0x800220 <Atm1280AlarmSyncP__0__dt>
+ 4c8:	90 91 21 02 	lds	r25, 0x0221	; 0x800221 <Atm1280AlarmSyncP__0__dt+0x1>
+ 4cc:	a0 91 22 02 	lds	r26, 0x0222	; 0x800222 <Atm1280AlarmSyncP__0__dt+0x2>
+ 4d0:	b0 91 23 02 	lds	r27, 0x0223	; 0x800223 <Atm1280AlarmSyncP__0__dt+0x3>
+ 4d4:	8c 0d       	add	r24, r12
+ 4d6:	9d 1d       	adc	r25, r13
+ 4d8:	ae 1d       	adc	r26, r14
+ 4da:	bf 1d       	adc	r27, r15
+ 4dc:	2f bf       	out	0x3f, r18	; 63
+ 4de:	40 93 25 02 	sts	0x0225, r20	; 0x800225 <AlarmToTimerC__0__m_dt>
+ 4e2:	50 93 26 02 	sts	0x0226, r21	; 0x800226 <AlarmToTimerC__0__m_dt+0x1>
+ 4e6:	60 93 27 02 	sts	0x0227, r22	; 0x800227 <AlarmToTimerC__0__m_dt+0x2>
+ 4ea:	70 93 28 02 	sts	0x0228, r23	; 0x800228 <AlarmToTimerC__0__m_dt+0x3>
+ 4ee:	10 92 0e 02 	sts	0x020E, r1	; 0x80020e <AlarmToTimerC__0__m_oneshot>
+ 4f2:	2f b7       	in	r18, 0x3f	; 63
+ 4f4:	f8 94       	cli
+ 4f6:	31 e0       	ldi	r19, 0x01	; 1
+ 4f8:	30 93 04 02 	sts	0x0204, r19	; 0x800204 <Atm1280AlarmSyncP__0__set>
+ 4fc:	80 93 0a 02 	sts	0x020A, r24	; 0x80020a <Atm1280AlarmSyncP__0__t0>
+ 500:	90 93 0b 02 	sts	0x020B, r25	; 0x80020b <Atm1280AlarmSyncP__0__t0+0x1>
+ 504:	a0 93 0c 02 	sts	0x020C, r26	; 0x80020c <Atm1280AlarmSyncP__0__t0+0x2>
+ 508:	b0 93 0d 02 	sts	0x020D, r27	; 0x80020d <Atm1280AlarmSyncP__0__t0+0x3>
+ 50c:	40 93 20 02 	sts	0x0220, r20	; 0x800220 <Atm1280AlarmSyncP__0__dt>
+ 510:	50 93 21 02 	sts	0x0221, r21	; 0x800221 <Atm1280AlarmSyncP__0__dt+0x1>
+ 514:	60 93 22 02 	sts	0x0222, r22	; 0x800222 <Atm1280AlarmSyncP__0__dt+0x2>
+ 518:	70 93 23 02 	sts	0x0223, r23	; 0x800223 <Atm1280AlarmSyncP__0__dt+0x3>
+ 51c:	2f bf       	out	0x3f, r18	; 63
+ 51e:	0e 94 cd 00 	call	0x19a	; 0x19a <Atm1280AlarmSyncP__0__checkAlarm>
+ 522:	2f b7       	in	r18, 0x3f	; 63
+ 524:	f8 94       	cli
+ 526:	60 91 0f 02 	lds	r22, 0x020F	; 0x80020f <Atm1280AlarmSyncP__0__now>
+ 52a:	70 91 10 02 	lds	r23, 0x0210	; 0x800210 <Atm1280AlarmSyncP__0__now+0x1>
+ 52e:	80 91 11 02 	lds	r24, 0x0211	; 0x800211 <Atm1280AlarmSyncP__0__now+0x2>
+ 532:	90 91 12 02 	lds	r25, 0x0212	; 0x800212 <Atm1280AlarmSyncP__0__now+0x3>
+ 536:	2f bf       	out	0x3f, r18	; 63
+ 538:	3d c0       	rjmp	.+122    	; 0x5b4 <__LOCK_REGION_LENGTH__+0x1b4>
+ 53a:	8f b7       	in	r24, 0x3f	; 63
+ 53c:	f8 94       	cli
+ 53e:	40 91 0f 02 	lds	r20, 0x020F	; 0x80020f <Atm1280AlarmSyncP__0__now>
+ 542:	50 91 10 02 	lds	r21, 0x0210	; 0x800210 <Atm1280AlarmSyncP__0__now+0x1>
+ 546:	60 91 11 02 	lds	r22, 0x0211	; 0x800211 <Atm1280AlarmSyncP__0__now+0x2>
+ 54a:	70 91 12 02 	lds	r23, 0x0212	; 0x800212 <Atm1280AlarmSyncP__0__now+0x3>
+ 54e:	8f bf       	out	0x3f, r24	; 63
+ 550:	8f b7       	in	r24, 0x3f	; 63
+ 552:	f8 94       	cli
+ 554:	10 92 04 02 	sts	0x0204, r1	; 0x800204 <Atm1280AlarmSyncP__0__set>
+ 558:	8f bf       	out	0x3f, r24	; 63
+ 55a:	80 91 1d 02 	lds	r24, 0x021D	; 0x80021d <VirtualizeTimerC__0__m_timers+0x8>
+ 55e:	81 ff       	sbrs	r24, 1
+ 560:	95 c0       	rjmp	.+298    	; 0x68c <__LOCK_REGION_LENGTH__+0x28c>
+ 562:	80 91 15 02 	lds	r24, 0x0215	; 0x800215 <VirtualizeTimerC__0__m_timers>
+ 566:	90 91 16 02 	lds	r25, 0x0216	; 0x800216 <VirtualizeTimerC__0__m_timers+0x1>
+ 56a:	a0 91 17 02 	lds	r26, 0x0217	; 0x800217 <VirtualizeTimerC__0__m_timers+0x2>
+ 56e:	b0 91 18 02 	lds	r27, 0x0218	; 0x800218 <VirtualizeTimerC__0__m_timers+0x3>
+ 572:	8a 01       	movw	r16, r20
+ 574:	9b 01       	movw	r18, r22
+ 576:	08 1b       	sub	r16, r24
+ 578:	19 0b       	sbc	r17, r25
+ 57a:	2a 0b       	sbc	r18, r26
+ 57c:	3b 0b       	sbc	r19, r27
+ 57e:	80 91 19 02 	lds	r24, 0x0219	; 0x800219 <VirtualizeTimerC__0__m_timers+0x4>
+ 582:	90 91 1a 02 	lds	r25, 0x021A	; 0x80021a <VirtualizeTimerC__0__m_timers+0x5>
+ 586:	a0 91 1b 02 	lds	r26, 0x021B	; 0x80021b <VirtualizeTimerC__0__m_timers+0x6>
+ 58a:	b0 91 1c 02 	lds	r27, 0x021C	; 0x80021c <VirtualizeTimerC__0__m_timers+0x7>
+ 58e:	80 1b       	sub	r24, r16
+ 590:	91 0b       	sbc	r25, r17
+ 592:	a2 0b       	sbc	r26, r18
+ 594:	b3 0b       	sbc	r27, r19
+ 596:	8f 3f       	cpi	r24, 0xFF	; 255
+ 598:	2f ef       	ldi	r18, 0xFF	; 255
+ 59a:	92 07       	cpc	r25, r18
+ 59c:	a2 07       	cpc	r26, r18
+ 59e:	2f e7       	ldi	r18, 0x7F	; 127
+ 5a0:	b2 07       	cpc	r27, r18
+ 5a2:	09 f4       	brne	.+2      	; 0x5a6 <__LOCK_REGION_LENGTH__+0x1a6>
+ 5a4:	73 c0       	rjmp	.+230    	; 0x68c <__LOCK_REGION_LENGTH__+0x28c>
+ 5a6:	18 16       	cp	r1, r24
+ 5a8:	19 06       	cpc	r1, r25
+ 5aa:	1a 06       	cpc	r1, r26
+ 5ac:	1b 06       	cpc	r1, r27
+ 5ae:	64 f0       	brlt	.+24     	; 0x5c8 <__LOCK_REGION_LENGTH__+0x1c8>
+ 5b0:	cb 01       	movw	r24, r22
+ 5b2:	ba 01       	movw	r22, r20
+ 5b4:	df 91       	pop	r29
+ 5b6:	cf 91       	pop	r28
+ 5b8:	1f 91       	pop	r17
+ 5ba:	0f 91       	pop	r16
+ 5bc:	ff 90       	pop	r15
+ 5be:	ef 90       	pop	r14
+ 5c0:	df 90       	pop	r13
+ 5c2:	cf 90       	pop	r12
+ 5c4:	0c 94 6f 01 	jmp	0x2de	; 0x2de <VirtualizeTimerC__0__fireTimers>
+ 5c8:	80 93 25 02 	sts	0x0225, r24	; 0x800225 <AlarmToTimerC__0__m_dt>
+ 5cc:	90 93 26 02 	sts	0x0226, r25	; 0x800226 <AlarmToTimerC__0__m_dt+0x1>
+ 5d0:	a0 93 27 02 	sts	0x0227, r26	; 0x800227 <AlarmToTimerC__0__m_dt+0x2>
+ 5d4:	b0 93 28 02 	sts	0x0228, r27	; 0x800228 <AlarmToTimerC__0__m_dt+0x3>
+ 5d8:	21 e0       	ldi	r18, 0x01	; 1
+ 5da:	20 93 0e 02 	sts	0x020E, r18	; 0x80020e <AlarmToTimerC__0__m_oneshot>
+ 5de:	3f b7       	in	r19, 0x3f	; 63
+ 5e0:	f8 94       	cli
+ 5e2:	20 93 04 02 	sts	0x0204, r18	; 0x800204 <Atm1280AlarmSyncP__0__set>
+ 5e6:	40 93 0a 02 	sts	0x020A, r20	; 0x80020a <Atm1280AlarmSyncP__0__t0>
+ 5ea:	50 93 0b 02 	sts	0x020B, r21	; 0x80020b <Atm1280AlarmSyncP__0__t0+0x1>
+ 5ee:	60 93 0c 02 	sts	0x020C, r22	; 0x80020c <Atm1280AlarmSyncP__0__t0+0x2>
+ 5f2:	70 93 0d 02 	sts	0x020D, r23	; 0x80020d <Atm1280AlarmSyncP__0__t0+0x3>
+ 5f6:	80 93 20 02 	sts	0x0220, r24	; 0x800220 <Atm1280AlarmSyncP__0__dt>
+ 5fa:	90 93 21 02 	sts	0x0221, r25	; 0x800221 <Atm1280AlarmSyncP__0__dt+0x1>
+ 5fe:	a0 93 22 02 	sts	0x0222, r26	; 0x800222 <Atm1280AlarmSyncP__0__dt+0x2>
+ 602:	b0 93 23 02 	sts	0x0223, r27	; 0x800223 <Atm1280AlarmSyncP__0__dt+0x3>
+ 606:	3f bf       	out	0x3f, r19	; 63
+ 608:	df 91       	pop	r29
+ 60a:	cf 91       	pop	r28
+ 60c:	1f 91       	pop	r17
+ 60e:	0f 91       	pop	r16
+ 610:	ff 90       	pop	r15
+ 612:	ef 90       	pop	r14
+ 614:	df 90       	pop	r13
+ 616:	cf 90       	pop	r12
+ 618:	0c 94 cd 00 	jmp	0x19a	; 0x19a <Atm1280AlarmSyncP__0__checkAlarm>
+ 61c:	60 91 03 02 	lds	r22, 0x0203	; 0x800203 <RoundRobinResourceQueueC__0__last>
+ 620:	70 e0       	ldi	r23, 0x00	; 0
+ 622:	cb 01       	movw	r24, r22
+ 624:	01 96       	adiw	r24, 0x01	; 1
+ 626:	a1 e0       	ldi	r26, 0x01	; 1
+ 628:	b0 e0       	ldi	r27, 0x00	; 0
+ 62a:	81 30       	cpi	r24, 0x01	; 1
+ 62c:	91 05       	cpc	r25, r1
+ 62e:	11 f4       	brne	.+4      	; 0x634 <__LOCK_REGION_LENGTH__+0x234>
+ 630:	80 e0       	ldi	r24, 0x00	; 0
+ 632:	90 e0       	ldi	r25, 0x00	; 0
+ 634:	18 2f       	mov	r17, r24
+ 636:	e8 2f       	mov	r30, r24
+ 638:	e6 95       	lsr	r30
+ 63a:	e6 95       	lsr	r30
+ 63c:	e6 95       	lsr	r30
+ 63e:	f0 e0       	ldi	r31, 0x00	; 0
+ 640:	ec 5e       	subi	r30, 0xEC	; 236
+ 642:	fd 4f       	sbci	r31, 0xFD	; 253
+ 644:	20 81       	ld	r18, Z
+ 646:	38 2f       	mov	r19, r24
+ 648:	37 70       	andi	r19, 0x07	; 7
+ 64a:	ad 01       	movw	r20, r26
+ 64c:	01 c0       	rjmp	.+2      	; 0x650 <__LOCK_REGION_LENGTH__+0x250>
+ 64e:	44 0f       	add	r20, r20
+ 650:	3a 95       	dec	r19
+ 652:	ea f7       	brpl	.-6      	; 0x64e <__LOCK_REGION_LENGTH__+0x24e>
+ 654:	34 2f       	mov	r19, r20
+ 656:	42 23       	and	r20, r18
+ 658:	39 f0       	breq	.+14     	; 0x668 <__LOCK_REGION_LENGTH__+0x268>
+ 65a:	93 2f       	mov	r25, r19
+ 65c:	90 95       	com	r25
+ 65e:	29 23       	and	r18, r25
+ 660:	20 83       	st	Z, r18
+ 662:	80 93 03 02 	sts	0x0203, r24	; 0x800203 <RoundRobinResourceQueueC__0__last>
+ 666:	06 c0       	rjmp	.+12     	; 0x674 <__LOCK_REGION_LENGTH__+0x274>
+ 668:	68 17       	cp	r22, r24
+ 66a:	79 07       	cpc	r23, r25
+ 66c:	11 f0       	breq	.+4      	; 0x672 <__LOCK_REGION_LENGTH__+0x272>
+ 66e:	01 96       	adiw	r24, 0x01	; 1
+ 670:	dc cf       	rjmp	.-72     	; 0x62a <__LOCK_REGION_LENGTH__+0x22a>
+ 672:	1f ef       	ldi	r17, 0xFF	; 255
+ 674:	10 93 24 02 	sts	0x0224, r17	; 0x800224 <ArbiterP__0__reqResId>
+ 678:	8f ef       	ldi	r24, 0xFF	; 255
+ 67a:	80 93 00 02 	sts	0x0200, r24	; 0x800200 <ArbiterP__0__resId>
+ 67e:	81 e0       	ldi	r24, 0x01	; 1
+ 680:	80 93 02 02 	sts	0x0202, r24	; 0x800202 <__data_end>
+ 684:	80 e0       	ldi	r24, 0x00	; 0
+ 686:	0e 94 a8 00 	call	0x150	; 0x150 <SchedulerBasicP__TaskBasic__postTask>
+ 68a:	03 cf       	rjmp	.-506    	; 0x492 <__LOCK_REGION_LENGTH__+0x92>
+ 68c:	df 91       	pop	r29
+ 68e:	cf 91       	pop	r28
+ 690:	1f 91       	pop	r17
+ 692:	0f 91       	pop	r16
+ 694:	ff 90       	pop	r15
+ 696:	ef 90       	pop	r14
+ 698:	df 90       	pop	r13
+ 69a:	cf 90       	pop	r12
+ 69c:	08 95       	ret
+
+0000069e <__nesc_atomic_start>:
+ 69e:	8f b7       	in	r24, 0x3f	; 63
+ 6a0:	f8 94       	cli
+ 6a2:	08 95       	ret
+
+000006a4 <__nesc_atomic_end>:
+ 6a4:	8f bf       	out	0x3f, r24	; 63
+ 6a6:	08 95       	ret
+
+000006a8 <__vector_29>:
+ 6a8:	1f 92       	push	r1
+ 6aa:	0f 92       	push	r0
+ 6ac:	0f b6       	in	r0, 0x3f	; 63
+ 6ae:	0f 92       	push	r0
+ 6b0:	11 24       	eor	r1, r1
+ 6b2:	0b b6       	in	r0, 0x3b	; 59
+ 6b4:	0f 92       	push	r0
+ 6b6:	2f 93       	push	r18
+ 6b8:	3f 93       	push	r19
+ 6ba:	4f 93       	push	r20
+ 6bc:	5f 93       	push	r21
+ 6be:	6f 93       	push	r22
+ 6c0:	7f 93       	push	r23
+ 6c2:	8f 93       	push	r24
+ 6c4:	9f 93       	push	r25
+ 6c6:	af 93       	push	r26
+ 6c8:	bf 93       	push	r27
+ 6ca:	cf 93       	push	r28
+ 6cc:	ef 93       	push	r30
+ 6ce:	ff 93       	push	r31
+ 6d0:	20 91 78 00 	lds	r18, 0x0078	; 0x800078 <__TEXT_REGION_LENGTH__+0x7e0078>
+ 6d4:	30 91 79 00 	lds	r19, 0x0079	; 0x800079 <__TEXT_REGION_LENGTH__+0x7e0079>
+ 6d8:	78 94       	sei
+ 6da:	4f b7       	in	r20, 0x3f	; 63
+ 6dc:	f8 94       	cli
+ 6de:	80 91 2d 02 	lds	r24, 0x022D	; 0x80022d <Atm1280AdcP__f>
+ 6e2:	81 fb       	bst	r24, 1
+ 6e4:	99 27       	eor	r25, r25
+ 6e6:	90 f9       	bld	r25, 0
+ 6e8:	81 70       	andi	r24, 0x01	; 1
+ 6ea:	4f bf       	out	0x3f, r20	; 63
+ 6ec:	81 11       	cpse	r24, r1
+ 6ee:	20 c0       	rjmp	.+64     	; 0x730 <__vector_29+0x88>
+ 6f0:	80 91 7a 00 	lds	r24, 0x007A	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
+ 6f4:	87 7f       	andi	r24, 0xF7	; 247
+ 6f6:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
+ 6fa:	80 91 13 02 	lds	r24, 0x0213	; 0x800213 <AdcP__state>
+ 6fe:	81 30       	cpi	r24, 0x01	; 1
+ 700:	19 f0       	breq	.+6      	; 0x708 <__vector_29+0x60>
+ 702:	82 30       	cpi	r24, 0x02	; 2
+ 704:	81 f0       	breq	.+32     	; 0x726 <__vector_29+0x7e>
+ 706:	34 c0       	rjmp	.+104    	; 0x770 <__vector_29+0xc8>
+ 708:	91 11       	cpse	r25, r1
+ 70a:	05 c0       	rjmp	.+10     	; 0x716 <__vector_29+0x6e>
+ 70c:	0e 94 18 01 	call	0x230	; 0x230 <BusyWaitMicroC__BusyWait__wait.constprop.22>
+ 710:	0e 94 23 01 	call	0x246	; 0x246 <AdcP__sample>
+ 714:	2d c0       	rjmp	.+90     	; 0x770 <__vector_29+0xc8>
+ 716:	30 93 1f 02 	sts	0x021F, r19	; 0x80021f <AdcP__val+0x1>
+ 71a:	20 93 1e 02 	sts	0x021E, r18	; 0x80021e <AdcP__val>
+ 71e:	81 e0       	ldi	r24, 0x01	; 1
+ 720:	0e 94 a8 00 	call	0x150	; 0x150 <SchedulerBasicP__TaskBasic__postTask>
+ 724:	25 c0       	rjmp	.+74     	; 0x770 <__vector_29+0xc8>
+ 726:	99 23       	and	r25, r25
+ 728:	89 f3       	breq	.-30     	; 0x70c <__vector_29+0x64>
+ 72a:	10 92 13 02 	sts	0x0213, r1	; 0x800213 <AdcP__state>
+ 72e:	20 c0       	rjmp	.+64     	; 0x770 <__vector_29+0xc8>
+ 730:	cf b7       	in	r28, 0x3f	; 63
+ 732:	f8 94       	cli
+ 734:	0e 94 fc 00 	call	0x1f8	; 0x1f8 <HplAtm1280AdcP__HplAtm1280Adc__getAdmux>
+ 738:	cf bf       	out	0x3f, r28	; 63
+ 73a:	2f b7       	in	r18, 0x3f	; 63
+ 73c:	f8 94       	cli
+ 73e:	80 91 7a 00 	lds	r24, 0x007A	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
+ 742:	86 fb       	bst	r24, 6
+ 744:	99 27       	eor	r25, r25
+ 746:	90 f9       	bld	r25, 0
+ 748:	87 7f       	andi	r24, 0xF7	; 247
+ 74a:	80 61       	ori	r24, 0x10	; 16
+ 74c:	90 fb       	bst	r25, 0
+ 74e:	86 f9       	bld	r24, 6
+ 750:	8f 77       	andi	r24, 0x7F	; 127
+ 752:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
+ 756:	87 7f       	andi	r24, 0xF7	; 247
+ 758:	80 61       	ori	r24, 0x10	; 16
+ 75a:	8f 7b       	andi	r24, 0xBF	; 191
+ 75c:	8f 77       	andi	r24, 0x7F	; 127
+ 75e:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
+ 762:	87 7f       	andi	r24, 0xF7	; 247
+ 764:	80 61       	ori	r24, 0x10	; 16
+ 766:	8f 7b       	andi	r24, 0xBF	; 191
+ 768:	80 68       	ori	r24, 0x80	; 128
+ 76a:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
+ 76e:	2f bf       	out	0x3f, r18	; 63
+ 770:	ff 91       	pop	r31
+ 772:	ef 91       	pop	r30
+ 774:	cf 91       	pop	r28
+ 776:	bf 91       	pop	r27
+ 778:	af 91       	pop	r26
+ 77a:	9f 91       	pop	r25
+ 77c:	8f 91       	pop	r24
+ 77e:	7f 91       	pop	r23
+ 780:	6f 91       	pop	r22
+ 782:	5f 91       	pop	r21
+ 784:	4f 91       	pop	r20
+ 786:	3f 91       	pop	r19
+ 788:	2f 91       	pop	r18
+ 78a:	0f 90       	pop	r0
+ 78c:	0b be       	out	0x3b, r0	; 59
+ 78e:	0f 90       	pop	r0
+ 790:	0f be       	out	0x3f, r0	; 63
+ 792:	0f 90       	pop	r0
+ 794:	1f 90       	pop	r1
+ 796:	18 95       	reti
+
+00000798 <__vector_13>:
+ 798:	1f 92       	push	r1
+ 79a:	0f 92       	push	r0
+ 79c:	0f b6       	in	r0, 0x3f	; 63
+ 79e:	0f 92       	push	r0
+ 7a0:	11 24       	eor	r1, r1
+ 7a2:	0b b6       	in	r0, 0x3b	; 59
+ 7a4:	0f 92       	push	r0
+ 7a6:	2f 93       	push	r18
+ 7a8:	3f 93       	push	r19
+ 7aa:	4f 93       	push	r20
+ 7ac:	5f 93       	push	r21
+ 7ae:	6f 93       	push	r22
+ 7b0:	7f 93       	push	r23
+ 7b2:	8f 93       	push	r24
+ 7b4:	9f 93       	push	r25
+ 7b6:	af 93       	push	r26
+ 7b8:	bf 93       	push	r27
+ 7ba:	ef 93       	push	r30
+ 7bc:	ff 93       	push	r31
+ 7be:	2f b7       	in	r18, 0x3f	; 63
+ 7c0:	f8 94       	cli
+ 7c2:	80 91 0f 02 	lds	r24, 0x020F	; 0x80020f <Atm1280AlarmSyncP__0__now>
+ 7c6:	90 91 10 02 	lds	r25, 0x0210	; 0x800210 <Atm1280AlarmSyncP__0__now+0x1>
+ 7ca:	a0 91 11 02 	lds	r26, 0x0211	; 0x800211 <Atm1280AlarmSyncP__0__now+0x2>
+ 7ce:	b0 91 12 02 	lds	r27, 0x0212	; 0x800212 <Atm1280AlarmSyncP__0__now+0x3>
+ 7d2:	01 96       	adiw	r24, 0x01	; 1
+ 7d4:	a1 1d       	adc	r26, r1
+ 7d6:	b1 1d       	adc	r27, r1
+ 7d8:	80 93 0f 02 	sts	0x020F, r24	; 0x80020f <Atm1280AlarmSyncP__0__now>
+ 7dc:	90 93 10 02 	sts	0x0210, r25	; 0x800210 <Atm1280AlarmSyncP__0__now+0x1>
+ 7e0:	a0 93 11 02 	sts	0x0211, r26	; 0x800211 <Atm1280AlarmSyncP__0__now+0x2>
+ 7e4:	b0 93 12 02 	sts	0x0212, r27	; 0x800212 <Atm1280AlarmSyncP__0__now+0x3>
+ 7e8:	2f bf       	out	0x3f, r18	; 63
+ 7ea:	78 94       	sei
+ 7ec:	0e 94 cd 00 	call	0x19a	; 0x19a <Atm1280AlarmSyncP__0__checkAlarm>
+ 7f0:	ff 91       	pop	r31
+ 7f2:	ef 91       	pop	r30
+ 7f4:	bf 91       	pop	r27
+ 7f6:	af 91       	pop	r26
+ 7f8:	9f 91       	pop	r25
+ 7fa:	8f 91       	pop	r24
+ 7fc:	7f 91       	pop	r23
+ 7fe:	6f 91       	pop	r22
+ 800:	5f 91       	pop	r21
+ 802:	4f 91       	pop	r20
+ 804:	3f 91       	pop	r19
+ 806:	2f 91       	pop	r18
+ 808:	0f 90       	pop	r0
+ 80a:	0b be       	out	0x3b, r0	; 59
+ 80c:	0f 90       	pop	r0
+ 80e:	0f be       	out	0x3f, r0	; 63
+ 810:	0f 90       	pop	r0
+ 812:	1f 90       	pop	r1
+ 814:	18 95       	reti
+
+00000816 <__vector_15>:
+ 816:	1f 92       	push	r1
+ 818:	0f 92       	push	r0
+ 81a:	0f b6       	in	r0, 0x3f	; 63
+ 81c:	0f 92       	push	r0
+ 81e:	11 24       	eor	r1, r1
+ 820:	0f 90       	pop	r0
+ 822:	0f be       	out	0x3f, r0	; 63
+ 824:	0f 90       	pop	r0
+ 826:	1f 90       	pop	r1
+ 828:	18 95       	reti
+
+0000082a <main>:
+ 82a:	cf b7       	in	r28, 0x3f	; 63
+ 82c:	f8 94       	cli
+ 82e:	44 e0       	ldi	r20, 0x04	; 4
+ 830:	50 e0       	ldi	r21, 0x00	; 0
+ 832:	6f ef       	ldi	r22, 0xFF	; 255
+ 834:	70 e0       	ldi	r23, 0x00	; 0
+ 836:	86 e0       	ldi	r24, 0x06	; 6
+ 838:	92 e0       	ldi	r25, 0x02	; 2
+ 83a:	0e 94 f0 04 	call	0x9e0	; 0x9e0 <memset>
+ 83e:	8f ef       	ldi	r24, 0xFF	; 255
+ 840:	80 93 29 02 	sts	0x0229, r24	; 0x800229 <SchedulerBasicP__m_head>
+ 844:	80 93 2e 02 	sts	0x022E, r24	; 0x80022e <SchedulerBasicP__m_tail>
+ 848:	88 ee       	ldi	r24, 0xE8	; 232
+ 84a:	91 e0       	ldi	r25, 0x01	; 1
+ 84c:	90 93 2b 02 	sts	0x022B, r25	; 0x80022b <MeasureClockC__cycles+0x1>
+ 850:	80 93 2a 02 	sts	0x022A, r24	; 0x80022a <MeasureClockC__cycles>
+ 854:	80 e0       	ldi	r24, 0x00	; 0
+ 856:	87 7f       	andi	r24, 0xF7	; 247
+ 858:	8f 7e       	andi	r24, 0xEF	; 239
+ 85a:	8f 7d       	andi	r24, 0xDF	; 223
+ 85c:	8f 7b       	andi	r24, 0xBF	; 191
+ 85e:	8f 77       	andi	r24, 0x7F	; 127
+ 860:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
+ 864:	81 e0       	ldi	r24, 0x01	; 1
+ 866:	83 bf       	out	0x33, r24	; 51
+ 868:	0e 94 96 00 	call	0x12c	; 0x12c <SchedulerBasicP__popTask>
+ 86c:	8f 3f       	cpi	r24, 0xFF	; 255
+ 86e:	19 f0       	breq	.+6      	; 0x876 <main+0x4c>
+ 870:	0e 94 f6 01 	call	0x3ec	; 0x3ec <SchedulerBasicP__TaskBasic__runTask>
+ 874:	f9 cf       	rjmp	.-14     	; 0x868 <main+0x3e>
+ 876:	80 91 b6 00 	lds	r24, 0x00B6	; 0x8000b6 <__TEXT_REGION_LENGTH__+0x7e00b6>
+ 87a:	80 72       	andi	r24, 0x20	; 32
+ 87c:	80 93 b6 00 	sts	0x00B6, r24	; 0x8000b6 <__TEXT_REGION_LENGTH__+0x7e00b6>
+ 880:	80 91 b6 00 	lds	r24, 0x00B6	; 0x8000b6 <__TEXT_REGION_LENGTH__+0x7e00b6>
+ 884:	81 fd       	sbrc	r24, 1
+ 886:	fc cf       	rjmp	.-8      	; 0x880 <main+0x56>
+ 888:	82 e0       	ldi	r24, 0x02	; 2
+ 88a:	80 93 b0 00 	sts	0x00B0, r24	; 0x8000b0 <__TEXT_REGION_LENGTH__+0x7e00b0>
+ 88e:	80 91 b6 00 	lds	r24, 0x00B6	; 0x8000b6 <__TEXT_REGION_LENGTH__+0x7e00b6>
+ 892:	80 fd       	sbrc	r24, 0
+ 894:	fc cf       	rjmp	.-8      	; 0x88e <main+0x64>
+ 896:	85 e0       	ldi	r24, 0x05	; 5
+ 898:	80 93 b1 00 	sts	0x00B1, r24	; 0x8000b1 <__TEXT_REGION_LENGTH__+0x7e00b1>
+ 89c:	8c e7       	ldi	r24, 0x7C	; 124
+ 89e:	80 93 b3 00 	sts	0x00B3, r24	; 0x8000b3 <__TEXT_REGION_LENGTH__+0x7e00b3>
+ 8a2:	80 91 70 00 	lds	r24, 0x0070	; 0x800070 <__TEXT_REGION_LENGTH__+0x7e0070>
+ 8a6:	82 60       	ori	r24, 0x02	; 2
+ 8a8:	80 93 70 00 	sts	0x0070, r24	; 0x800070 <__TEXT_REGION_LENGTH__+0x7e0070>
+ 8ac:	10 92 14 02 	sts	0x0214, r1	; 0x800214 <RoundRobinResourceQueueC__0__resQ>
+ 8b0:	0e 94 96 00 	call	0x12c	; 0x12c <SchedulerBasicP__popTask>
+ 8b4:	8f 3f       	cpi	r24, 0xFF	; 255
+ 8b6:	19 f0       	breq	.+6      	; 0x8be <main+0x94>
+ 8b8:	0e 94 f6 01 	call	0x3ec	; 0x3ec <SchedulerBasicP__TaskBasic__runTask>
+ 8bc:	f9 cf       	rjmp	.-14     	; 0x8b0 <main+0x86>
+ 8be:	cf bf       	out	0x3f, r28	; 63
+ 8c0:	78 94       	sei
+ 8c2:	91 b1       	in	r25, 0x01	; 1
+ 8c4:	81 b9       	out	0x01, r24	; 1
+ 8c6:	82 b1       	in	r24, 0x02	; 2
+ 8c8:	12 b8       	out	0x02, r1	; 2
+ 8ca:	2f b7       	in	r18, 0x3f	; 63
+ 8cc:	f8 94       	cli
+ 8ce:	80 91 0f 02 	lds	r24, 0x020F	; 0x80020f <Atm1280AlarmSyncP__0__now>
+ 8d2:	90 91 10 02 	lds	r25, 0x0210	; 0x800210 <Atm1280AlarmSyncP__0__now+0x1>
+ 8d6:	a0 91 11 02 	lds	r26, 0x0211	; 0x800211 <Atm1280AlarmSyncP__0__now+0x2>
+ 8da:	b0 91 12 02 	lds	r27, 0x0212	; 0x800212 <Atm1280AlarmSyncP__0__now+0x3>
+ 8de:	2f bf       	out	0x3f, r18	; 63
+ 8e0:	80 93 15 02 	sts	0x0215, r24	; 0x800215 <VirtualizeTimerC__0__m_timers>
+ 8e4:	90 93 16 02 	sts	0x0216, r25	; 0x800216 <VirtualizeTimerC__0__m_timers+0x1>
+ 8e8:	a0 93 17 02 	sts	0x0217, r26	; 0x800217 <VirtualizeTimerC__0__m_timers+0x2>
+ 8ec:	b0 93 18 02 	sts	0x0218, r27	; 0x800218 <VirtualizeTimerC__0__m_timers+0x3>
+ 8f0:	8a e0       	ldi	r24, 0x0A	; 10
+ 8f2:	90 e0       	ldi	r25, 0x00	; 0
+ 8f4:	a0 e0       	ldi	r26, 0x00	; 0
+ 8f6:	b0 e0       	ldi	r27, 0x00	; 0
+ 8f8:	80 93 19 02 	sts	0x0219, r24	; 0x800219 <VirtualizeTimerC__0__m_timers+0x4>
+ 8fc:	90 93 1a 02 	sts	0x021A, r25	; 0x80021a <VirtualizeTimerC__0__m_timers+0x5>
+ 900:	a0 93 1b 02 	sts	0x021B, r26	; 0x80021b <VirtualizeTimerC__0__m_timers+0x6>
+ 904:	b0 93 1c 02 	sts	0x021C, r27	; 0x80021c <VirtualizeTimerC__0__m_timers+0x7>
+ 908:	80 91 1d 02 	lds	r24, 0x021D	; 0x80021d <VirtualizeTimerC__0__m_timers+0x8>
+ 90c:	8e 7f       	andi	r24, 0xFE	; 254
+ 90e:	82 60       	ori	r24, 0x02	; 2
+ 910:	80 93 1d 02 	sts	0x021D, r24	; 0x80021d <VirtualizeTimerC__0__m_timers+0x8>
+ 914:	83 e0       	ldi	r24, 0x03	; 3
+ 916:	0e 94 a8 00 	call	0x150	; 0x150 <SchedulerBasicP__TaskBasic__postTask>
+ 91a:	cf b7       	in	r28, 0x3f	; 63
+ 91c:	f8 94       	cli
+ 91e:	0e 94 96 00 	call	0x12c	; 0x12c <SchedulerBasicP__popTask>
+ 922:	8f 3f       	cpi	r24, 0xFF	; 255
+ 924:	09 f0       	breq	.+2      	; 0x928 <main+0xfe>
+ 926:	58 c0       	rjmp	.+176    	; 0x9d8 <main+0x1ae>
+ 928:	80 91 70 00 	lds	r24, 0x0070	; 0x800070 <__TEXT_REGION_LENGTH__+0x7e0070>
+ 92c:	83 70       	andi	r24, 0x03	; 3
+ 92e:	89 f0       	breq	.+34     	; 0x952 <main+0x128>
+ 930:	80 91 b6 00 	lds	r24, 0x00B6	; 0x8000b6 <__TEXT_REGION_LENGTH__+0x7e00b6>
+ 934:	8a 71       	andi	r24, 0x1A	; 26
+ 936:	e1 f7       	brne	.-8      	; 0x930 <main+0x106>
+ 938:	80 91 b3 00 	lds	r24, 0x00B3	; 0x8000b3 <__TEXT_REGION_LENGTH__+0x7e00b3>
+ 93c:	90 91 b2 00 	lds	r25, 0x00B2	; 0x8000b2 <__TEXT_REGION_LENGTH__+0x7e00b2>
+ 940:	89 1b       	sub	r24, r25
+ 942:	88 30       	cpi	r24, 0x08	; 8
+ 944:	40 f0       	brcs	.+16     	; 0x956 <main+0x12c>
+ 946:	80 91 b2 00 	lds	r24, 0x00B2	; 0x8000b2 <__TEXT_REGION_LENGTH__+0x7e00b2>
+ 94a:	89 3f       	cpi	r24, 0xF9	; 249
+ 94c:	20 f4       	brcc	.+8      	; 0x956 <main+0x12c>
+ 94e:	83 e0       	ldi	r24, 0x03	; 3
+ 950:	03 c0       	rjmp	.+6      	; 0x958 <main+0x12e>
+ 952:	85 e0       	ldi	r24, 0x05	; 5
+ 954:	01 c0       	rjmp	.+2      	; 0x958 <main+0x12e>
+ 956:	82 e0       	ldi	r24, 0x02	; 2
+ 958:	e0 91 6e 00 	lds	r30, 0x006E	; 0x80006e <__TEXT_REGION_LENGTH__+0x7e006e>
+ 95c:	e6 70       	andi	r30, 0x06	; 6
+ 95e:	29 f5       	brne	.+74     	; 0x9aa <main+0x180>
+ 960:	90 91 6f 00 	lds	r25, 0x006F	; 0x80006f <__TEXT_REGION_LENGTH__+0x7e006f>
+ 964:	9e 72       	andi	r25, 0x2E	; 46
+ 966:	21 f5       	brne	.+72     	; 0x9b0 <main+0x186>
+ 968:	e0 91 71 00 	lds	r30, 0x0071	; 0x800071 <__TEXT_REGION_LENGTH__+0x7e0071>
+ 96c:	ee 72       	andi	r30, 0x2E	; 46
+ 96e:	e9 f4       	brne	.+58     	; 0x9aa <main+0x180>
+ 970:	90 91 72 00 	lds	r25, 0x0072	; 0x800072 <__TEXT_REGION_LENGTH__+0x7e0072>
+ 974:	9e 72       	andi	r25, 0x2E	; 46
+ 976:	e1 f4       	brne	.+56     	; 0x9b0 <main+0x186>
+ 978:	e0 91 73 00 	lds	r30, 0x0073	; 0x800073 <__TEXT_REGION_LENGTH__+0x7e0073>
+ 97c:	ee 72       	andi	r30, 0x2E	; 46
+ 97e:	a9 f4       	brne	.+42     	; 0x9aa <main+0x180>
+ 980:	0c b4       	in	r0, 0x2c	; 44
+ 982:	07 fc       	sbrc	r0, 7
+ 984:	15 c0       	rjmp	.+42     	; 0x9b0 <main+0x186>
+ 986:	90 91 c1 00 	lds	r25, 0x00C1	; 0x8000c1 <__TEXT_REGION_LENGTH__+0x7e00c1>
+ 98a:	98 71       	andi	r25, 0x18	; 24
+ 98c:	89 f4       	brne	.+34     	; 0x9b0 <main+0x186>
+ 98e:	e0 91 c9 00 	lds	r30, 0x00C9	; 0x8000c9 <__TEXT_REGION_LENGTH__+0x7e00c9>
+ 992:	e8 71       	andi	r30, 0x18	; 24
+ 994:	51 f4       	brne	.+20     	; 0x9aa <main+0x180>
+ 996:	90 91 bc 00 	lds	r25, 0x00BC	; 0x8000bc <__TEXT_REGION_LENGTH__+0x7e00bc>
+ 99a:	92 fd       	sbrc	r25, 2
+ 99c:	09 c0       	rjmp	.+18     	; 0x9b0 <main+0x186>
+ 99e:	90 91 7a 00 	lds	r25, 0x007A	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
+ 9a2:	97 fd       	sbrc	r25, 7
+ 9a4:	04 c0       	rjmp	.+8      	; 0x9ae <main+0x184>
+ 9a6:	e5 e0       	ldi	r30, 0x05	; 5
+ 9a8:	03 c0       	rjmp	.+6      	; 0x9b0 <main+0x186>
+ 9aa:	e0 e0       	ldi	r30, 0x00	; 0
+ 9ac:	01 c0       	rjmp	.+2      	; 0x9b0 <main+0x186>
+ 9ae:	e1 e0       	ldi	r30, 0x01	; 1
+ 9b0:	93 b7       	in	r25, 0x33	; 51
+ 9b2:	8e 17       	cp	r24, r30
+ 9b4:	08 f4       	brcc	.+2      	; 0x9b8 <main+0x18e>
+ 9b6:	e8 2f       	mov	r30, r24
+ 9b8:	f0 e0       	ldi	r31, 0x00	; 0
+ 9ba:	ec 51       	subi	r30, 0x1C	; 28
+ 9bc:	ff 4f       	sbci	r31, 0xFF	; 255
+ 9be:	84 91       	lpm	r24, Z
+ 9c0:	e9 2f       	mov	r30, r25
+ 9c2:	e0 7f       	andi	r30, 0xF0	; 240
+ 9c4:	e1 60       	ori	r30, 0x01	; 1
+ 9c6:	e8 2b       	or	r30, r24
+ 9c8:	e3 bf       	out	0x33, r30	; 51
+ 9ca:	78 94       	sei
+ 9cc:	88 95       	sleep
+ 9ce:	f8 94       	cli
+ 9d0:	83 b7       	in	r24, 0x33	; 51
+ 9d2:	8e 7f       	andi	r24, 0xFE	; 254
+ 9d4:	83 bf       	out	0x33, r24	; 51
+ 9d6:	a3 cf       	rjmp	.-186    	; 0x91e <main+0xf4>
+ 9d8:	cf bf       	out	0x3f, r28	; 63
+ 9da:	0e 94 f6 01 	call	0x3ec	; 0x3ec <SchedulerBasicP__TaskBasic__runTask>
+ 9de:	9d cf       	rjmp	.-198    	; 0x91a <main+0xf0>
+
+000009e0 <memset>:
+ 9e0:	dc 01       	movw	r26, r24
+ 9e2:	01 c0       	rjmp	.+2      	; 0x9e6 <memset+0x6>
+ 9e4:	6d 93       	st	X+, r22
+ 9e6:	41 50       	subi	r20, 0x01	; 1
+ 9e8:	50 40       	sbci	r21, 0x00	; 0
+ 9ea:	e0 f7       	brcc	.-8      	; 0x9e4 <memset+0x4>
+ 9ec:	08 95       	ret
+
+000009ee <_exit>:
+ 9ee:	f8 94       	cli
+
+000009f0 <__stop_program>:
+ 9f0:	ff cf       	rjmp	.-2      	; 0x9f0 <__stop_program>
