@@ -3,7 +3,7 @@ PROTO_FOLDER		= Protocol
 APP_FOLDER		= RadioScanner
 
 #COMPONENT		= RadioScannerAppC
-COMPONENT		= Test/VolumeAdcTestAppC
+COMPONENT		= Test/PS2TestAppC
 TINYOS_ROOT_DIR	       ?= ../tinyos_ws18
-CFLAGS 		       += -IVolumeAdc
+CFLAGS 		       += -I. -IPS2 -ITest -IVolumeAdc
 include $(TINYOS_ROOT_DIR)/Makefile.include

@@ -45,19 +45,22 @@ implementation {
     command void PS2.init(void)
     {
         /* Configure data & clock pins as input */
-        ClockPin.makeInput();
-        DataPin.makeInput();
+        call ClockPin.makeInput();
+        call DataPin.makeInput();
         /* Enable pull-up (probably already done in keyboard) */
         //DataPin.set();
 
         /* Enable PCINT2 on the clock line */
         //TODO enable correct PCINT, maybe use RMW
-        ClockIRQ.setMask(0x02);
+        call ClockIRQ.setMask(0x02);
         //ClockPin.enable();
-        
-        PS2BitCount = PS2_BIT_NUM;
-        kbShiftState = UNSHIFTED;
-        kbKeyState = DOWN;
+       
+        atomic 
+        {
+            PS2BitCount = PS2_BIT_NUM;
+            kbShiftState = UNSHIFTED;
+            kbKeyState = DOWN;
+        }
     }
 
     /*
@@ -70,8 +73,6 @@ implementation {
     //TODO maybe convert to command
     void decodeScancode(uint8_t scancode)
     {
-        uint8_t data;
-
         if (DOWN == kbKeyState)
         {
             switch (scancode)
@@ -101,7 +102,7 @@ implementation {
                         while (min < max)
                         {
                             i = (max - min) >> 1;
-                            sc = pgm_read_byte(&unshifted[i][0])
+                            sc = pgm_read_byte(&unshifted[i][0]);
                             
                             /* Fire the signal if the scancode was decoded successfully */
                             if (sc == scancode)
@@ -125,7 +126,7 @@ implementation {
                         while (min < max)
                         {
                             i = (max - min) >> 1;
-                            sc = pgm_read_byte(&shifted[i][0])
+                            sc = pgm_read_byte(&shifted[i][0]);
                             
                             /* Fire the signal if the scancode was decoded successfully */
                             if (sc == scancode)
@@ -173,13 +174,13 @@ implementation {
         static uint8_t PS2Data;
 
         /* Falling clock edge captured */
-        if (!ClockPin.get())
+        if (! call ClockPin.get())
         {
             /* Only sample data bits */
             if (PS2BitCount < PS2_BIT_NUM && PS2BitCount > PS2_DATA_START)
             {
                 PS2Data = PS2Data >> 1;
-                if (DataPin.get())
+                if (call DataPin.get())
                     PS2Data |= 0x80;
             }
         }

@@ -14,12 +14,11 @@ configuration PS2C {
 
 implementation {
     components PS2P;
-    components HplAtmegaPinChange2C as PCIRQ;
-    components HplAtm1289GeneralIOC as IO;
+    components HplAtmegaPinChange2C as PinChangeIRQ;
+    components HplAtm1280GeneralIOC as IO;
 
     PS2 = PS2P.PS2;
-
-    PS2P.ClockINT -> PinChangeIRQ;
+    PS2P.ClockIRQ -> PinChangeIRQ;
 
     //TODO use correct ports!!!
     PS2P.ClockPin -> IO.PortC1;
