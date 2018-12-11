@@ -8,22 +8,21 @@
  *
 **/
 
-#include <debug.h>
-
 configuration PS2C {
     provides interface PS2;
 }
 
 implementation {
     components PS2P;
-    components HplAtmegaPinChange2C as PinChange;
+    components HplAtmegaPinChange2C as PCIRQ;
     components HplAtm1289GeneralIOC as IO;
 
     PS2 = PS2P.PS2;
 
-    PS2P.ClockPin -> PinChange;
+    PS2P.ClockINT -> PinChangeIRQ;
 
-    //TODO use correct port!!!
+    //TODO use correct ports!!!
+    PS2P.ClockPin -> IO.PortC1;
     PS2P.DataPin -> IO.PortC0;
 }
 
