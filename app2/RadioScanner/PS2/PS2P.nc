@@ -60,13 +60,15 @@ implementation {
         kbKeyState = DOWN;
     }
 
-    async event void PS2.receivedChar(uint8_t chr)
-    {
-
-    }
-
-    //TODO decide wheter this can be a command or if it should be a function directly called in the ISR
-    command void decodeScancode(uint8_t scancode)
+    /*
+     * @brief           This procedure converts a given scancode to a characer.
+     *                  If the scancode was converted successfully, it fires a
+     *                  signal passing the character. Lower-/uppercase conversion
+     *                  is also handled in this procedure.
+     * @param scancode  The scancode to be decoded.
+     */
+    //TODO maybe convert to command
+    void decodeScancode(uint8_t scancode)
     {
         uint8_t data;
 
@@ -86,29 +88,74 @@ implementation {
                     kbShiftState = SHIFTED;
                     break;
 
+                /* Perform a scancode-character conversion using a lookup table */
                 default:
+                    //TODO merge only use single while loop by using pointer to correct LUT
                     if (UNSHIFTED == kbShiftState)
                     {
+                        uint8_t min = 0;
+                        uint8_t max = SC_UNSHIFTED_LEN-1;
+                        uint8_t i, sc;
 
+                        /* Perform table lookup with binary search */
+                        while (min < max)
+                        {
+                            i = (max - min) >> 1;
+                            sc = pgm_read_byte(&unshifted[i][0])
+                            
+                            /* Fire the signal if the scancode was decoded successfully */
+                            if (sc == scancode)
+                            {
+                                signal PS2.receivedChar(pgm_read_byte(&unshifted[i][1]));
+                                break;
+                            }
+                            else if (sc < scancode)
+                                max = i;
+                            else
+                                min = i;
+                        }
                     }
                     else
                     {
+                        uint8_t min = 0;
+                        uint8_t max = SC_SHIFTED_LEN-1;
+                        uint8_t i, sc;
+
+                        /* Perform table lookup with binary search */
+                        while (min < max)
+                        {
+                            i = (max - min) >> 1;
+                            sc = pgm_read_byte(&shifted[i][0])
+                            
+                            /* Fire the signal if the scancode was decoded successfully */
+                            if (sc == scancode)
+                            {
+                                signal PS2.receivedChar(pgm_read_byte(&shifted[i][1]));
+                                break;
+                            }
+                            else if (sc < scancode)
+                                max = i;
+                            else
+                                min = i;
+                        }
 
                     }
             }
         }
         else
         {
+            /* Key cannot be released twice in a row */
             kbKeyState = DOWN;
-
+        
+            /* Check if shift keys have been released */
             switch (scancode)
             {
                 case KB_LEFT_SHIFT:
-                    kbShiftState = SHIFTED;
+                    kbShiftState = UNSHIFTED;
                     break;
                 
                 case KB_RIGHT_SHIFT:
-                    kbShiftState = SHIFTED;
+                    kbShiftState = UNSHIFTED;
                     break;
 
                 default:
@@ -146,7 +193,7 @@ implementation {
             {
                 /* Ignore start byte */
                 if (PS2Data != PS2_START_BYTE) 
-                    call decodeScancode(PS2Data);
+                    decodeScancode(PS2Data);
                 
                 PS2BitCount = PS2_BIT_NUM;
             }
