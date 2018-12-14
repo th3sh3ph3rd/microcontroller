@@ -47,13 +47,9 @@ implementation {
         /* Configure data & clock pins as input */
         call ClockPin.makeInput();
         call DataPin.makeInput();
-        /* Enable pull-up (probably already done in keyboard) */
-        //DataPin.set();
 
-        /* Enable PCINT2 on the clock line */
-        //TODO enable correct PCINT, maybe use RMW
+        /* Enable PCINT17 (PK1) on the clock line */
         call ClockIRQ.setMask(0x02);
-        //ClockPin.enable();
        
         atomic 
         {
@@ -61,6 +57,8 @@ implementation {
             kbShiftState = UNSHIFTED;
             kbKeyState = DOWN;
         }
+
+        call ClockIRQ.enable();
     }
 
     /*
@@ -99,21 +97,21 @@ implementation {
                         uint8_t i, sc;
 
                         /* Perform table lookup with binary search */
-                        while (min < max)
+                        while (min <= max)
                         {
-                            i = (max - min) >> 1;
+                            i = (max + min) >> 1;
                             sc = pgm_read_byte(&unshifted[i][0]);
                             
-                            /* Fire the signal if the scancode was decoded successfully */
-                            if (sc == scancode)
+                            if (sc < scancode)
+                                min = i+1;
+                            else if (sc > scancode)
+                                max = i-1;
+                            else
                             {
+                                /* Fire the signal if the scancode was decoded successfully */
                                 signal PS2.receivedChar(pgm_read_byte(&unshifted[i][1]));
                                 break;
                             }
-                            else if (sc < scancode)
-                                max = i;
-                            else
-                                min = i;
                         }
                     }
                     else
@@ -123,24 +121,53 @@ implementation {
                         uint8_t i, sc;
 
                         /* Perform table lookup with binary search */
-                        while (min < max)
+                        while (min <= max)
                         {
-                            i = (max - min) >> 1;
+                            i = (max + min) >> 1;
                             sc = pgm_read_byte(&shifted[i][0]);
                             
-                            /* Fire the signal if the scancode was decoded successfully */
-                            if (sc == scancode)
+                            if (sc < scancode)
+                                min = i+1;
+                            else if (sc > scancode)
+                                max = i-1;
+                            else
                             {
+                                /* Fire the signal if the scancode was decoded successfully */
                                 signal PS2.receivedChar(pgm_read_byte(&shifted[i][1]));
                                 break;
                             }
-                            else if (sc < scancode)
-                                max = i;
-                            else
-                                min = i;
                         }
-
                     }
+
+//                    uint8_t *scArray;
+//
+//                    if (UNSHIFTED == kbShiftstate)
+//                        scArray = unshifted;
+//                    else
+//                        scArray = shifted;
+//
+//                    uint8_t min = 0;
+//                    uint8_t max = SC_UNSHIFTED_LEN-1;
+//                    uint8_t i, sc;
+//
+//                    /* Perform table lookup with binary search */
+//                    while (min <= max)
+//                    {
+//                        i = (max + min) >> 1;
+//                        sc = pgm_read_byte(&scArray[i][0]);
+//                        
+//                        if (sc < scancode)
+//                            min = i+1;
+//                        else if (sc > scancode)
+//                            max = i-1;
+//                        else
+//                        {
+//                            /* Fire the signal if the scancode was decoded successfully */
+//                            signal PS2.receivedChar(pgm_read_byte(&scArray[i][1]));
+//                            break;
+//                        }
+//                    }
+//                    break;
             }
         }
         else
@@ -174,14 +201,14 @@ implementation {
         static uint8_t PS2Data;
 
         /* Falling clock edge captured */
-        if (! call ClockPin.get())
+        if (!(call ClockPin.get()))
         {
             /* Only sample data bits */
             if (PS2BitCount < PS2_BIT_NUM && PS2BitCount > PS2_DATA_START)
             {
                 PS2Data = PS2Data >> 1;
                 if (call DataPin.get())
-                    PS2Data |= 0x80;
+                    PS2Data |= 0x80; 
             }
         }
         /* Rising edge captured */

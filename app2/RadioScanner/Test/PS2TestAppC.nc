@@ -15,8 +15,10 @@ configuration PS2TestAppC {
 
 implementation {
 	components MainC, PS2TestP, PS2C, GlcdC;
+        components HplAtm1280GeneralIOFastPortC as IO;
 
         PS2TestP.Boot -> MainC.Boot;
         PS2TestP.Glcd -> GlcdC.Glcd;
         PS2TestP.Keyboard -> PS2C.PS2;
+        PS2TestP.dbgLeds -> IO.PortH;
 }

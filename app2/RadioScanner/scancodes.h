@@ -2,7 +2,7 @@
 #define SCANCODES_H
 
 // Unshifted characters
-#define SC_UNSHIFTED_LEN 67
+#define SC_UNSHIFTED_LEN 66
 uint8_t const PROGMEM unshifted[][2] = {
 {0x0d,9},
 {0x0e,'|'},
@@ -74,7 +74,7 @@ uint8_t const PROGMEM unshifted[][2] = {
 {0,0}
 };
 // Shifted characters
-#define SC_SHIFTED_LEN 67
+#define SC_SHIFTED_LEN 66
 uint8_t const PROGMEM shifted[][2] = {
 {0x0d,9},
 {0x0e,'x'},

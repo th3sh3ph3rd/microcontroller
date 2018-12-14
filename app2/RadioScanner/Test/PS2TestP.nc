@@ -16,6 +16,7 @@ module PS2TestP {
         interface Boot;
         interface Glcd;
         interface PS2 as Keyboard;
+        interface GeneralIOPort as dbgLeds;
     }
 }
 
@@ -25,14 +26,20 @@ implementation {
 
     event void Boot.booted()
     {
+        call dbgLeds.makeOutput(0xff);
+        call dbgLeds.clear(0xff);
+     
         call Keyboard.init();
         call Glcd.fill(0x00);
 
         atomic
         {
             cx = 0;
-            cy = 55;
+            cy = 10;
         }
+        
+        //call Glcd.drawText("hello world", cx, cy);
+        call dbgLeds.set(1);
     }
 
     task void drawChar()
@@ -47,11 +54,15 @@ implementation {
             cx = 0;
             cy -= 8;
         }
+
+        call dbgLeds.write(4);
     }
 
     async event void Keyboard.receivedChar(uint8_t c)
     {
         character = c;
         post drawChar();
+
+        call dbgLeds.write(2);
     }
 }

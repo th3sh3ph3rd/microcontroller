@@ -21,7 +21,7 @@ implementation {
     PS2P.ClockIRQ -> PinChangeIRQ;
 
     //TODO use correct ports!!!
-    PS2P.ClockPin -> IO.PortC1;
-    PS2P.DataPin -> IO.PortC0;
+    PS2P.ClockPin -> IO.PortK1;
+    PS2P.DataPin -> IO.PortK0;
 }
 
