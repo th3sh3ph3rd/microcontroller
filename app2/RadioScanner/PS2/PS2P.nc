@@ -68,7 +68,7 @@ implementation {
      *                  is also handled in this procedure.
      * @param scancode  The scancode to be decoded.
      */
-    //TODO maybe convert to command
+    //TODO convert to task to avoid recursion, may require ringbuffer
     void decodeScancode(uint8_t scancode)
     {
         if (DOWN == kbKeyState)
