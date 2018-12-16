@@ -29,6 +29,7 @@ module FMClickP {
 }
 
 implementation {
+    /* I2C addresses */
     #define DEVICE_WRITE_ADDR   0x10
     #define DEVICE_READ_ADDR    0x21
 
@@ -42,7 +43,7 @@ implementation {
     #define ENABLE_REG          0x02
     #define ENABLE_MASK         0x0001
     #define DISABLE_REG         0x02
-    #define DISABLE_MASK        0x0020
+    #define DISABLE_MASK        0x0040
     #define DMUTE_REG           0x02
     #define DMUTE_MASK          0x4000
     #define GPIO2_REG           0x04
@@ -52,7 +53,7 @@ implementation {
     #define BLNDADJ_MASK        0x00c0
     #define BLNDADJ_VAL         0x0000 /* Default */
     #define VOLEXT_REG          0x06
-    #define VOLEXT_MASK         0x0080
+    #define VOLEXT_MASK         0x0100
     #define SEEKTH_REG          0x05
     #define SEEKTH_MASK         0xff00
     #define SEEKTH_VAL          0x1900 /* Recommended */
@@ -63,7 +64,7 @@ implementation {
     #define SKCNT_MASK          0x000f
     #define SKCNT_VAL           0x0008 /* More stringent valid station requirements */
     #define RDS_REG             0x04
-    #define RDS_MASK            0x0800
+    #define RDS_MASK            0x1000
     #define RDSIEN_REG          0x04
     #define RDSIEN_MASK         0x8000
     #define STCIEN_REG          0x04
@@ -72,18 +73,28 @@ implementation {
     #define BAND_MASK           0x00c0
     #define BAND_VAL            0x0000 /* European FM band */
     #define SPACE_REG           0x05
-    #define SPACE_MASK          0x0018 
+    #define SPACE_MASK          0x0030 
     #define SPACE_VAL           0x0008 /* Europe FM channel spacing */
     #define DE_REG              0x04
-    #define DE_MASK             0x0400 /* Europe FM de-emphasis settings */
+    #define DE_MASK             0x0800 /* Europe FM de-emphasis settings */
     #define TUNE_REG            0x03
     #define TUNE_MASK           0x8000
     #define CHAN_REG            0x03
-    #define CHAN_MASK           0x01ff
+    #define CHAN_MASK           0x03ff
     #define READCHAN_REG        0x0b
-    #define READCHAN_MASK       0x01ff
+    #define READCHAN_MASK       0x03ff
     #define VOLUME_REG          0x05
     #define VOLUME_MASK         0x000f
+    #define SEEKUP_REG          0x02
+    #define SEEKUP_MASK         0x0200
+    #define SKMODE_REG          0x02
+    #define SKMODE_MASK         0x0400
+    #define SEEK_REG            0x02
+    #define SEEK_MASK           0x0100
+    #define RDSA_REG            0x0c
+    #define RDSB_REG            0x0d
+    #define RDSC_REG            0x0e
+    #define RDSD_REG            0x0f
 
     #define XOSCEN_DELAY_MS     500
   
@@ -98,6 +109,7 @@ implementation {
     enum bus_state {IDLE, READ, WRITE};
     enum init_state {SETUP, XOSCEN, WAITXOSC, ENABLE, READREGF, CONFIG, FINISH};
     enum tune_state {STARTTUNE, WAITTUNE, TUNECHAN, ENDTUNE, FINTUNE};
+    enum seek_state {STARTSEEK, WAITSEEK, SEEKCHAN, ENDSEEK, FINSEEK};
 
     //TODO make bitfield
     struct
@@ -108,6 +120,7 @@ implementation {
         enum bus_state      bus;
         enum init_state     init;
         enum tune_state     tune;
+        enum seek_state     seek;
     } states;
 
     void readRegisters()
@@ -303,6 +316,65 @@ implementation {
         }
     }
 
+    //TODO convert to task (avoid signal recursion)
+    error_t _seek(bool up)
+    {
+        if (states.seek == STARTSEEK)
+        {
+            /* Wrap around band limits */
+            shadowRegisters[SKMODE_REG] &= ~SKMODE_MASK;
+            shadowRegisters[SEEK_REG] |= SEEK_MASK;
+
+            //TODO to seek entire band set CHAN to 00, SEEKUP to 1 and SKMODE to 1
+
+            if (up)
+                shadowRegisters[SEEKUP_REG] |= SEEKUP_MASK;
+            else
+                shadowRegisters[SEEKUP_REG] &= ~SEEKUP_MASK;
+
+
+            writeRegisters();
+
+            states.seek = WAITSEEK;
+            return SUCCESS;
+        }
+        else if (states.seek == WAITSEEk)
+        {
+            //TODO maybe move this to previous state to avoid missing interrupt
+            /* Enable STC interrupt */
+            Int.enable();
+
+            states.seek = SEEKCHAN;
+            return SUCCESS;
+        }
+        else if (states.seek == SEEKCHAN)
+        {
+            readRegisters();
+
+            states.seek = ENDSEEK;
+            return SUCCESS;
+        }
+        else if (states.seek == ENDSEEK)
+        {
+            /* Disable seeking */
+            shadowRegisters[SEEK_REG] &= ~SEEK_MASK;
+            writeRegisters();
+
+            states.seek = FINSEEK;
+            return SUCCESS;
+        }
+        //TODO need to verify that STC has been cleared?
+        else if (states.seek == FINSEEK)
+        {
+            //TODO generate new signal for seek
+            //TODO check SF/BL bits if channel is valid
+            signal FMClick.tuneComplete(shadowRegisters[READCHAN_REG] & READCHAN_MASK);
+
+            states.driver = IDLE;
+            return SUCCESS;
+        }
+    }
+
     command error_t Init.init()
     {
         if (IDLE != states.driver)
@@ -332,8 +404,11 @@ implementation {
     {
         if (IDLE != states.driver)
             return FAIL;
+ 
+        states.driver = SEEK;
+        states.seek = STARTSEEK;
 
-        return SUCCESS;
+        return _seek(up);
     }
 
     command uint16_t getChannel(void)
@@ -411,6 +486,10 @@ implementation {
                 _tune(0);
                 break;
             
+            case SEEK:
+                _seek(0);
+                break;
+            
             default:
                 break;
         }
@@ -432,6 +511,10 @@ implementation {
                 _tune(0);
                 break;
 
+            case SEEK:
+                _seek(0);
+                break;
+            
             case CONFRDS:
                 states.driver = IDLE;
                 break;
@@ -456,6 +539,10 @@ implementation {
                 _tune(0);
                 break;
 
+            case SEEK:
+                _seek(0);
+                break;
+            
             default:
                 break;
         }
