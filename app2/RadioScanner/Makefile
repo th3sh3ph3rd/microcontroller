@@ -6,5 +6,5 @@ APP_FOLDER		= RadioScanner
 COMPONENT		= Test/PS2TestAppC
 #COMPONENT		= Test/VolumeAdcTestAppC
 TINYOS_ROOT_DIR	       ?= ../tinyos_ws18
-CFLAGS 		       += -I. -IPS2 -ITest -IVolumeAdc
+CFLAGS 		       += -I. -IFMClick -IPS2 -ITest -IVolumeAdc
 include $(TINYOS_ROOT_DIR)/Makefile.include
