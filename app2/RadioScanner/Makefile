@@ -3,7 +3,8 @@ PROTO_FOLDER		= Protocol
 APP_FOLDER		= RadioScanner
 
 #COMPONENT		= RadioScannerAppC
-COMPONENT		= Test/PS2TestAppC
+#COMPONENT		= Test/PS2TestAppC
+COMPONENT		= Test/FMClickTestAppC
 #COMPONENT		= Test/VolumeAdcTestAppC
 TINYOS_ROOT_DIR	       ?= ../tinyos_ws18
 CFLAGS 		       += -I. -IFMClick -IPS2 -ITest -IVolumeAdc

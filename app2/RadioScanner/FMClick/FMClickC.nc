@@ -8,7 +8,7 @@
  *
 **/
 
-configuration FMCLickC {
+configuration FMClickC {
     provides 
     {
         interface Init;
@@ -17,7 +17,7 @@ configuration FMCLickC {
 }
 
 implementation {
-    components FMClickP;
+    components FMClickP, GlcdC;
     components HplAtm128InterruptC as Int; 
     components new Atm128I2CMasterC() as I2C;
     components new TimerMilliC() as Timer;
@@ -26,14 +26,16 @@ implementation {
     Init = FMClickP.Init;
     FMClick = FMClickP.FMClick;
 
-    FMClick.Int -> Int.Int3;
+    FMClickP.Int -> Int.Int3;
 
-    FMCLick.I2CResource -> I2C.Resource;
-    FMCLick.I2C -> I2C.I2CPacket;
+    FMClickP.I2CResource -> I2C.Resource;
+    FMClickP.I2C -> I2C.I2CPacket;
 
-    FMClick.Timer -> Timer;
+    FMClickP.Timer -> Timer;
 
     FMClickP.RSTPin -> IO.PortD2;
     FMClickP.SDIOPin -> IO.PortD1;
+
+    FMClickP.Glcd -> GlcdC.Glcd;
 }
 

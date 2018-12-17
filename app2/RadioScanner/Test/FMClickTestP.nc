@@ -1,0 +1,67 @@
+/**
+ *
+ * @file RadioScannerAppC.nc
+ * @author  Jan Nausner <e01614835@student.tuwien.ac.at>
+ * @date    2018-12-09
+ *
+ * VolumeAdc test module implementation.
+ *
+**/
+
+#include <debug.h>
+
+module FMClickTestP {
+    uses
+    {
+        interface Boot;
+        interface Glcd;
+        interface Init as RadioInit;
+        interface FMClick as Radio;
+    }
+}
+
+implementation {
+    #define FM4 1038
+    #define RADIO 921
+
+    uint16_t currChan;
+
+    event void Boot.booted()
+    {
+        call RadioInit.init();
+        call Glcd.fill(0x00);
+        call Glcd.drawText("init fm", 0, 10);
+    }
+
+    task void tune2Station()
+    {
+        call Glcd.drawText("init done", 0, 10);
+        //call Radio.setVolume(15); not working, signal needed
+        call Glcd.drawText("tuning to FM4", 0, 10);
+        call Radio.tune(FM4);
+    }
+
+    task void finishedTuning()
+    {
+        char buf[5];
+        sprintf(buf, "%u", currChan);
+        call Glcd.drawText("listening to FM4", 0, 10);
+        call Glcd.drawText(buf, 0, 20);
+    }
+
+    event void Radio.initDone(error_t res)
+    {
+        post tune2Station();
+    }
+ 
+    async event void Radio.tuneComplete(uint16_t channel)
+    {
+        atomic { currChan = channel; }
+        post finishedTuning();
+    }
+
+    async event void Radio.rdsReceived(RDSType type, char *buf)
+    {
+
+    }
+}

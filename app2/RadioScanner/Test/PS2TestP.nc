@@ -58,7 +58,7 @@ implementation {
         call dbgLeds.write(4);
     }
 
-    async event void Keyboard.receivedChar(uint8_t c)
+    event void Keyboard.receivedChar(uint8_t c)
     {
         character = c;
         post drawChar();
