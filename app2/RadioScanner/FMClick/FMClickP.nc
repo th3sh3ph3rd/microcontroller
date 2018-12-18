@@ -38,11 +38,15 @@ implementation {
 
     /* Register file addresses */
     #define REGISTER_NUM        16
-    #define REGISTER_WIDTH      2
+    #define REGISTER_WIDTH      2       /* Bytes per register word */
     #define READ_START_ADDR     0x0a
     #define WRITE_START_ADDR    0x02
-    #define WRITE_END_ADDR      0x08 /* First register that should not be written */
+    #define WRITE_END_ADDR      0x08    /* First register that should not be written */
     #define WRITE_REG_NUM       (WRITE_END_ADDR - WRITE_START_ADDR)
+    //#define WRITE_REG_NUM       14
+    #define CHIPID_REG          0x01
+    #define POWERUP_VAL         0x1253
+    #define POWERDOWN_VAL       0x1200
     #define XOSCEN_REG          0x07
     #define XOSCEN_MASK         0x8000
     #define ENABLE_REG          0x02
@@ -53,21 +57,21 @@ implementation {
     #define DMUTE_MASK          0x4000
     #define GPIO2_REG           0x04
     #define GPIO2_MASK          0x000c
-    #define GPIO2_VAL           0x0004 /* Configures GPIO2 to fire RDS/STC interrupts */
+    #define GPIO2_VAL           0x0004  /* Configures GPIO2 to fire RDS/STC interrupts */
     #define BLNDADJ_REG         0x04
     #define BLNDADJ_MASK        0x00c0
-    #define BLNDADJ_VAL         0x0000 /* Default */
+    #define BLNDADJ_VAL         0x0000  /* Default */
     #define VOLEXT_REG          0x06
     #define VOLEXT_MASK         0x0100
     #define SEEKTH_REG          0x05
     #define SEEKTH_MASK         0xff00
-    #define SEEKTH_VAL          0x1900 /* Recommended */
+    #define SEEKTH_VAL          0x1900  /* Recommended */
     #define SKSNR_REG           0x06
     #define SKSNR_MASK          0x00f0
-    #define SKSNR_VAL           0x0040 /* Good SNR threshold */ 
+    #define SKSNR_VAL           0x0040  /* Good SNR threshold */ 
     #define SKCNT_REG           0x06
     #define SKCNT_MASK          0x000f
-    #define SKCNT_VAL           0x0008 /* More stringent valid station requirements */
+    #define SKCNT_VAL           0x0008  /* More stringent valid station requirements */
     #define RDS_REG             0x04
     #define RDS_MASK            0x1000
     #define RDSIEN_REG          0x04
@@ -158,8 +162,6 @@ implementation {
 
     void registerWriteback()
     {
-        char buf[7];
-
         uint8_t i = READ_START_ADDR;
         uint8_t j;
         for (j = 0; j < REGISTER_NUM*REGISTER_WIDTH; j += REGISTER_WIDTH)
@@ -167,11 +169,6 @@ implementation {
             shadowRegisters[i] = (comBuffer[j] << 8) | comBuffer[j+1];
             i = (i+1) & (REGISTER_NUM-1);
         }
-
-//        sprintf(buf, "0x%X", shadowRegisters[2]);
-//        call Glcd.drawText(buf, 0, 30);
-//        sprintf(buf, "0x%X", shadowRegisters[0x0a]);
-//        call Glcd.drawText(buf, 36, 30);
     }
 
     void writeRegisters()
@@ -223,7 +220,7 @@ implementation {
         
         if (SETUP == state)
         {
-            call Glcd.drawText("z", 0, 20);
+            call Glcd.drawText("a", 0, 20);
             call RSTPin.makeOutput();
             call RSTPin.clr();
             
@@ -245,11 +242,32 @@ implementation {
         //TODO remove if not needed
         else if (XOSCEN == state)
         {
-            call Glcd.drawText("y", 0, 20);
+            uint16_t chipIDReg;
+            atomic { chipIDReg = shadowRegisters[CHIPID_REG]; }
+           
+            call Glcd.drawText("b", 0, 20);
+            /* Chip already powered up, just need to set configuration state */
+            //TODO need to check if XOSCEN set?
+//            if (POWERUP_VAL != chipIDReg)
+//            {
+//                atomic { states.init = CONFIG; }
+//                post _init();
+//            }
+//            else
+//            {
+//                /* Start internal oscillator */
+//                //atomic { shadowRegisters[XOSCEN_REG] |= XOSCEN_MASK; }
+//                atomic { shadowRegisters[0x07] |= 0x8000; }
+//                /* Clear RDSD */
+//                atomic { shadowRegisters[RDSD_REG] = 0x0000; }
+//                writeRegisters();
+//
+//                atomic { states.init = WAITXOSC; }
+//            }
             /* Start internal oscillator */
-            //atomic { shadowRegisters[XOSCEN_REG] |= XOSCEN_MASK; }
-            atomic { shadowRegisters[0x07] |= 0x8000; }
-            /* Set RDSD to low */
+            atomic { shadowRegisters[XOSCEN_REG] |= XOSCEN_MASK; }
+            //atomic { shadowRegisters[0x07] |= 0x8000; }
+            /* Clear RDSD */
             atomic { shadowRegisters[RDSD_REG] = 0x0000; }
             writeRegisters();
 
@@ -257,7 +275,7 @@ implementation {
         }
         else if (WAITXOSC == state)
         {
-            call Glcd.drawText("x", 0, 20);
+            call Glcd.drawText("c", 0, 20);
             /* Wait for oscillator to stabilize */
             call Timer.startOneShot(XOSCEN_DELAY_MS);
             
@@ -265,13 +283,13 @@ implementation {
         }
         else if (ENABLE == state)
         {
-            call Glcd.drawText("w", 0, 20);
+            call Glcd.drawText("d", 0, 20);
             atomic
             {
                 /* Start device powerup and disable mute */
                 //shadowRegisters[ENABLE_REG] |= ENABLE_MASK;
                 //shadowRegisters[DISABLE_REG] &= ~DISABLE_MASK;
-                //shadowRegisters[DMUTE_REG] = DMUTE_MASK;
+                //shadowRegisters[DMUTE_REG] |= DMUTE_MASK;
                 shadowRegisters[0x02] |= 0x4001;
             }
 
@@ -281,7 +299,7 @@ implementation {
         }
         else if (WAITPOWERUP == state)
         {
-            call Glcd.drawText("v", 0, 20);
+            call Glcd.drawText("e", 0, 20);
             /* Wait for chip powerup */
             call Timer.startOneShot(POWERUP_DELAY_MS);
             
@@ -289,7 +307,7 @@ implementation {
         }
         else if (READREGF == state)
         {
-            call Glcd.drawText("u", 0, 20);
+            call Glcd.drawText("f", 0, 20);
             /* Read initial register file state */
             readRegisters();
 
@@ -297,7 +315,17 @@ implementation {
         }
         else if (CONFIG == state)
         {
-            call Glcd.drawText("t", 0, 20);
+            char buf[7];
+
+            uint16_t chipIDReg;
+            atomic { chipIDReg = shadowRegisters[CHIPID_REG]; }
+            
+//            if (POWERUP_VAL != chipIDReg)
+//            {
+//                signal FMClick.initDone(FAIL);
+//                return;
+//            }
+
             atomic
             {
                 /* Enable STC interrupt and configure GPIO2 for interrupt transmission */
@@ -328,28 +356,28 @@ implementation {
         {
             char buf[7];
 
-            call Glcd.drawText("s", 0, 20);
+            call Glcd.drawText("h", 0, 20);
+            sprintf(buf, "0x%X", shadowRegisters[1]);
+            call Glcd.drawText(buf, 0, 20);
+            sprintf(buf, "0x%X", shadowRegisters[2]);
+            call Glcd.drawText(buf, 36, 20);
+
+            atomic { states.driver = IDLE; }
+
             //TODO pass correct exit state
             signal FMClick.initDone(SUCCESS);
-            
-            sprintf(buf, "0x%X", shadowRegisters[7]);
-            call Glcd.drawText(buf, 0, 30);
-            sprintf(buf, "0x%X", shadowRegisters[1]);
-            call Glcd.drawText(buf, 36, 30);
-            
-            atomic { states.driver = IDLE; }
         }
     }
 
     //TODO sgnal FAIL on error
     task void _tune()
     {
+        char buf[7];
         enum tune_state state;
         atomic { state = states.tune; }
         
         if (STARTTUNE == state)
         {
-            call Glcd.drawText("a", 0, 20);
             atomic
             {
                 /* Enable tuning and set channel register */
@@ -358,14 +386,15 @@ implementation {
                                              (CHAN_MASK & (nextChannel - BAND_LOW_END)); 
             }
 
+            sprintf(buf, "0x%X", shadowRegisters[CHAN_REG]);
+            call Glcd.drawText(buf, 72, 20);
+            
             writeRegisters();
 
             atomic { states.tune = WAITTUNE; }
         }
         else if (WAITTUNE == state)
         {
-            call Glcd.drawText("b", 0, 20);
-            //TODO maybe move this to previous state to avoid missing interrupt
             /* Enable STC interrupt */
             call Int.enable();
 
@@ -373,14 +402,12 @@ implementation {
         }
         else if (TUNECHAN == state)
         {
-            call Glcd.drawText("c", 0, 20);
             readRegisters();
 
             atomic { states.tune = ENDTUNE; }
         }
         else if (ENDTUNE == state)
         {
-            call Glcd.drawText("d", 0, 20);
             /* Disable tuning */
             atomic { shadowRegisters[TUNE_REG] &= ~TUNE_MASK; }
             writeRegisters();
@@ -392,14 +419,12 @@ implementation {
         {
             char buf[7];
             uint16_t channel;
-            call Glcd.drawText("e", 0, 20);
+            
+            //sprintf(buf, "0x%X", shadowRegisters[READCHAN_REG]);
+            //call Glcd.drawText(buf, 72, 20);
+            
             atomic { channel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + BAND_LOW_END; }
             signal FMClick.tuneComplete(channel);
-         
-//            sprintf(buf, "0x%X", shadowRegisters[CHAN_REG]);
-//            call Glcd.drawText(buf, 0, 30);
-//            sprintf(buf, "0x%X", shadowRegisters[6]);
-//            call Glcd.drawText(buf, 36, 30);
 
             atomic { states.driver = IDLE; }
         }
