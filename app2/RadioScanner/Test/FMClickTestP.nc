@@ -23,6 +23,7 @@ module FMClickTestP {
 implementation {
     #define FM4 1038
     #define RADIO 921
+    #define RADIOW 899
 
     uint16_t currChan;
 
@@ -44,9 +45,11 @@ implementation {
     task void finishedTuning()
     {
         char buf[5];
-        sprintf(buf, "%u", currChan);
+        uint16_t chan;
+        atomic { chan = currChan; }
+        sprintf(buf, "%u", chan);
         call Glcd.drawText("listening to FM4", 0, 10);
-        call Glcd.drawText(buf, 0, 20);
+        //call Glcd.drawText(buf, 0, 20);
     }
 
     event void Radio.initDone(error_t res)

@@ -8,6 +8,8 @@
  *
 **/
 
+#include <stdio.h>
+
 //TODO optimizations
 // -don't read/write all registers, only up to highest required
 
@@ -32,13 +34,15 @@ module FMClickP {
 implementation {
     /* I2C addresses */
     #define DEVICE_WRITE_ADDR   0x10
-    #define DEVICE_READ_ADDR    0x21
+    #define DEVICE_READ_ADDR    0x10
 
     /* Register file addresses */
     #define REGISTER_NUM        16
     #define REGISTER_WIDTH      2
     #define READ_START_ADDR     0x0a
     #define WRITE_START_ADDR    0x02
+    #define WRITE_END_ADDR      0x08 /* First register that should not be written */
+    #define WRITE_REG_NUM       (WRITE_END_ADDR - WRITE_START_ADDR)
     #define XOSCEN_REG          0x07
     #define XOSCEN_MASK         0x8000
     #define ENABLE_REG          0x02
@@ -75,7 +79,7 @@ implementation {
     #define BAND_VAL            0x0000 /* European FM band */
     #define SPACE_REG           0x05
     #define SPACE_MASK          0x0030 
-    #define SPACE_VAL           0x0008 /* Europe FM channel spacing */
+    #define SPACE_VAL           0x0010 /* Europe FM channel spacing */
     #define DE_REG              0x04
     #define DE_MASK             0x0800 /* Europe FM de-emphasis settings */
     #define TUNE_REG            0x03
@@ -97,10 +101,10 @@ implementation {
     #define RDSC_REG            0x0e
     #define RDSD_REG            0x0f
 
-    #define XOSCEN_DELAY_MS     1000
-  
-    //TODO do we need to read registers before every write?
-    //     if yes, call readreg in interface function to avoid additional state
+    #define XOSCEN_DELAY_MS     600
+    #define POWERUP_DELAY_MS    110
+
+    #define BAND_LOW_END        875
 
     uint16_t shadowRegisters[REGISTER_NUM];
     uint8_t comBuffer[REGISTER_NUM*REGISTER_WIDTH];
@@ -108,7 +112,7 @@ implementation {
     enum driver_state {IDLE, INIT, TUNE, SEEK, VOL, CONFRDS};
     enum com_state {REQ, COM};
     enum bus_state {NOOP, READ, WRITE};
-    enum init_state {SETUP, XOSCEN, WAITXOSC, ENABLE, READREGF, CONFIG, FINISH};
+    enum init_state {SETUP, XOSCEN, WAITXOSC, ENABLE, WAITPOWERUP, READREGF, CONFIG, FINISH};
     enum tune_state {STARTTUNE, WAITTUNE, TUNECHAN, ENDTUNE, FINTUNE};
     enum seek_state {STARTSEEK, WAITSEEK, SEEKCHAN, ENDSEEK, FINSEEK};
 
@@ -143,13 +147,19 @@ implementation {
         }
         else if (COM == state)
         {
-            while (call I2C.read(I2C_START | I2C_STOP, DEVICE_READ_ADDR, REGISTER_NUM*REGISTER_WIDTH, comBuffer) != SUCCESS);
+            //TODO maybe throw error (GLCD?) instead of hanging
+            while (call I2C.read(I2C_START | I2C_STOP,
+                   DEVICE_READ_ADDR,
+                   REGISTER_NUM*REGISTER_WIDTH,
+                   comBuffer) != SUCCESS);
             atomic { states.read = REQ; }
         }
     }
 
     void registerWriteback()
     {
+        char buf[7];
+
         uint8_t i = READ_START_ADDR;
         uint8_t j;
         for (j = 0; j < REGISTER_NUM*REGISTER_WIDTH; j += REGISTER_WIDTH)
@@ -157,6 +167,11 @@ implementation {
             shadowRegisters[i] = (comBuffer[j] << 8) | comBuffer[j+1];
             i = (i+1) & (REGISTER_NUM-1);
         }
+
+//        sprintf(buf, "0x%X", shadowRegisters[2]);
+//        call Glcd.drawText(buf, 0, 30);
+//        sprintf(buf, "0x%X", shadowRegisters[0x0a]);
+//        call Glcd.drawText(buf, 36, 30);
     }
 
     void writeRegisters()
@@ -169,8 +184,8 @@ implementation {
             /* Write buffered registers to communication buffer */
             uint8_t i = WRITE_START_ADDR;
             uint8_t j;
-            
-            for (j = 0; j < REGISTER_NUM*REGISTER_WIDTH; j += REGISTER_WIDTH)
+           
+            for (j = 0; j < WRITE_REG_NUM*REGISTER_WIDTH; j += REGISTER_WIDTH)
             {
                 atomic
                 {
@@ -191,7 +206,11 @@ implementation {
         } 
         else if (COM == state)
         {
-            while (call I2C.write(I2C_START | I2C_STOP, DEVICE_WRITE_ADDR, REGISTER_NUM*REGISTER_WIDTH, comBuffer) != SUCCESS);
+            //TODO maybe throw error (GLCD?) instead of hanging
+            while (call I2C.write(I2C_START | I2C_STOP, 
+                   DEVICE_WRITE_ADDR,
+                   WRITE_REG_NUM*REGISTER_WIDTH,
+                   comBuffer) != SUCCESS);
             atomic { states.write = REQ; }
         }
     }
@@ -204,6 +223,7 @@ implementation {
         
         if (SETUP == state)
         {
+            call Glcd.drawText("z", 0, 20);
             call RSTPin.makeOutput();
             call RSTPin.clr();
             
@@ -219,19 +239,25 @@ implementation {
 
             /* Read initial register file state */
             readRegisters();
-
+ 
             atomic { states.init = XOSCEN; }
         }
+        //TODO remove if not needed
         else if (XOSCEN == state)
         {
+            call Glcd.drawText("y", 0, 20);
             /* Start internal oscillator */
-            atomic { shadowRegisters[XOSCEN_REG] |= XOSCEN_MASK; }
+            //atomic { shadowRegisters[XOSCEN_REG] |= XOSCEN_MASK; }
+            atomic { shadowRegisters[0x07] |= 0x8000; }
+            /* Set RDSD to low */
+            atomic { shadowRegisters[RDSD_REG] = 0x0000; }
             writeRegisters();
 
             atomic { states.init = WAITXOSC; }
         }
         else if (WAITXOSC == state)
         {
+            call Glcd.drawText("x", 0, 20);
             /* Wait for oscillator to stabilize */
             call Timer.startOneShot(XOSCEN_DELAY_MS);
             
@@ -239,27 +265,39 @@ implementation {
         }
         else if (ENABLE == state)
         {
+            call Glcd.drawText("w", 0, 20);
             atomic
             {
                 /* Start device powerup and disable mute */
-                shadowRegisters[ENABLE_REG] |= ENABLE_MASK;
-                shadowRegisters[DISABLE_REG] &= ~DISABLE_MASK;
-                shadowRegisters[DMUTE_REG] &= ~DMUTE_MASK;
+                //shadowRegisters[ENABLE_REG] |= ENABLE_MASK;
+                //shadowRegisters[DISABLE_REG] &= ~DISABLE_MASK;
+                //shadowRegisters[DMUTE_REG] = DMUTE_MASK;
+                shadowRegisters[0x02] |= 0x4001;
             }
 
             writeRegisters();
 
+            atomic { states.init = WAITPOWERUP; }
+        }
+        else if (WAITPOWERUP == state)
+        {
+            call Glcd.drawText("v", 0, 20);
+            /* Wait for chip powerup */
+            call Timer.startOneShot(POWERUP_DELAY_MS);
+            
             atomic { states.init = READREGF; }
         }
         else if (READREGF == state)
         {
+            call Glcd.drawText("u", 0, 20);
             /* Read initial register file state */
             readRegisters();
-            
+
             atomic { states.init = CONFIG; }
         }
         else if (CONFIG == state)
         {
+            call Glcd.drawText("t", 0, 20);
             atomic
             {
                 /* Enable STC interrupt and configure GPIO2 for interrupt transmission */
@@ -288,9 +326,17 @@ implementation {
         }
         else if (FINISH == state)
         {
+            char buf[7];
+
+            call Glcd.drawText("s", 0, 20);
             //TODO pass correct exit state
             signal FMClick.initDone(SUCCESS);
-
+            
+            sprintf(buf, "0x%X", shadowRegisters[7]);
+            call Glcd.drawText(buf, 0, 30);
+            sprintf(buf, "0x%X", shadowRegisters[1]);
+            call Glcd.drawText(buf, 36, 30);
+            
             atomic { states.driver = IDLE; }
         }
     }
@@ -309,7 +355,7 @@ implementation {
                 /* Enable tuning and set channel register */
                 shadowRegisters[TUNE_REG] |= TUNE_MASK;
                 shadowRegisters[CHAN_REG] |= (shadowRegisters[CHAN_REG] & ~CHAN_MASK) | 
-                                             (CHAN_MASK & (nextChannel - 875)); 
+                                             (CHAN_MASK & (nextChannel - BAND_LOW_END)); 
             }
 
             writeRegisters();
@@ -344,10 +390,16 @@ implementation {
         //TODO need to verify that STC has been cleared?
         else if (FINTUNE == state)
         {
+            char buf[7];
             uint16_t channel;
             call Glcd.drawText("e", 0, 20);
-            atomic { channel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + 875; }
+            atomic { channel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + BAND_LOW_END; }
             signal FMClick.tuneComplete(channel);
+         
+//            sprintf(buf, "0x%X", shadowRegisters[CHAN_REG]);
+//            call Glcd.drawText(buf, 0, 30);
+//            sprintf(buf, "0x%X", shadowRegisters[6]);
+//            call Glcd.drawText(buf, 36, 30);
 
             atomic { states.driver = IDLE; }
         }
@@ -442,8 +494,6 @@ implementation {
         
         if (IDLE != state)
             return FAIL;
-
-        call Glcd.drawText("x", 0, 20);
         
         atomic
         {

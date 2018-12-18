@@ -20,8 +20,7 @@ implementation {
     PS2 = PS2P.PS2;
     PS2P.ClockIRQ -> PinChangeIRQ;
 
-    //TODO use correct ports!!!
-    PS2P.ClockPin -> IO.PortK1;
-    PS2P.DataPin -> IO.PortK0;
+    PS2P.ClockPin -> IO.PortK7;
+    PS2P.DataPin -> IO.PortK6;
 }
 

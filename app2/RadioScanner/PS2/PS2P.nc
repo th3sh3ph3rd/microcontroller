@@ -8,6 +8,10 @@
  *
 **/
 
+//TODO may sometimes hang, but couldn't reproduce error
+//TODO consider endless loop as cause or LUT mismatch
+
+#include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <scancodes.h>
 
@@ -44,12 +48,16 @@ implementation {
      */
     command void PS2.init(void)
     {
+        uint8_t tmpMask;
+
         /* Configure data & clock pins as input */
         call ClockPin.makeInput();
         call DataPin.makeInput();
 
         /* Enable PCINT17 (PK1) on the clock line */
-        call ClockIRQ.setMask(0x02);
+        tmpMask = call ClockIRQ.getMask();
+        tmpMask |= 1 << PCINT23;
+        call ClockIRQ.setMask(tmpMask);
        
         atomic 
         {
