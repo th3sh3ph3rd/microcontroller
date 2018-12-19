@@ -9,6 +9,9 @@
 **/
 
 #include <stdio.h>
+#include <string.h>
+
+//TODO merge atomic sections
 
 //TODO optimizations
 // -don't read/write all registers, only up to highest required
@@ -36,88 +39,93 @@ implementation {
     #define DEVICE_WRITE_ADDR   0x10
     #define DEVICE_READ_ADDR    0x10
 
-    /* Register file addresses */
+    /* Register file parameters */
     #define REGISTER_NUM        16
     #define REGISTER_WIDTH      2       /* Bytes per register word */
-    #define READ_START_ADDR     0x0a
-    #define WRITE_START_ADDR    0x02
-    #define WRITE_END_ADDR      0x08    /* First register that should not be written */
-    #define WRITE_REG_NUM       (WRITE_END_ADDR - WRITE_START_ADDR)
-    //#define WRITE_REG_NUM       14
+    #define READ_START_ADDR     0x0a    /* First address read by I2C communication */
+    #define WRITE_START_ADDR    0x02    /* First address written by I2C communication */
+    
+    /* Register file addresses */
+    #define DEVID_REG           0x00
     #define CHIPID_REG          0x01
-    #define POWERUP_VAL         0x1253
-    #define POWERDOWN_VAL       0x1200
-    #define XOSCEN_REG          0x07
-    #define XOSCEN_MASK         0x8000
-    #define ENABLE_REG          0x02
-    #define ENABLE_MASK         0x0001
-    #define DISABLE_REG         0x02
-    #define DISABLE_MASK        0x0040
-    #define DMUTE_REG           0x02
-    #define DMUTE_MASK          0x4000
-    #define GPIO2_REG           0x04
-    #define GPIO2_MASK          0x000c
-    #define GPIO2_VAL           0x0004  /* Configures GPIO2 to fire RDS/STC interrupts */
-    #define BLNDADJ_REG         0x04
-    #define BLNDADJ_MASK        0x00c0
-    #define BLNDADJ_VAL         0x0000  /* Default */
-    #define VOLEXT_REG          0x06
-    #define VOLEXT_MASK         0x0100
-    #define SEEKTH_REG          0x05
-    #define SEEKTH_MASK         0xff00
-    #define SEEKTH_VAL          0x1900  /* Recommended */
-    #define SKSNR_REG           0x06
-    #define SKSNR_MASK          0x00f0
-    #define SKSNR_VAL           0x0040  /* Good SNR threshold */ 
-    #define SKCNT_REG           0x06
-    #define SKCNT_MASK          0x000f
-    #define SKCNT_VAL           0x0008  /* More stringent valid station requirements */
-    #define RDS_REG             0x04
-    #define RDS_MASK            0x1000
-    #define RDSIEN_REG          0x04
-    #define RDSIEN_MASK         0x8000
-    #define STCIEN_REG          0x04
-    #define STCIEN_MASK         0x4000
-    #define BAND_REG            0x05
-    #define BAND_MASK           0x00c0
-    #define BAND_VAL            0x0000 /* European FM band */
-    #define SPACE_REG           0x05
-    #define SPACE_MASK          0x0030 
-    #define SPACE_VAL           0x0010 /* Europe FM channel spacing */
-    #define DE_REG              0x04
-    #define DE_MASK             0x0800 /* Europe FM de-emphasis settings */
-    #define TUNE_REG            0x03
-    #define TUNE_MASK           0x8000
-    #define CHAN_REG            0x03
-    #define CHAN_MASK           0x03ff
+    #define POWERCONF_REG       0x02
+    #define CHANNEL_REG         0x03
+    #define SYSCONF1_REG        0x04
+    #define SYSCONF2_REG        0x05
+    #define SYSCONF3_REG        0x06
+    #define TEST1_REG           0x07
+    #define STATRSSI_REG        0x0a
     #define READCHAN_REG        0x0b
-    #define READCHAN_MASK       0x03ff
-    #define VOLUME_REG          0x05
-    #define VOLUME_MASK         0x000f
-    #define SEEKUP_REG          0x02
-    #define SEEKUP_MASK         0x0200
-    #define SKMODE_REG          0x02
-    #define SKMODE_MASK         0x0400
-    #define SEEK_REG            0x02
-    #define SEEK_MASK           0x0100
     #define RDSA_REG            0x0c
     #define RDSB_REG            0x0d
     #define RDSC_REG            0x0e
     #define RDSD_REG            0x0f
 
+    /* Chip ID */
+    #define POWERUP_VAL         0x1253
+    #define POWERDOWN_VAL       0x1200
+
+    /* Power Configuration */
+    #define ENABLE_MASK         0x0001
+    #define DISABLE_MASK        0x0040
+    #define DMUTE_MASK          0x4000
+    #define SEEKUP_MASK         0x0200
+    #define SKMODE_MASK         0x0400
+    #define SEEK_MASK           0x0100
+
+    /* Channel */
+    #define TUNE_MASK           0x8000
+    #define CHAN_MASK           0x03ff
+
+    /* System Configuration 1 */
+    #define GPIO2_MASK          0x000c
+    #define GPIO2_VAL           0x0004  /* Configures GPIO2 to fire RDS/STC interrupts */
+    #define BLNDADJ_MASK        0x00c0
+    #define BLNDADJ_VAL         0x0000  /* Default */
+    #define RDS_MASK            0x1000
+    #define RDSIEN_MASK         0x8000
+    #define STCIEN_MASK         0x4000
+    #define DE_MASK             0x0800 /* Europe FM de-emphasis settings */
+
+    /* System Configuration 2 */
+    #define SEEKTH_MASK         0xff00
+    #define SEEKTH_VAL          0x1900  /* Recommended */
+    #define BAND_MASK           0x00c0
+    #define BAND_VAL            0x0000 /* European FM band */
+    #define SPACE_MASK          0x0030 
+    #define SPACE_VAL           0x0010 /* Europe FM channel spacing */
+    #define VOLUME_MASK         0x000f
+
+    /* System Configuration 3 */
+    #define VOLEXT_MASK         0x0100
+    #define SKSNR_MASK          0x00f0
+    #define SKSNR_VAL           0x0040  /* Good SNR threshold */ 
+    #define SKCNT_MASK          0x000f
+    #define SKCNT_VAL           0x0008  /* More stringent valid station requirements */
+
+    /* Test 1 */
+    #define XOSCEN_MASK         0x8000
+
+    /* Status RSSI */
+    #define STC_MASK            0x4000 
+
+    /* Read Channel */
+    #define READCHAN_MASK       0x03ff
+
     #define XOSCEN_DELAY_MS     600
-    #define POWERUP_DELAY_MS    110
+    #define POWERUP_DELAY_MS    150
 
     #define BAND_LOW_END        875
 
     uint16_t shadowRegisters[REGISTER_NUM];
     uint8_t comBuffer[REGISTER_NUM*REGISTER_WIDTH];
+    uint8_t writeAddr;
 
     enum driver_state {IDLE, INIT, TUNE, SEEK, VOL, CONFRDS};
     enum com_state {REQ, COM};
     enum bus_state {NOOP, READ, WRITE};
     enum init_state {SETUP, XOSCEN, WAITXOSC, ENABLE, WAITPOWERUP, READREGF, CONFIG, FINISH};
-    enum tune_state {STARTTUNE, WAITTUNE, TUNECHAN, ENDTUNE, FINTUNE};
+    enum tune_state {STARTTUNE, WAITTUNE, TUNECHAN, ENDTUNE, READTUNE, FINTUNE};
     enum seek_state {STARTSEEK, WAITSEEK, SEEKCHAN, ENDSEEK, FINSEEK};
 
     //TODO make bitfield
@@ -181,8 +189,11 @@ implementation {
             /* Write buffered registers to communication buffer */
             uint8_t i = WRITE_START_ADDR;
             uint8_t j;
+            uint8_t bytesToSend;
+
+            atomic { bytesToSend = (writeAddr-WRITE_START_ADDR+1)*REGISTER_WIDTH; }
            
-            for (j = 0; j < WRITE_REG_NUM*REGISTER_WIDTH; j += REGISTER_WIDTH)
+            for (j = 0; j < bytesToSend; j += REGISTER_WIDTH)
             {
                 atomic
                 {
@@ -203,10 +214,13 @@ implementation {
         } 
         else if (COM == state)
         {
+            uint8_t bytesToSend;
+            atomic { bytesToSend = (writeAddr-WRITE_START_ADDR+1)*REGISTER_WIDTH; }
+            
             //TODO maybe throw error (GLCD?) instead of hanging
             while (call I2C.write(I2C_START | I2C_STOP, 
                    DEVICE_WRITE_ADDR,
-                   WRITE_REG_NUM*REGISTER_WIDTH,
+                   bytesToSend,
                    comBuffer) != SUCCESS);
             atomic { states.write = REQ; }
         }
@@ -220,34 +234,21 @@ implementation {
         
         if (SETUP == state)
         {
-            call Glcd.drawText("a", 0, 20);
-            call RSTPin.makeOutput();
-            call RSTPin.clr();
-            
-            /* Select 2-wire mode */
-            call SDIOPin.makeOutput();
-            call SDIOPin.clr();
-
-            /* Set falling edge on STC/RDS interrupt */
-            call Int.edge(0);
-
             /* Finish reset */
             call RSTPin.set();
 
             /* Read initial register file state */
-            readRegisters();
- 
             atomic { states.init = XOSCEN; }
+            readRegisters(); 
         }
         //TODO remove if not needed
         else if (XOSCEN == state)
         {
-            uint16_t chipIDReg;
-            atomic { chipIDReg = shadowRegisters[CHIPID_REG]; }
-           
-            call Glcd.drawText("b", 0, 20);
-            /* Chip already powered up, just need to set configuration state */
-            //TODO need to check if XOSCEN set?
+//            uint16_t chipIDReg;
+//            atomic { chipIDReg = shadowRegisters[CHIPID_REG]; }
+//           
+//            /* Chip already powered up, just need to set configuration state */
+//            //TODO need to check if XOSCEN set?
 //            if (POWERUP_VAL != chipIDReg)
 //            {
 //                atomic { states.init = CONFIG; }
@@ -260,46 +261,42 @@ implementation {
 //                atomic { shadowRegisters[0x07] |= 0x8000; }
 //                /* Clear RDSD */
 //                atomic { shadowRegisters[RDSD_REG] = 0x0000; }
-//                writeRegisters();
-//
+//                atomic { writeAddr = 0x0f; }
 //                atomic { states.init = WAITXOSC; }
+//                writeRegisters();
 //            }
-            /* Start internal oscillator */
-            atomic { shadowRegisters[XOSCEN_REG] |= XOSCEN_MASK; }
-            //atomic { shadowRegisters[0x07] |= 0x8000; }
-            /* Clear RDSD */
-            atomic { shadowRegisters[RDSD_REG] = 0x0000; }
-            writeRegisters();
 
-            atomic { states.init = WAITXOSC; }
+            //atomic { shadowRegisters[0x07] = 0x8100; }
+            /* Start internal oscillator and clear RDSD */
+            atomic
+            { 
+                shadowRegisters[TEST1_REG] |= XOSCEN_MASK;
+                shadowRegisters[RDSD_REG] = 0x0000;
+                writeAddr = RDSD_REG;
+                states.init = WAITXOSC;
+            } 
+            writeRegisters();
         }
         else if (WAITXOSC == state)
         {
-            call Glcd.drawText("c", 0, 20);
             /* Wait for oscillator to stabilize */
-            call Timer.startOneShot(XOSCEN_DELAY_MS);
-            
             atomic { states.init = ENABLE; }
+            call Timer.startOneShot(XOSCEN_DELAY_MS); 
         }
         else if (ENABLE == state)
         {
-            call Glcd.drawText("d", 0, 20);
             atomic
             {
                 /* Start device powerup and disable mute */
-                //shadowRegisters[ENABLE_REG] |= ENABLE_MASK;
-                //shadowRegisters[DISABLE_REG] &= ~DISABLE_MASK;
-                //shadowRegisters[DMUTE_REG] |= DMUTE_MASK;
-                shadowRegisters[0x02] |= 0x4001;
+                shadowRegisters[POWERCONF_REG] = (shadowRegisters[POWERCONF_REG] & ~DISABLE_MASK) |
+                                                 ENABLE_MASK | DMUTE_MASK;
+                writeAddr = POWERCONF_REG;
+                states.init = WAITPOWERUP;
             }
-
             writeRegisters();
-
-            atomic { states.init = WAITPOWERUP; }
         }
         else if (WAITPOWERUP == state)
         {
-            call Glcd.drawText("e", 0, 20);
             /* Wait for chip powerup */
             call Timer.startOneShot(POWERUP_DELAY_MS);
             
@@ -307,11 +304,9 @@ implementation {
         }
         else if (READREGF == state)
         {
-            call Glcd.drawText("f", 0, 20);
             /* Read initial register file state */
-            readRegisters();
-
             atomic { states.init = CONFIG; }
+            readRegisters();
         }
         else if (CONFIG == state)
         {
@@ -320,48 +315,38 @@ implementation {
             uint16_t chipIDReg;
             atomic { chipIDReg = shadowRegisters[CHIPID_REG]; }
             
-//            if (POWERUP_VAL != chipIDReg)
-//            {
-//                signal FMClick.initDone(FAIL);
-//                return;
-//            }
-
-            atomic
-            {
-                /* Enable STC interrupt and configure GPIO2 for interrupt transmission */
-                shadowRegisters[GPIO2_REG] = (shadowRegisters[GPIO2_REG] & ~GPIO2_MASK) | GPIO2_VAL;
-                shadowRegisters[STCIEN_REG] |= STCIEN_MASK;
-
-                /* General configuration */
-                shadowRegisters[BLNDADJ_REG] = (shadowRegisters[BLNDADJ_REG] & ~BLNDADJ_MASK) | BLNDADJ_VAL;
-                shadowRegisters[VOLEXT_REG] &= ~VOLEXT_MASK; /* Don't use extended volume range */
-                shadowRegisters[SEEKTH_REG] = (shadowRegisters[SEEKTH_REG] & ~SEEKTH_MASK) | SEEKTH_VAL;
-                shadowRegisters[SKSNR_REG] = (shadowRegisters[SKSNR_REG] & ~SKSNR_MASK) | SKSNR_VAL;
-                shadowRegisters[SKCNT_REG] = (shadowRegisters[SKCNT_REG] & ~SKCNT_MASK) | SKCNT_VAL;
-
-                /* Regional FM settings */
-                shadowRegisters[BAND_REG] = (shadowRegisters[BAND_REG] & ~BAND_MASK) | BAND_VAL;
-                shadowRegisters[SPACE_REG] = (shadowRegisters[SPACE_REG] & ~SPACE_MASK) | SPACE_VAL;
-                shadowRegisters[DE_REG] |= DE_MASK;
-        
-                //TODO remove this later
-                shadowRegisters[VOLUME_REG] = (shadowRegisters[VOLUME_REG] & ~VOLUME_MASK) | (15 & VOLUME_MASK);
-            }
-
-            writeRegisters();
-
-            atomic { states.init = FINISH; }
-        }
-        else if (FINISH == state)
-        {
-            char buf[7];
-
             call Glcd.drawText("h", 0, 20);
             sprintf(buf, "0x%X", shadowRegisters[1]);
             call Glcd.drawText(buf, 0, 20);
             sprintf(buf, "0x%X", shadowRegisters[2]);
             call Glcd.drawText(buf, 36, 20);
+            
+            if (POWERUP_VAL != chipIDReg)
+            {
+                signal FMClick.initDone(FAIL);
+                return;
+            }
 
+            atomic
+            {
+                /* Enable STC interrupt and configure GPIO2 for interrupt transmission */
+                shadowRegisters[SYSCONF1_REG] = (shadowRegisters[SYSCONF1_REG] & ~(GPIO2_MASK | BLNDADJ_MASK)) |
+                                                GPIO2_VAL | BLNDADJ_VAL | STCIEN_MASK | DE_MASK;
+                /* General and regional configuration */
+                shadowRegisters[SYSCONF2_REG] = (shadowRegisters[SYSCONF2_REG] &
+                                                ~(SEEKTH_MASK | BAND_MASK | SPACE_MASK | VOLUME_MASK)) |
+                                                SEEKTH_VAL | BAND_VAL | SPACE_VAL | 15;
+                shadowRegisters[SYSCONF3_REG] = (shadowRegisters[SYSCONF3_REG] &
+                                                ~(VOLEXT_MASK | SKSNR_MASK | SKCNT_MASK)) |
+                                                SKSNR_VAL | SKCNT_MASK;
+                writeAddr = SYSCONF3_REG;
+                states.init = FINISH;
+            }
+
+            writeRegisters();
+        }
+        else if (FINISH == state)
+        {
             atomic { states.driver = IDLE; }
 
             //TODO pass correct exit state
@@ -372,7 +357,6 @@ implementation {
     //TODO sgnal FAIL on error
     task void _tune()
     {
-        char buf[7];
         enum tune_state state;
         atomic { state = states.tune; }
         
@@ -380,53 +364,75 @@ implementation {
         {
             atomic
             {
-                /* Enable tuning and set channel register */
-                shadowRegisters[TUNE_REG] |= TUNE_MASK;
-                shadowRegisters[CHAN_REG] |= (shadowRegisters[CHAN_REG] & ~CHAN_MASK) | 
-                                             (CHAN_MASK & (nextChannel - BAND_LOW_END)); 
+                shadowRegisters[CHANNEL_REG] |= (shadowRegisters[CHANNEL_REG] & ~CHAN_MASK) | 
+                                                TUNE_MASK | (CHAN_MASK & (nextChannel - BAND_LOW_END)); 
+                writeAddr = CHANNEL_REG;
+                states.tune = WAITTUNE;
             }
-
-            sprintf(buf, "0x%X", shadowRegisters[CHAN_REG]);
-            call Glcd.drawText(buf, 72, 20);
-            
             writeRegisters();
-
-            atomic { states.tune = WAITTUNE; }
         }
         else if (WAITTUNE == state)
         {
+            call Glcd.drawText("b", 0, 30);
             /* Enable STC interrupt */
-            call Int.enable();
-
+            //TODO timeout for interrupt
             atomic { states.tune = TUNECHAN; }
+            call Int.enable();
         }
         else if (TUNECHAN == state)
         {
-            readRegisters();
-
+            call Glcd.drawText("c", 0, 30);
             atomic { states.tune = ENDTUNE; }
+            readRegisters();
         }
         else if (ENDTUNE == state)
         {
+            call Glcd.drawText("d", 0, 30);
             /* Disable tuning */
-            atomic { shadowRegisters[TUNE_REG] &= ~TUNE_MASK; }
+            atomic
+            {
+                shadowRegisters[CHANNEL_REG] &= ~TUNE_MASK;
+                writeAddr = CHANNEL_REG;
+                states.tune = READTUNE;
+            }
             writeRegisters();
-
+        }
+        else if (READTUNE == state)
+        {
+            /* Disable tuning */
             atomic { states.tune = FINTUNE; }
+            readRegisters();
         }
         //TODO need to verify that STC has been cleared?
         else if (FINTUNE == state)
         {
             char buf[7];
-            uint16_t channel;
-            
-            //sprintf(buf, "0x%X", shadowRegisters[READCHAN_REG]);
-            //call Glcd.drawText(buf, 72, 20);
-            
-            atomic { channel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + BAND_LOW_END; }
-            signal FMClick.tuneComplete(channel);
+            uint8_t stc;
 
-            atomic { states.driver = IDLE; }
+            sprintf(buf, "0x%X", shadowRegisters[SYSCONF2_REG]);
+            call Glcd.drawText(buf, 0, 30);
+            sprintf(buf, "0x%X", shadowRegisters[POWERCONF_REG]);
+            call Glcd.drawText(buf, 36, 30);
+           
+            atomic { stc = (shadowRegisters[STATRSSI_REG] & STC_MASK) >> 8; }
+
+            /* Tuning complete */
+            if (!stc)
+            {
+                uint16_t channel;
+                atomic
+                {
+                    channel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + BAND_LOW_END;
+                    states.driver = IDLE;
+                }
+                signal FMClick.tuneComplete(channel);
+            }
+            /* Read the register file until STC is set */
+            else
+            {
+                atomic { states.tune = READTUNE; }
+                post _tune();
+            }
         }
     }
 
@@ -438,17 +444,18 @@ implementation {
             atomic
             {
                 /* Wrap around band limits */
-                shadowRegisters[SKMODE_REG] &= ~SKMODE_MASK;
-                shadowRegisters[SEEK_REG] |= SEEK_MASK;
+                shadowRegisters[POWERCONF_REG] &= ~SKMODE_MASK;
+                shadowRegisters[POWERCONF_REG] |= SEEK_MASK;
             }
 
             //TODO to seek entire band set CHAN to 00, SEEKUP to 1 and SKMODE to 1
 
             if (up)
-                atomic { shadowRegisters[SEEKUP_REG] |= SEEKUP_MASK; }
+                atomic { shadowRegisters[POWERCONF_REG] |= SEEKUP_MASK; }
             else
-                atomic { shadowRegisters[SEEKUP_REG] &= ~SEEKUP_MASK; }
+                atomic { shadowRegisters[POWERCONF_REG] &= ~SEEKUP_MASK; }
 
+            atomic { writeAddr = 0x02; }
             writeRegisters();
 
             states.seek = WAITSEEK;
@@ -473,7 +480,9 @@ implementation {
         else if (states.seek == ENDSEEK)
         {
             /* Disable seeking */
-            atomic { shadowRegisters[SEEK_REG] &= ~SEEK_MASK; }
+            atomic { shadowRegisters[POWERCONF_REG] &= ~SEEK_MASK; }
+            
+            atomic { writeAddr = 0x02; }
             writeRegisters();
 
             states.seek = FINSEEK;
@@ -506,7 +515,19 @@ implementation {
             states.write = REQ;
             states.bus = NOOP;
             states.init = SETUP;
+            memset(shadowRegisters, 0, sizeof(shadowRegisters));
+            memset(comBuffer, 0, sizeof(comBuffer));
         }
+
+        call RSTPin.makeOutput();
+        call RSTPin.clr();
+        
+        /* Select 2-wire mode */
+        call SDIOPin.makeOutput();
+        call SDIOPin.clr();
+
+        /* Set falling edge on STC/RDS interrupt */
+        call Int.edge(FALSE);
 
         post _init();
         return SUCCESS; 
@@ -567,7 +588,9 @@ implementation {
         atomic { states.driver = VOL; }
 
         //TODO only set if volume actually changed
-        atomic { shadowRegisters[VOLUME_REG] = (shadowRegisters[VOLUME_REG] & ~VOLUME_MASK) | (volume & VOLUME_MASK); }
+        atomic { shadowRegisters[SYSCONF2_REG] = (shadowRegisters[SYSCONF2_REG] & ~VOLUME_MASK) | (volume & VOLUME_MASK); }
+            
+        atomic { writeAddr = 0x05; }
         writeRegisters();
 
         return SUCCESS;
@@ -589,19 +612,20 @@ implementation {
         {
             atomic
             {
-                shadowRegisters[RDS_REG] |= RDS_MASK;
-                shadowRegisters[RDSIEN_REG] |= RDSIEN_MASK;
+                shadowRegisters[SYSCONF1_REG] |= RDS_MASK;
+                shadowRegisters[SYSCONF1_REG] |= RDSIEN_MASK;
             }
         }
         else
         {
             atomic
             {
-                shadowRegisters[RDS_REG] &= ~RDS_MASK;
-                shadowRegisters[RDSIEN_REG] &= ~RDSIEN_MASK;
+                shadowRegisters[SYSCONF1_REG] &= ~RDS_MASK;
+                shadowRegisters[SYSCONF1_REG] &= ~RDSIEN_MASK;
             }
         }
 
+        atomic { writeAddr = 0x04; }
         writeRegisters();
 
         return SUCCESS;
