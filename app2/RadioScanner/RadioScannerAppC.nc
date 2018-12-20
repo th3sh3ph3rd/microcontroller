@@ -14,6 +14,11 @@ configuration RadioScannerAppC {
 }
 
 implementation {
-	components MainC;
+	components MainC, RadioScannerP, FMClickC, PS2C, GlcdC;
 
+        RadioScannerP.Boot -> MainC.Boot;
+        RadioScannerP.Glcd -> GlcdC.Glcd;
+        RadioScannerP.RadioInit -> FMClickC.Init;
+        RadioScannerP.Radio -> FMClickC.FMClick;
+        RadioScannerP.Keyboard -> PS2C.PS2;
 }

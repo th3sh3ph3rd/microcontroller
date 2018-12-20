@@ -10,8 +10,6 @@
 
 #include <debug.h>
 
-//TODO Boot.booted() is called twice after powercycle
-
 module FMClickTestP {
     uses
     {
@@ -41,7 +39,7 @@ implementation {
         call Glcd.drawText("init done", 0, 10);
         //call Radio.setVolume(15); not working, signal needed
         call Glcd.drawText("tune to station", 0, 10);
-        call Radio.tune(FM4);
+        call Radio.tune(RADIOW);
     }
 
     task void initFail()
@@ -57,8 +55,19 @@ implementation {
         sprintf(buf, "%u", chan);
         call Glcd.drawText("tuned to station", 0, 10);
         call Glcd.drawText(buf, 0, 40);
+        //call Radio.seek(FALSE);
     }
 
+    task void finishedSeeking()
+    {
+        char buf[5];
+        uint16_t chan;
+        atomic { chan = currChan; }
+        sprintf(buf, "%u", chan);
+        call Glcd.drawText("next station", 0, 10);
+        call Glcd.drawText(buf, 0, 40);
+    }
+    
     event void Radio.initDone(error_t res)
     {
         if (SUCCESS == res)
@@ -73,6 +82,12 @@ implementation {
         post finishedTuning();
     }
 
+    async event void Radio.seekComplete(uint16_t channel)
+    {
+        atomic { currChan = channel; }
+        post finishedSeeking();
+    }
+    
     async event void Radio.rdsReceived(RDSType type, char *buf)
     {
 

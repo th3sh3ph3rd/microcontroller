@@ -20,6 +20,8 @@ interface FMClick {
     event void initDone(error_t res);
 
     async event void tuneComplete(uint16_t channel);
+    
+    async event void seekComplete(uint16_t channel);
 
     async event void rdsReceived(RDSType type, char *buf);
 }

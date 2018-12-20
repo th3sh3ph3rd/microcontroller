@@ -35,6 +35,7 @@ implementation {
 
     FMClickP.RSTPin -> IO.PortD2;
     FMClickP.SDIOPin -> IO.PortD1;
+    FMClickP.INTPin -> IO.PortD3;
 
     FMClickP.Glcd -> GlcdC.Glcd;
 }
