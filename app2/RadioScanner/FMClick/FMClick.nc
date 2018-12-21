@@ -4,7 +4,7 @@ typedef enum {
     UP,
     DOWN,
     BAND
-} seek_t;
+} seekmode_t;
 
 typedef enum {
     PS, // Programm Station
@@ -15,7 +15,7 @@ typedef enum {
 interface FMClick {
     command error_t tune(uint16_t channel);
 
-    command error_t seek(bool up);
+    command error_t seek(seekmode_t mode);
 
     command uint16_t getChannel(void);
 

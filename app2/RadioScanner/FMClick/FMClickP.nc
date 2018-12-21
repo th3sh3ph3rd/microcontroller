@@ -153,7 +153,7 @@ implementation {
     } states;
 
     uint16_t nextChannel;
-    bool seekUp;
+    seekmode_t seekMode;
 
     void readRegisters()
     {
@@ -406,21 +406,40 @@ implementation {
     void task seek()
     {
         enum seek_state state;
+        seekmode_t mode;
         static uint8_t sfbl;
         static uint16_t channel;
-        atomic { state = states.seek; }
+
+        call Glcd.drawText("seek", 0, 30);
+
+        atomic 
+        {
+            mode = seekMode;
+            state = states.seek;
+        }
         
         if (STARTSEEK == state)
         {
-            atomic
+            /* Start at lower band end and stop at high band end for band seek */
+            if (BAND == mode)
             {
-                /* Wrap around band limits */
-                shadowRegisters[POWERCONF_REG] = (shadowRegisters[POWERCONF_REG] & ~SKMODE_MASK) | SEEK_MASK;
+                atomic
+                {
+                    shadowRegisters[POWERCONF_REG] = shadowRegisters[POWERCONF_REG] | SKMODE_MASK | SEEK_MASK;
+                }
+            }
+            /* Wrap around band limits for single seek */
+            else
+            {
+                atomic
+                {
+                    shadowRegisters[POWERCONF_REG] = (shadowRegisters[POWERCONF_REG] & ~SKMODE_MASK) | SEEK_MASK;
+                }
             }
 
             //TODO to seek entire band set CHAN to 00, SEEKUP to 1 and SKMODE to 1
 
-            if (seekUp)
+            if (UP == mode || BAND == mode)
                 atomic { shadowRegisters[POWERCONF_REG] |= SEEKUP_MASK; }
             else
                 atomic { shadowRegisters[POWERCONF_REG] &= ~SEEKUP_MASK; }
@@ -465,30 +484,29 @@ implementation {
         }
         else if (FINSEEK == state)
         {   
-            uint8_t stc;
-            
-//            char buf[7];
-//            sprintf(buf, "0x%X", shadowRegisters[SYSCONF2_REG]);
-//            call Glcd.drawText(buf, 0, 30);
-//            sprintf(buf, "0x%X", shadowRegisters[READCHAN_REG]);
-//            call Glcd.drawText(buf, 36, 30);
-            
+            uint8_t stc; 
             atomic { stc = (shadowRegisters[STATRSSI_REG] & STC_MASK) >> 8; }
+            
             /* Seek complete */
             if (!stc)
             {
                 /* Channel valid */
                 if (!sfbl)
                 {
-                    atomic { states.driver = IDLE; }
                     signal FMClick.seekComplete(channel);
+
+                    /* Continue seeking in band mode */
+                    if (BAND == mode)
+                    {
+                        atomic { states.seek = STARTSEEK; }
+                        post seek(); 
+                    }
+                    else
+                        atomic { states.driver = IDLE; }
                 }
-                /* Channel invalid, continue seeking */
+                /* Reached band end / no valid channel found */
                 else
-                {
-                    atomic { states.driver = STARTSEEK; }
-                    signal FMClick.seekComplete(0xffff); //TODO define some error code
-                }
+                    atomic { states.driver = IDLE; }
             }
             /* Read the register file until STC is cleared */
             else
@@ -561,7 +579,7 @@ implementation {
         return SUCCESS;
     }
 
-    command error_t FMClick.seek(bool up)
+    command error_t FMClick.seek(seekmode_t mode)
     {
         enum driver_state state;
         atomic { state = states.driver; }
@@ -573,13 +591,14 @@ implementation {
         {
             states.driver = SEEK;
             states.seek = STARTSEEK;
-            seekUp = up;
+            seekMode = mode;
         }
 
         post seek();
         return SUCCESS;
     }
 
+    //TODO safe current channel as global state
     command uint16_t FMClick.getChannel(void)
     {
         uint16_t channel;

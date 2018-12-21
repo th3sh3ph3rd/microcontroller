@@ -69,12 +69,17 @@ implementation {
         {
             switch (c)
             {
+                //TODO tune to channel 0 (875) before seek
+                case 'b':
+                    call Radio.seek(BAND);
+                    break;
+                
                 case 'h':
-                    call Radio.seek(FALSE);
+                    call Radio.seek(DOWN);
                     break;
 
                 case 'l':
-                    call Radio.seek(TRUE);
+                    call Radio.seek(UP);
                     break;
 
                 case 't':
@@ -132,14 +137,6 @@ implementation {
             atomic { appState = KBCTRL; }
             call Radio.tune(channel);
         }
-    }
-
-    task void tune2Station()
-    {
-        call Glcd.drawText("init done", 0, 10);
-        //call Radio.setVolume(15); not working, signal needed
-        call Glcd.drawText("tune to station", 0, 10);
-        call Radio.tune(RADIOW);
     }
 
     task void readyScreen()
