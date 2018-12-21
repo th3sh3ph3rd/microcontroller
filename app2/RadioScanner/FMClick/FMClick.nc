@@ -1,6 +1,12 @@
 // A Thomas Lamprecht <tlamprecht@ecs.tuwien.ac> production - 2018
 
 typedef enum {
+    UP,
+    DOWN,
+    BAND
+} seek_t;
+
+typedef enum {
     PS, // Programm Station
     RT, // Radio Text
     TIME, // TIME

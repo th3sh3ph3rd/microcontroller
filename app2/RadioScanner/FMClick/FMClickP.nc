@@ -11,6 +11,7 @@
 //TODO read only required registers
 //TODO make function prototypes and move internal functions to bottom of file
 //TODO extend interface to provide seekDone signal and functions for seeking entire band or next channel
+//TODO remove volume block state
 
 #include <stdio.h>
 #include <string.h>
@@ -90,6 +91,7 @@ implementation {
     /* System Configuration 2 */
     #define SEEKTH_MASK         0xff00
     #define SEEKTH_VAL          0x1900  /* Recommended */
+    //#define SEEKTH_VAL          0x1000  /* Recommended */
     #define BAND_MASK           0x00c0
     #define BAND_VAL            0x0000 /* European FM band */
     #define SPACE_MASK          0x0030 
@@ -100,8 +102,10 @@ implementation {
     #define VOLEXT_MASK         0x0100
     #define SKSNR_MASK          0x00f0
     #define SKSNR_VAL           0x0040  /* Good SNR threshold */ 
+    //#define SKSNR_VAL           0x0010  /* Good SNR threshold */ 
     #define SKCNT_MASK          0x000f
     #define SKCNT_VAL           0x0008  /* More stringent valid station requirements */
+    //#define SKCNT_VAL           0x0001  /* More stringent valid station requirements */
 
     /* Test 1 */
     #define XOSCEN_MASK         0x8000
@@ -235,7 +239,6 @@ implementation {
         }
     }
 
-    //TODO sgnal FAIL on error
     task void init()
     {
         enum init_state state;
@@ -254,7 +257,6 @@ implementation {
             atomic { states.init = XOSCEN; }
             readRegisters(); 
         }
-        //TODO remove if not needed
         else if (XOSCEN == state)
         {
             /* Start internal oscillator and clear RDSD */
@@ -288,8 +290,8 @@ implementation {
         else if (WAITPOWERUP == state)
         {
             /* Wait for chip powerup */
-            call Timer.startOneShot(POWERUP_DELAY_MS); 
             atomic { states.init = READREGF; }
+            call Timer.startOneShot(POWERUP_DELAY_MS); 
         }
         else if (READREGF == state)
         {
@@ -299,15 +301,8 @@ implementation {
         }
         else if (CONFIG == state)
         {
-            char buf[7];
-
             uint16_t chipIDReg;
             atomic { chipIDReg = shadowRegisters[CHIPID_REG]; }
-            
-            sprintf(buf, "0x%X", shadowRegisters[CHIPID_REG]);
-            call Glcd.drawText(buf, 0, 20);
-            sprintf(buf, "0x%X", shadowRegisters[POWERCONF_REG]);
-            call Glcd.drawText(buf, 36, 20);
             
             if (POWERUP_VAL != chipIDReg)
             {
@@ -324,7 +319,7 @@ implementation {
                 /* General and regional configuration */
                 shadowRegisters[SYSCONF2_REG] = (shadowRegisters[SYSCONF2_REG] &
                                                 ~(SEEKTH_MASK | BAND_MASK | SPACE_MASK | VOLUME_MASK)) |
-                                                SEEKTH_VAL | BAND_VAL | SPACE_VAL | 15;
+                                                SEEKTH_VAL | BAND_VAL | SPACE_VAL;
                 shadowRegisters[SYSCONF3_REG] = (shadowRegisters[SYSCONF3_REG] &
                                                 ~(VOLEXT_MASK | SKSNR_MASK | SKCNT_MASK)) |
                                                 SKSNR_VAL | SKCNT_MASK;
@@ -341,7 +336,6 @@ implementation {
         }
     }
 
-    //TODO sgnal FAIL on error
     task void tune()
     {
         enum tune_state state;
@@ -352,8 +346,7 @@ implementation {
         {
             atomic
             {
-                shadowRegisters[CHANNEL_REG] |= (shadowRegisters[CHANNEL_REG] & ~CHAN_MASK) | 
-                                                TUNE_MASK | (CHAN_MASK & (nextChannel - BAND_LOW_END)); 
+                shadowRegisters[CHANNEL_REG] = TUNE_MASK | (CHAN_MASK & (nextChannel - BAND_LOW_END)); 
                 writeAddr = CHANNEL_REG;
                 states.tune = WAITTUNE;
             }
@@ -364,6 +357,7 @@ implementation {
             /* Enable STC interrupt */
             //TODO timeout for interrupt
             atomic { states.tune = TUNECHAN; }
+            call Int.clear();
             call Int.enable();
         }
         else if (TUNECHAN == state)
@@ -391,14 +385,7 @@ implementation {
         }
         else if (FINTUNE == state)
         {
-            char buf[7];
             uint8_t stc;
-
-            sprintf(buf, "0x%X", shadowRegisters[SYSCONF2_REG]);
-            call Glcd.drawText(buf, 0, 30);
-            sprintf(buf, "0x%X", shadowRegisters[READCHAN_REG]);
-            call Glcd.drawText(buf, 36, 30);
-           
             atomic { stc = (shadowRegisters[STATRSSI_REG] & STC_MASK) >> 8; }
 
             /* Tuning complete */
@@ -416,7 +403,6 @@ implementation {
         }
     }
 
-    //TODO convert to task (avoid signal recursion)
     void task seek()
     {
         enum seek_state state;
@@ -449,8 +435,9 @@ implementation {
         else if (WAITSEEK == state)
         {
             /* Enable STC interrupt */
-            call Int.enable();
             atomic { states.seek = SEEKCHAN; }
+            call Int.clear();
+            call Int.enable();
         }
         else if (SEEKCHAN == state)
         {
@@ -478,15 +465,15 @@ implementation {
         }
         else if (FINSEEK == state)
         {   
-            char buf[7];
             uint8_t stc;
+            
+//            char buf[7];
+//            sprintf(buf, "0x%X", shadowRegisters[SYSCONF2_REG]);
+//            call Glcd.drawText(buf, 0, 30);
+//            sprintf(buf, "0x%X", shadowRegisters[READCHAN_REG]);
+//            call Glcd.drawText(buf, 36, 30);
+            
             atomic { stc = (shadowRegisters[STATRSSI_REG] & STC_MASK) >> 8; }
-            
-            sprintf(buf, "0x%X", shadowRegisters[SYSCONF2_REG]);
-            call Glcd.drawText(buf, 0, 30);
-            sprintf(buf, "0x%X", shadowRegisters[READCHAN_REG]);
-            call Glcd.drawText(buf, 36, 30);
-            
             /* Seek complete */
             if (!stc)
             {
@@ -500,7 +487,7 @@ implementation {
                 else
                 {
                     atomic { states.driver = STARTSEEK; }
-                    post seek();
+                    signal FMClick.seekComplete(0xffff); //TODO define some error code
                 }
             }
             /* Read the register file until STC is cleared */
@@ -550,7 +537,6 @@ implementation {
         return SUCCESS; 
     }
 
-    //TODO check if channel is valid
     //TODO check if board has been initialized (internal state)
     command error_t FMClick.tune(uint16_t channel)
     {
@@ -558,6 +544,10 @@ implementation {
         atomic { state = states.driver; }
         
         if (IDLE != state)
+            return FAIL;
+
+        /* Check if channel is in the allowed band */
+        if (channel < BAND_LOW_END || channel > BAND_HIGH_END)
             return FAIL;
         
         atomic

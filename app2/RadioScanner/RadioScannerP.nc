@@ -20,6 +20,8 @@ module RadioScannerP {
         interface Init as RadioInit;
         interface FMClick as Radio;
         interface PS2 as Keyboard;
+        interface Read<uint16_t> as volumeKnob;
+        interface Timer<TMilli> as Timer;
     }
 }
 
@@ -68,7 +70,7 @@ implementation {
             switch (c)
             {
                 case 'h':
-                    call Radio.seek(TRUE);
+                    call Radio.seek(FALSE);
                     break;
 
                 case 'l':
@@ -97,6 +99,7 @@ implementation {
     }
 
     //TODO enable delete
+    //TODO only write text once
     task void inputTuneChannel()
     {
         char c;
@@ -110,7 +113,7 @@ implementation {
         {
             uint8_t idx;
             atomic { idx = tuneInput.idx; }
-            if (idx < TUNEINPUT_BUF_SZ)
+            if (idx < TUNEINPUT_BUF_SZ-1)
             {
                 atomic
                 {
@@ -125,8 +128,7 @@ implementation {
 
         if (c == 'g')
         {
-            uint16_t channel;
-            channel = (uint16_t)strtoul(buf, NULL, 10);
+            uint16_t channel = (uint16_t)strtoul(buf, NULL, 10);
             atomic { appState = KBCTRL; }
             call Radio.tune(channel);
         }
@@ -176,6 +178,8 @@ implementation {
     {
         if (SUCCESS == res)
         {
+            //TODO probably move this somewhere else
+            call Timer.startPeriodic(300);
             atomic { appState = KBCTRL; }
             post readyScreen();
         }
@@ -204,5 +208,17 @@ implementation {
     async event void Radio.rdsReceived(RDSType type, char *buf)
     {
 
+    }
+    
+    event void Timer.fired()
+    {
+        call volumeKnob.read();
+    }
+
+    event void volumeKnob.readDone(error_t res, uint16_t val)
+    {
+        //TODO maybe post task
+        //TODO maybe use logarithmic scaling
+        call Radio.setVolume((uint8_t)(val >> 6));    
     }
 }
