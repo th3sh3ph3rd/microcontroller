@@ -30,7 +30,7 @@ implementation {
     #define RADIO 921
     #define RADIOW 899
 
-    enum app_state {INIT, KBCTRL, TUNEINP};
+    enum app_state {INIT, KBCTRL, TUNEINP, TUNE, SEEK, BANDSEEK};
     enum app_state appState;
 
     char kbChar;
@@ -69,17 +69,20 @@ implementation {
         {
             switch (c)
             {
-                //TODO tune to channel 0 (875) before seek
-                case 'b':
-                    call Radio.seek(BAND);
-                    break;
-                
                 case 'h':
+                    atomic { appState = SEEK; }
                     call Radio.seek(DOWN);
                     break;
 
                 case 'l':
+                    atomic { appState = SEEK; }
                     call Radio.seek(UP);
+                    break;
+                
+                //TODO tune to channel 0 (875) before seek
+                case 's':
+                    atomic { appState = BANDSEEK; }
+                    call Radio.tune(875);
                     break;
 
                 case 't':
@@ -103,40 +106,45 @@ implementation {
         }
     }
 
-    //TODO enable delete
     //TODO only write text once
     task void inputTuneChannel()
     {
         char c;
+        uint8_t idx;
         char buf[TUNEINPUT_BUF_SZ];
-        atomic { c = kbChar; }
+        
+        atomic 
+        { 
+            c = kbChar;
+            idx = tuneInput.idx; 
+        }
 
         call Glcd.fill(0x00);
         call Glcd.drawText("Enter channel:", 0, 10);
         
         if (isdigit(c))
         {
-            uint8_t idx;
-            atomic { idx = tuneInput.idx; }
             if (idx < TUNEINPUT_BUF_SZ-1)
-            {
-                atomic
-                {
-                    tuneInput.buf[tuneInput.idx] = c;
-                    tuneInput.idx++;
-                }
-            }
+                atomic { tuneInput.buf[tuneInput.idx++] = c; }
         }
 
+        if (c == '\b' && idx > 0)
+                atomic { tuneInput.buf[--tuneInput.idx] = '\0'; }
+        
         atomic { memcpy(buf, tuneInput.buf, TUNEINPUT_BUF_SZ); }
         call Glcd.drawText(buf, 0, 20);
 
         if (c == 'g')
         {
             uint16_t channel = (uint16_t)strtoul(buf, NULL, 10);
-            atomic { appState = KBCTRL; }
+            atomic { appState = TUNE; }
             call Radio.tune(channel);
         }
+    }
+
+    task void seekBand()
+    {
+        call Radio.seek(BAND);
     }
 
     task void readyScreen()
@@ -155,7 +163,13 @@ implementation {
     {
         char buf[5];
         uint16_t chan;
-        atomic { chan = currChan; }
+        
+        atomic 
+        { 
+            chan = currChan;
+            appState = KBCTRL; 
+        }
+
         sprintf(buf, "%u", chan);
         call Glcd.drawText("tuned to station", 0, 10);
         call Glcd.drawText(buf, 0, 40);
@@ -165,7 +179,13 @@ implementation {
     {
         char buf[5];
         uint16_t chan;
-        atomic { chan = currChan; }
+        
+        atomic 
+        { 
+            chan = currChan;
+            appState = KBCTRL; 
+        }
+
         sprintf(buf, "%u", chan);
         call Glcd.drawText("next station", 0, 10);
         call Glcd.drawText(buf, 0, 40);
@@ -192,8 +212,18 @@ implementation {
 
     async event void Radio.tuneComplete(uint16_t channel)
     {
-        atomic { currChan = channel; }
-        post finishedTuning();
+        enum app_state state; 
+        
+        atomic 
+        { 
+            currChan = channel;
+            state = appState;
+        }
+       
+        if (BANDSEEK == state)
+            post seekBand();
+        else
+            post finishedTuning();
     }
 
     async event void Radio.seekComplete(uint16_t channel)
@@ -212,6 +242,7 @@ implementation {
         call volumeKnob.read();
     }
 
+    //TODO only set volume if value has actually changed
     event void volumeKnob.readDone(error_t res, uint16_t val)
     {
         //TODO maybe post task

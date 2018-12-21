@@ -10,7 +10,6 @@
 
 //TODO read only required registers
 //TODO make function prototypes and move internal functions to bottom of file
-//TODO extend interface to provide seekDone signal and functions for seeking entire band or next channel
 //TODO remove volume block state
 
 #include <stdio.h>
@@ -152,94 +151,201 @@ implementation {
         enum seek_state     seek;
     } states;
 
+    uint16_t currChannel;
     uint16_t nextChannel;
     seekmode_t seekMode;
 
-    void readRegisters()
-    {
-        enum com_state state;
-        atomic { state = states.read; }
-        if (REQ == state)
-        {
-            atomic
-            {
-                states.bus = READ;
-                states.read = COM;
-            }
+    /* Task prototypes */
+    task void init(void);
+    task void tune(void);
+    task void seek(void);
 
-            //TODO check error?
-            call I2CResource.request();
-        }
-        else if (COM == state)
-        {
-            //TODO maybe throw error (GLCD?) instead of hanging
-            while (call I2C.read(I2C_START | I2C_STOP,
-                   DEVICE_READ_ADDR,
-                   REGISTER_NUM*REGISTER_WIDTH,
-                   comBuffer) != SUCCESS);
-            atomic { states.read = REQ; }
-        }
-    }
+    /* Function prototypes */
+    void readRegisters(void);
+    void registerWriteback(void);
+    void writeRegisters(void);
 
-    void registerWriteback()
+    ////////////////////////
+    /* Interface commands */
+    ////////////////////////
+    
+    /*
+     * @brief   Initialize the FMClick module.
+     * @return  If the initialization was started, SUCCESS is returned, else FAIL.
+     */
+    //TODO check if RESET and READ delay can be removed
+    command error_t Init.init(void)
     {
-        uint8_t i = READ_START_ADDR;
-        uint8_t j;
-        for (j = 0; j < REGISTER_NUM*REGISTER_WIDTH; j += REGISTER_WIDTH)
-        {
-            shadowRegisters[i] = (comBuffer[j] << 8) | comBuffer[j+1];
-            i = (i+1) & (REGISTER_NUM-1);
-        }
-    }
+        enum driver_state state;
+        atomic { state = states.driver; }
 
-    void writeRegisters()
-    {
-        enum com_state state;
-        atomic { state = states.write; }
+        if (IDLE != state)
+            return FAIL;
+
+        atomic 
+        {
+            states.driver = INIT;
+            states.read = REQ;
+            states.write = REQ;
+            states.bus = NOOP;
+            states.init = SETUP;
+            memset(shadowRegisters, 0, sizeof(shadowRegisters));
+            memset(comBuffer, 0, sizeof(comBuffer));
+        }
+
+        /* Start board reset */
+        call RSTPin.makeOutput();
+        call RSTPin.clr();
         
-        if (REQ == state)
-        {
-            /* Write buffered registers to communication buffer */
-            uint8_t i = WRITE_START_ADDR;
-            uint8_t j;
-            uint8_t bytesToSend;
+        /* Select 2-wire mode */
+        call SDIOPin.makeOutput();
+        call SDIOPin.clr();
 
-            atomic { bytesToSend = (writeAddr-WRITE_START_ADDR+1)*REGISTER_WIDTH; }
-           
-            for (j = 0; j < bytesToSend; j += REGISTER_WIDTH)
-            {
-                atomic
-                {
-                    comBuffer[j] = (uint8_t) (shadowRegisters[i] >> 8);
-                    comBuffer[j+1] = (uint8_t) shadowRegisters[i];
-                }
-                i = (i+1) & (REGISTER_NUM-1);
-            }
+        /* Set interrupt pin as input, disable pullup and set falling edge on STC/RDS interrupt */
+        call INTPin.makeInput();
+        call INTPin.clr();
+        call Int.edge(FALSE);
 
-            atomic
-            {
-                states.bus = WRITE;
-                states.write = COM;
-            }
-
-            //TODO check error?
-            call I2CResource.request();
-        } 
-        else if (COM == state)
-        {
-            uint8_t bytesToSend;
-            atomic { bytesToSend = (writeAddr-WRITE_START_ADDR+1)*REGISTER_WIDTH; }
-            
-            //TODO maybe throw error (GLCD?) instead of hanging
-            while (call I2C.write(I2C_START | I2C_STOP, 
-                   DEVICE_WRITE_ADDR,
-                   bytesToSend,
-                   comBuffer) != SUCCESS);
-            atomic { states.write = REQ; }
-        }
+        //post init();
+        call Timer.startOneShot(RESET_DELAY_MS);
+        return SUCCESS; 
     }
 
-    task void init()
+    /*
+     * @brief               Tune to a specific channel.
+     * @parameter channel   The radio channel frequency*10 (e.g. for 103.8 pass 1038).
+     * @return              If the channel is in the band and the tuning process was 
+     *                      started, SUCCESS is returned, else FAIL.
+     */
+    //TODO check if board has been initialized (internal state)
+    command error_t FMClick.tune(uint16_t channel)
+    {
+        enum driver_state state;
+        atomic { state = states.driver; }
+        
+        if (IDLE != state)
+            return FAIL;
+
+        /* Check if channel is in the allowed band */
+        if (channel < BAND_LOW_END || channel > BAND_HIGH_END)
+            return FAIL;
+        
+        atomic
+        {
+            states.driver = TUNE;
+            states.tune = STARTTUNE;
+            nextChannel = channel;
+        }
+
+        post tune();
+        return SUCCESS;
+    }
+
+    /*
+     * @brief       Seek channels in the band.
+     * @param mode  The desired seek mode (UP to seek the next higher channel, 
+     *              DOWN to seek the next lower channel and BAND to seek all
+     *              channels on the band).
+     * @return      If seeking was started, SUCCESS is returned, else FAIL.
+     */
+    command error_t FMClick.seek(seekmode_t mode)
+    {
+        enum driver_state state;
+        atomic { state = states.driver; }
+        
+        if (IDLE != state)
+            return FAIL;
+
+        atomic
+        {
+            states.driver = SEEK;
+            states.seek = STARTSEEK;
+            seekMode = mode;
+        }
+
+        post seek();
+        return SUCCESS;
+    }
+
+    /*
+     * @brief   Get the frequency of the channel the module is tuned to.
+     * @return  The channel frequency * 10;
+     */
+    //TODO safe current channel as global state
+    command uint16_t FMClick.getChannel(void)
+    {
+        return currChannel;
+    }
+
+    /*
+     * @brief           Set the volume of the sound output on the FMClick module.
+     * @param volume    The volume to set (max. 15).
+     * @return          If volume setting was started, SUCCESS is returned, else FAIL.
+     */
+    command error_t FMClick.setVolume(uint8_t volume)
+    {
+        enum driver_state state;
+        atomic { state = states.driver; }
+        
+        if (IDLE != state)
+            return FAIL;
+ 
+        atomic
+        { 
+            states.driver = VOL;
+            shadowRegisters[SYSCONF2_REG] = (shadowRegisters[SYSCONF2_REG] & ~VOLUME_MASK) | 
+                                            (volume & VOLUME_MASK);
+            writeAddr = SYSCONF2_REG;
+        }
+        writeRegisters();
+
+        return SUCCESS;
+    }
+
+    command error_t FMClick.receiveRDS(bool enable)
+    {
+        enum driver_state state;
+        atomic { state = states.driver; }
+        
+        if (IDLE != state)
+            return FAIL;
+
+        atomic { states.driver = CONFRDS; }
+
+        //TODO compare with current RDS state and only send command if it changed
+        
+        if (enable)
+        {
+            atomic
+            {
+                shadowRegisters[SYSCONF1_REG] |= RDS_MASK;
+                shadowRegisters[SYSCONF1_REG] |= RDSIEN_MASK;
+                writeAddr = SYSCONF1_REG;
+            }
+        }
+        else
+        {
+            atomic
+            {
+                shadowRegisters[SYSCONF1_REG] &= ~RDS_MASK;
+                shadowRegisters[SYSCONF1_REG] &= ~RDSIEN_MASK;
+                writeAddr = SYSCONF1_REG;
+            }
+        }
+
+        writeRegisters();
+
+        return SUCCESS;
+    }
+
+    ////////////////////////
+    /* Tasks              */
+    ////////////////////////
+    
+    /*
+     * @brief Initialization state machine. Signals initDone().
+     */
+    task void init(void)
     {
         enum init_state state;
         atomic { state = states.init; }
@@ -336,10 +442,12 @@ implementation {
         }
     }
 
-    task void tune()
+    /*
+     * @brief Tuning state machine. Signals tuneComplete().
+     */
+    task void tune(void)
     {
         enum tune_state state;
-        static uint16_t channel;
         atomic { state = states.tune; }
         
         if (STARTTUNE == state)
@@ -370,7 +478,7 @@ implementation {
             /* Read channel and disable tuning */
             atomic
             {
-                channel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + BAND_LOW_END;
+                currChannel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + BAND_LOW_END;
                 shadowRegisters[CHANNEL_REG] &= ~TUNE_MASK;
                 writeAddr = CHANNEL_REG;
                 states.tune = READTUNE;
@@ -392,7 +500,7 @@ implementation {
             if (!stc)
             {
                 atomic { states.driver = IDLE; }
-                signal FMClick.tuneComplete(channel);
+                signal FMClick.tuneComplete(currChannel);
             }
             /* Read the register file until STC is cleared */
             else
@@ -403,12 +511,14 @@ implementation {
         }
     }
 
-    void task seek()
+    /*
+     * @brief Seeking state machine. Signals tuneComplete().
+     */
+    void task seek(void)
     {
         enum seek_state state;
         seekmode_t mode;
         static uint8_t sfbl;
-        static uint16_t channel;
 
         call Glcd.drawText("seek", 0, 30);
 
@@ -422,22 +532,10 @@ implementation {
         {
             /* Start at lower band end and stop at high band end for band seek */
             if (BAND == mode)
-            {
-                atomic
-                {
-                    shadowRegisters[POWERCONF_REG] = shadowRegisters[POWERCONF_REG] | SKMODE_MASK | SEEK_MASK;
-                }
-            }
+                atomic { shadowRegisters[POWERCONF_REG] = shadowRegisters[POWERCONF_REG] | SKMODE_MASK | SEEK_MASK; }
             /* Wrap around band limits for single seek */
             else
-            {
-                atomic
-                {
-                    shadowRegisters[POWERCONF_REG] = (shadowRegisters[POWERCONF_REG] & ~SKMODE_MASK) | SEEK_MASK;
-                }
-            }
-
-            //TODO to seek entire band set CHAN to 00, SEEKUP to 1 and SKMODE to 1
+                atomic { shadowRegisters[POWERCONF_REG] = (shadowRegisters[POWERCONF_REG] & ~SKMODE_MASK) | SEEK_MASK; }
 
             if (UP == mode || BAND == mode)
                 atomic { shadowRegisters[POWERCONF_REG] |= SEEKUP_MASK; }
@@ -463,13 +561,12 @@ implementation {
             atomic { states.seek = ENDSEEK; }
             readRegisters();
         }
-        //TODO verify that STC is set, check SF/BL and RSSI
         else if (ENDSEEK == state)
         {
             /* Read sfbl bit and channel and disable seeking */
             atomic {   
                 sfbl = (uint8_t)((shadowRegisters[STATRSSI_REG] & SFBL_MASK) >> 8);
-                channel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + BAND_LOW_END;
+                currChannel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + BAND_LOW_END;
                 shadowRegisters[POWERCONF_REG] &= ~SEEK_MASK;
                 writeAddr = POWERCONF_REG;
                 states.seek = READSEEK;
@@ -493,7 +590,7 @@ implementation {
                 /* Channel valid */
                 if (!sfbl)
                 {
-                    signal FMClick.seekComplete(channel);
+                    signal FMClick.seekComplete(currChannel);
 
                     /* Continue seeking in band mode */
                     if (BAND == mode)
@@ -517,149 +614,106 @@ implementation {
         }
     }
 
-    //TODO check if RESET and READ delay can be removed
-    command error_t Init.init()
+    ////////////////////////
+    /* Internal functions */
+    ////////////////////////
+    
+    /*
+     * @brief Read all registers of the FMClick module.
+     */
+    void readRegisters(void)
     {
-        enum driver_state state;
-        atomic { state = states.driver; }
-
-        if (IDLE != state)
-            return FAIL;
-
-        atomic 
+        enum com_state state;
+        atomic { state = states.read; }
+        if (REQ == state)
         {
-            states.driver = INIT;
-            states.read = REQ;
-            states.write = REQ;
-            states.bus = NOOP;
-            states.init = SETUP;
-            memset(shadowRegisters, 0, sizeof(shadowRegisters));
-            memset(comBuffer, 0, sizeof(comBuffer));
+            atomic
+            {
+                states.bus = READ;
+                states.read = COM;
+            }
+
+            //TODO check error?
+            call I2CResource.request();
         }
-
-        /* Start board reset */
-        call RSTPin.makeOutput();
-        call RSTPin.clr();
-        
-        /* Select 2-wire mode */
-        call SDIOPin.makeOutput();
-        call SDIOPin.clr();
-
-        /* Set interrupt pin as input, disable pullup and set falling edge on STC/RDS interrupt */
-        call INTPin.makeInput();
-        call INTPin.clr();
-        call Int.edge(FALSE);
-
-        //post init();
-        call Timer.startOneShot(RESET_DELAY_MS);
-        return SUCCESS; 
-    }
-
-    //TODO check if board has been initialized (internal state)
-    command error_t FMClick.tune(uint16_t channel)
-    {
-        enum driver_state state;
-        atomic { state = states.driver; }
-        
-        if (IDLE != state)
-            return FAIL;
-
-        /* Check if channel is in the allowed band */
-        if (channel < BAND_LOW_END || channel > BAND_HIGH_END)
-            return FAIL;
-        
-        atomic
+        else if (COM == state)
         {
-            states.driver = TUNE;
-            states.tune = STARTTUNE;
-            nextChannel = channel;
+            //TODO maybe throw error (GLCD?) instead of hanging
+            while (call I2C.read(I2C_START | I2C_STOP,
+                   DEVICE_READ_ADDR,
+                   REGISTER_NUM*REGISTER_WIDTH,
+                   comBuffer) != SUCCESS);
+            atomic { states.read = REQ; }
         }
-
-        post tune();
-        return SUCCESS;
     }
 
-    command error_t FMClick.seek(seekmode_t mode)
+    /*
+     * @brief Write the read register values to the shadow register file in the correct order.
+     */
+    void registerWriteback(void)
     {
-        enum driver_state state;
-        atomic { state = states.driver; }
-        
-        if (IDLE != state)
-            return FAIL;
-
-        atomic
+        uint8_t i = READ_START_ADDR;
+        uint8_t j;
+        for (j = 0; j < REGISTER_NUM*REGISTER_WIDTH; j += REGISTER_WIDTH)
         {
-            states.driver = SEEK;
-            states.seek = STARTSEEK;
-            seekMode = mode;
+            shadowRegisters[i] = (comBuffer[j] << 8) | comBuffer[j+1];
+            i = (i+1) & (REGISTER_NUM-1);
         }
-
-        post seek();
-        return SUCCESS;
     }
 
-    //TODO safe current channel as global state
-    command uint16_t FMClick.getChannel(void)
+    /*
+     * @brief Write all registers of the FMClick module up until the address specified in the global writeAddr.
+     */
+    void writeRegisters(void)
     {
-        uint16_t channel;
-        atomic { channel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + 875; }
-        return channel;
-    }
-
-    //TODO generate signal when finished
-    command error_t FMClick.setVolume(uint8_t volume)
-    {
-        enum driver_state state;
-        atomic { state = states.driver; }
+        enum com_state state;
+        atomic { state = states.write; }
         
-        if (IDLE != state)
-            return FAIL;
- 
-        atomic { states.driver = VOL; }
+        if (REQ == state)
+        {
+            /* Write buffered registers to communication buffer */
+            uint8_t i = WRITE_START_ADDR;
+            uint8_t j;
+            uint8_t bytesToSend;
 
-        //TODO only set if volume actually changed
-        atomic { shadowRegisters[SYSCONF2_REG] = (shadowRegisters[SYSCONF2_REG] & ~VOLUME_MASK) | (volume & VOLUME_MASK); }
+            atomic { bytesToSend = (writeAddr-WRITE_START_ADDR+1)*REGISTER_WIDTH; }
+           
+            for (j = 0; j < bytesToSend; j += REGISTER_WIDTH)
+            {
+                atomic
+                {
+                    comBuffer[j] = (uint8_t) (shadowRegisters[i] >> 8);
+                    comBuffer[j+1] = (uint8_t) shadowRegisters[i];
+                }
+                i = (i+1) & (REGISTER_NUM-1);
+            }
+
+            atomic
+            {
+                states.bus = WRITE;
+                states.write = COM;
+            }
+
+            //TODO check error?
+            call I2CResource.request();
+        } 
+        else if (COM == state)
+        {
+            uint8_t bytesToSend;
+            atomic { bytesToSend = (writeAddr-WRITE_START_ADDR+1)*REGISTER_WIDTH; }
             
-        atomic { writeAddr = 0x05; }
-        writeRegisters();
-
-        return SUCCESS;
+            //TODO maybe throw error (GLCD?) instead of hanging
+            while (call I2C.write(I2C_START | I2C_STOP, 
+                   DEVICE_WRITE_ADDR,
+                   bytesToSend,
+                   comBuffer) != SUCCESS);
+            atomic { states.write = REQ; }
+        }
     }
 
-    command error_t FMClick.receiveRDS(bool enable)
-    {
-        enum driver_state state;
-        atomic { state = states.driver; }
-        
-        if (IDLE != state)
-            return FAIL;
-
-        atomic { states.driver = CONFRDS; }
-
-        //TODO compare with current RDS state and only send command if it changed
-        
-        if (enable)
-        {
-            atomic
-            {
-                shadowRegisters[SYSCONF1_REG] |= RDS_MASK;
-                shadowRegisters[SYSCONF1_REG] |= RDSIEN_MASK;
-            }
-        }
-        else
-        {
-            atomic
-            {
-                shadowRegisters[SYSCONF1_REG] &= ~RDS_MASK;
-                shadowRegisters[SYSCONF1_REG] &= ~RDSIEN_MASK;
-            }
-        }
-
-        atomic { writeAddr = 0x04; }
-        writeRegisters();
-
-        return SUCCESS;
-    }
+    ////////////////////////
+    /* Events */
+    ////////////////////////
 
     event void Timer.fired()
     {
