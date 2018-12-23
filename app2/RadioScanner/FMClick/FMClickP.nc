@@ -72,6 +72,7 @@ implementation {
     #define SEEKUP_MASK         0x0200
     #define SKMODE_MASK         0x0400
     #define SEEK_MASK           0x0100
+    #define RDSM_MASK           0x0800
 
     /* Channel */
     #define TUNE_MASK           0x8000
@@ -318,8 +319,7 @@ implementation {
         {
             atomic
             {
-                shadowRegisters[SYSCONF1_REG] |= RDS_MASK;
-                shadowRegisters[SYSCONF1_REG] |= RDSIEN_MASK;
+                shadowRegisters[SYSCONF1_REG] |= RDS_MASK | RDSIEN_MASK;
                 writeAddr = SYSCONF1_REG;
             }
         }
@@ -327,8 +327,7 @@ implementation {
         {
             atomic
             {
-                shadowRegisters[SYSCONF1_REG] &= ~RDS_MASK;
-                shadowRegisters[SYSCONF1_REG] &= ~RDSIEN_MASK;
+                shadowRegisters[SYSCONF1_REG] &= ~(RDS_MASK | RDSIEN_MASK);
                 writeAddr = SYSCONF1_REG;
             }
         }
@@ -612,6 +611,11 @@ implementation {
                 post seek();
             }
         }
+    }
+
+    void task decodeRDS(void)
+    {
+
     }
 
     ////////////////////////
