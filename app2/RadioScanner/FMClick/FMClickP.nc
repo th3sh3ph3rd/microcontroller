@@ -641,6 +641,9 @@ implementation {
         }
     }
 
+    /*
+     * @brief Decodeing state machine for RDS messages. Signals rdsReceived().
+     */
     void task decodeRDS(void)
     {
         enum rds_state state;
