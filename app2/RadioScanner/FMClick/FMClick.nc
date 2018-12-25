@@ -1,5 +1,9 @@
 // A Thomas Lamprecht <tlamprecht@ecs.tuwien.ac> production - 2018
 
+#define PS_BUF_SZ   8
+#define RT_BUF_SZ   64
+#define CT_BUF_SZ   6
+
 typedef enum {
     UP,
     DOWN,
