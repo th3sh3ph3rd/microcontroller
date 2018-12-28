@@ -46,6 +46,7 @@ implementation {
     /* Function prototypes */
     static void decodeMessage(udp_msg_t *msg);
     static bool prepareMessage(udp_msg_t *msg, uint8_t **paramStart);
+    static bool parseChannelInfo(char *params, channelInfo *channel);
 
     ////////////////////////
     /* Interface commands */
@@ -148,22 +149,6 @@ implementation {
             post sendTask();
     }
 
-    //TODO signal these events and remove prototypes
-    /**
-     * Received highscore entry from the server.
-     * @param id The channel index from the database store
-     * @param channel The channel information, see channelInfo typedef
-     */
-    event void receivedChannelEntry(uint8_t id, channelInfo channel);
-
-    /**
-     * Server proceesed our request to save a Channel
-     * @param id The channel index from the database store, the one we passed
-     *           or the which was choosen if 0xFF was passed.
-     * @param result 0 = OK, 1 = No free index (only ID auto choose), 2 = DB error 
-     */
-    event void savedChannel(uint8_t id, uint8_t result);
-
     ////////////////////////
     /* Tasks              */
     ////////////////////////
@@ -191,6 +176,7 @@ implementation {
         
         decodeMessage(udpMsg);
 
+        /* Free up memory */
         call MsgPool.put(udpMsg);
 
         if (! (call RecvQ.empty()))
@@ -213,9 +199,85 @@ implementation {
 
         if (strncmp(msg, "ok\0", 3) == 0)
         {
+            //add: ok\rid=...\n signal savedChannel
+            //get: ok\rid=...,freq=...,name=...,qdial=...,picode=...,note=...\n signal receivedChannelEntry
+            //purgeall: ok\r\n
+            //list: ok\rid,id,id,id,...\n
+           
+            char *k, *sp;
+            char workBuf[msg->len-2];
+            memcpy(workBuf, paramStart, msg->len-3);
+            workBuf[msg->len-2] = '\0'; //TODO is this needed?
+
+            k = strtok_r(workBuf, "=", &sp);
+
+            /* Need to signal only certain events with return params */
+            if (k != NULL && strcmp("id", k) == 0)
+            {
+                uint8_t id = (uint8_t) strtol(sp, NULL, 10);
+
+                if (id >= 0 && id < 16)
+                {
+                    /* add or get respond with just the id */
+                    if (strchr(sp, ',') == NULL)
+                        signal savedChannel(id, 0);
+                    /* We got some channel response */ 
+                    else
+                    {
+                        if (parseChannelInfo(k, &channel))
+                            signal receivedChannelEntry(id, channel);
+                    }   
+                }
+            }
+            //TODO deal with list response at this point
+            //TODO put all ids in a queue and call getChannel for every entry
         }
         else if (strncmp(msg, "err\0", 4) == 0)
         {
+            //add: err\rcmd=add,msg=...\n signal savedChannel
+            //update: err\rcmd=update,msg=...\n signal savedChannel
+            //get: err\rcmd=update,msg=...\n
+            //purgeall: err\rcmd=update,msg=...\n
+            
+            char *k, *sp;
+            char workBuf[msg->len-3];
+            uint8_t cmd = 0;
+            uint8_t res = 0;
+            memcpy(workBuf, paramStart, msg->len-4);
+            workBuf[msg->len-3] = '\0'; //TODO is this needed?
+            
+            k = strtok_r(workBuf, "=", &sp);
+            if (k == NULL) 
+                return FALSE;
+
+            while (k != NULL)
+            {
+                v = sp;
+
+                if (strcmp("cmd", k) == 0) 
+                {
+                    if (strcmp("add", v) == 0 || strcmp("update", v) == 0)
+                        cmd = 1;
+                    /* Not interested in other responses */
+                    else
+                        return;
+                }
+                else if (strcmp("msg", k) == 0) 
+                {
+                    if (strcmp("Channel DB Full", v) == 0)
+                        res = 1;
+                    else //TODO maybe differentiate more between errors
+                        res = 2;
+                }
+
+                v = strchr(sp, ',');
+                sp = v + 1;
+
+                k = strtok_r(NULL, "=", &sp);
+            }
+
+            if (cmd != 0)
+                signal savedChannel(0xff, res); //TODO which ID to signal?
         }
     }
 
@@ -223,7 +285,7 @@ implementation {
     {
         /* Valid message is terminated with newline */
         if (msg->data[msg->len-1] != '\n')
-            return false;
+            return FALSE;
 
         msg->data[msg->len-1] = '\0';
 
@@ -237,7 +299,78 @@ implementation {
         else 
             *paramStart = &msg->data[msg->len-1];
 
-        return true;    
+        return TRUE;    
+    }
+
+    static bool parseChannelInfo(char *params, channelInfo *channel)
+    {
+        char *k, *v, *sp;
+        bool gotName =  FALSE;
+
+        k = strtok_r(params, "=", &sp);
+        if (k == NULL) 
+            return FALSE;
+
+        while (k != NULL)
+        {
+            v = sp;
+
+            if (strcmp("freq", k) == 0)
+            {
+                uint16_t freq = (uint16_t) strtol(v, NULL, 10);
+                if (freq < 875 || freq > 1080)
+                    return FALSE
+                channel->freq = freq;
+            } 
+            else if (strcmp("picode", k) == 0) 
+            {
+                uint16_t pi_code = (uint16_t) strtol(v, NULL, 10);
+                //TODO add appropriate check
+                channel->pi_code = pi_code;
+            } 
+            else if (strcmp("qdial", k) == 0) 
+            {
+                uint8_t qdial = (uint8_t) strtol(v, NULL, 10);
+                if (qdial < 1 || qdial > 9)
+                    return FALSE;
+                channel->quickDial = qdial;
+            } 
+            else if (strcmp("name", k) == 0) 
+            {
+                //TODO what is it doing???
+                snprintf(channel->name, 9, "%-8s", name);
+                channel->name[8] = '\0';
+                
+                sp += 8;
+                /* Name is either too long or delimiter is missing */
+                if (*sp != ',')
+                    return FALSE; 
+                sp++;
+                gotName = TRUE;
+            } 
+            else if (strcmp("note", k) == 0) 
+            {
+                strncpy(channel->note, note, 40);
+                channel->name[40] = '\0';
+                 
+                /* According to specification, note is the last parameter */
+                return TRUE;
+            }
+
+            if (gotName)
+            {
+                v = strchr(sp, ',');
+                if (v == NULL) 
+                    return FALSE;
+                sp = v + 1;
+                gotName = FALSE;
+            }
+
+            k = strtok_r(NULL, "=", &sp);
+        }
+
+        /* This should never be reached */
+        return FALSE;
     }
 
     ////////////////////////
