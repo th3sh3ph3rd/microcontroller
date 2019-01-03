@@ -88,11 +88,11 @@ implementation {
                 //TODO tune to channel 0 (875) before seek
                 case 's':
                     atomic { appState = BANDSEEK; }
-                    call Radio.tune(875);
+                    //call Radio.tune(875);
+                    call Radio.seek(BAND);
                     break;
 
                 case 't':
-                    //call Radio.tune(RADIOW);
                     atomic
                     {
                         tuneInput.idx = 0;
@@ -134,17 +134,19 @@ implementation {
                 atomic { tuneInput.buf[tuneInput.idx++] = c; }
         }
 
+        /* Backspace */
         if (c == '\b' && idx > 0)
-                atomic { tuneInput.buf[--tuneInput.idx] = '\0'; }
+            atomic { tuneInput.buf[--tuneInput.idx] = '\0'; }
         
         atomic { memcpy(buf, tuneInput.buf, TUNEINPUT_BUF_SZ); }
         call Glcd.drawText(buf, 0, 20);
 
+        /* Complete entering channel */
         if (c == 'g')
         {
             uint16_t channel = (uint16_t)strtoul(buf, NULL, 10);
             atomic { appState = TUNE; }
-            //call Radio.receiveRDS(FALSE);
+            call Radio.receiveRDS(FALSE);
             call Radio.tune(channel);
         }
     }
