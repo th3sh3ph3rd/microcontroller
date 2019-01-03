@@ -7,6 +7,7 @@ COMPONENT		= RadioScannerAppC
 #COMPONENT		= Test/FMClickTestAppC
 #COMPONENT		= Test/VolumeAdcTestAppC
 TINYOS_ROOT_DIR	       ?= ../tinyos_ws18
-CFLAGS 		       += -Wall -Wextra -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct
+#CFLAGS 		       += -Wall -Wextra -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct
+CFLAGS 		       += -funsigned-char -funsigned-bitfields -fshort-enums -fpack-struct
 CFLAGS		       += -I. -IDatabase -IFMClick -IPS2 -ITest -IVolumeAdc
 include $(TINYOS_ROOT_DIR)/Makefile.include

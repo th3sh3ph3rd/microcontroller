@@ -42,19 +42,25 @@ implementation {
         uint8_t idx;
         char buf[TUNEINPUT_BUF_SZ];
     } tuneInput;
+    
+    //TODO defines should actually come from interface file
+    #define PS_BUF_SZ   8
+    #define RT_BUF_SZ   64
+    #define CT_BUF_SZ   6
+    struct
+    {
+        char PS[PS_BUF_SZ];
+        char RT[RT_BUF_SZ];
+        char CT[CT_BUF_SZ];
+    } rds;
 
     task void inputTuneChannel();
 
-    event void Boot.booted()
-    {
-        atomic { appState = INIT; }
-        call Keyboard.init();
-        call RadioInit.init();
-        call Glcd.fill(0x00);
-        call Glcd.drawText("init fm", 0, 10);
-    }
-
-    task void handleChar()
+    ////////////////////////
+    /* Tasks              */
+    ////////////////////////
+    
+    task void handleChar(void)
     {
         char c;
         enum app_state state;
@@ -107,7 +113,7 @@ implementation {
     }
 
     //TODO only write text once
-    task void inputTuneChannel()
+    task void inputTuneChannel(void)
     {
         char c;
         uint8_t idx;
@@ -138,28 +144,29 @@ implementation {
         {
             uint16_t channel = (uint16_t)strtoul(buf, NULL, 10);
             atomic { appState = TUNE; }
+            //call Radio.receiveRDS(FALSE);
             call Radio.tune(channel);
         }
     }
 
-    task void seekBand()
+    task void seekBand(void)
     {
         call Radio.seek(BAND);
     }
 
-    task void readyScreen()
+    task void readyScreen(void)
     {
         call Glcd.fill(0x00);
         call Glcd.drawText("Radio initialized.", 0, 10);
     }
 
-    task void radioInitFail()
+    task void radioInitFail(void)
     {
         //call Glcd.fill(0x00);
         call Glcd.drawText("Radio init failed!", 0, 10);
     }
 
-    task void finishedTuning()
+    task void finishedTuning(void)
     {
         char buf[5];
         uint16_t chan;
@@ -173,9 +180,11 @@ implementation {
         sprintf(buf, "%u", chan);
         call Glcd.drawText("tuned to station", 0, 10);
         call Glcd.drawText(buf, 0, 40);
+        
+        call Radio.receiveRDS(TRUE);
     }
 
-    task void finishedSeeking()
+    task void finishedSeeking(void)
     {
         char buf[5];
         uint16_t chan;
@@ -189,6 +198,30 @@ implementation {
         sprintf(buf, "%u", chan);
         call Glcd.drawText("next station", 0, 10);
         call Glcd.drawText(buf, 0, 40);
+    }
+
+    task void handleRDS(void)
+    {
+        call Glcd.drawText(rds.PS, 0, 20);
+        call Glcd.drawText(rds.RT, 0, 30);
+        call Glcd.drawText(rds.CT, 0, 40);
+    }
+    
+    ////////////////////////
+    /* Internal functions */
+    ////////////////////////
+    
+    ////////////////////////
+    /* Events */
+    ////////////////////////
+
+    event void Boot.booted()
+    {
+        atomic { appState = INIT; }
+        call Keyboard.init();
+        call RadioInit.init();
+        call Glcd.fill(0x00);
+        call Glcd.drawText("init fm", 0, 10);
     }
     
     event void Radio.initDone(error_t res)
@@ -233,8 +266,31 @@ implementation {
     }
     
     async event void Radio.rdsReceived(RDSType type, char *buf)
-    {
+    { 
+        call Glcd.drawText("recRDS", 0, 50);
+        switch (type)
+        {
+            case PS:
+                memset(rds.PS, 0, PS_BUF_SZ);
+                memcpy(rds.PS, buf, PS_BUF_SZ);
+                post handleRDS();
+                break;
 
+            case RT:
+                memset(rds.RT, 0, RT_BUF_SZ);
+                memcpy(rds.RT, buf, RT_BUF_SZ);
+                post handleRDS();
+                break;
+
+            case TIME:
+                memset(rds.CT, 0, CT_BUF_SZ);
+                memcpy(rds.CT, buf, CT_BUF_SZ);
+                post handleRDS();
+                break;
+
+            default:
+                break;
+        }
     }
     
     event void Timer.fired()

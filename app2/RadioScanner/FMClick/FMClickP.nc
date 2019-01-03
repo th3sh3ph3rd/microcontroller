@@ -157,11 +157,12 @@ implementation {
     uint16_t nextChannel;
     seekmode_t seekMode;
 
-
     /* RDS group type codes */
-    #define GT_PS 0x00
-    #define GT_RT 0x02
-    #define GT_CT 0x05
+    #define GT_0A 0x00
+    #define GT_0B 0x01
+    #define GT_2A 0x04
+    #define GT_2B 0x05
+    #define GT_4A 0x08
 
     /* RDS blocks per message */
     #define PS_BLOCKS   (PS_BUF_SZ/2)
@@ -172,9 +173,9 @@ implementation {
         uint8_t PSBlocks;
         uint8_t RTBlocks;
         uint8_t CTBlocks;
-        uint8_t PS[PS_BUF_SZ];
-        uint8_t RT[RT_BUF_SZ];
-        uint8_t CT[CT_BUF_SZ];
+        char PS[PS_BUF_SZ];
+        char RT[RT_BUF_SZ];
+        char CT[CT_BUF_SZ];
     } rds;
 
     /* Task prototypes */
@@ -214,7 +215,6 @@ implementation {
             states.init = SETUP;
             memset(shadowRegisters, 0, sizeof(shadowRegisters));
             memset(comBuffer, 0, sizeof(comBuffer));
-            receiveRDS = FALSE;
         }
 
         /* Start board reset */
@@ -348,8 +348,8 @@ implementation {
                 writeAddr = SYSCONF1_REG;
                 states.driver = RDS;
             }
-            Int.clear();
-            Int.enable();
+            call Int.clear();
+            call Int.enable();
         }
         else
         {
@@ -359,7 +359,7 @@ implementation {
                 writeAddr = SYSCONF1_REG;
                 states.driver = IDLE;
             }
-            Int.disable();
+            call Int.disable();
         }
 
         writeRegisters();
@@ -647,18 +647,22 @@ implementation {
     void task decodeRDS(void)
     {
         enum rds_state state;
+        char buf[5];
         
         atomic { state = states.rds; }
+        call Glcd.drawText("yolo", 0, 60);
 
         if (READRDS == state)
         {
-            readRegisters();
             atomic { states.rds = DECODERDS; }
+            readRegisters();
         }
         else if (DECODERDS == state)
         {
             uint8_t groupType; 
             uint16_t RDSA, RDSB, RDSC, RDSD;
+            uint8_t offset, blocks;
+            uint8_t hours, minutes, localOffset;
 
             //TODO find out if this buffering is needed
             atomic 
@@ -671,11 +675,18 @@ implementation {
 
             groupType = (uint8_t)(RDSB >> 11);
 
+            sprintf(buf, "0x%X", groupType);
+            call Glcd.drawText(buf, 0, 60);
+
             switch (groupType)
             {
-                case GT_PS:
-                    uint8_t offset = ((uint8_t)RDSB) & 0x03;
-                    uint8_t blocks;
+                /* Intended fallthrough, packets get decoded in the same way */
+                case GT_0A:
+                case GT_0B:
+
+                    call Glcd.drawText("PS", 0, 60);
+                    
+                    offset = ((uint8_t)RDSB) & 0x03;
                     atomic 
                     { 
                         rds.PS[offset] = RDSD;
@@ -687,9 +698,11 @@ implementation {
                         signal FMClick.rdsReceived(PS, rds.PS);
                     break;
                 
-                case GT_RT:
-                    uint8_t offset = ((uint8_t)RDSB) & 0x0f;
-                    uint8_t blocks;
+                case GT_2B:
+                    
+                    call Glcd.drawText("RT", 0, 60);
+                    
+                    offset = ((uint8_t)RDSB) & 0x0f;
                     atomic 
                     { 
                         rds.RT[offset] = RDSC; 
@@ -702,8 +715,10 @@ implementation {
                         signal FMClick.rdsReceived(RT, rds.RT);
                     break;
                 
-                case GT_CT:
-                    uint8_t hours, minutes, localOffset;
+                case GT_4A:
+                    
+                    call Glcd.drawText("CT", 0, 60);
+                    
                     hours = (uint8_t)(RDSD >> 11) | (uint8_t)(RDSC << 4);
                     minutes = ((uint8_t)(RDSD >> 6) & 0x3f);
                     localOffset = ((uint8_t)RDSD) & 0x1f;
@@ -953,7 +968,7 @@ implementation {
                 post seek();
                 break;
             
-            case SEEK:
+            case RDS:
                 post decodeRDS();
                 break;
             
