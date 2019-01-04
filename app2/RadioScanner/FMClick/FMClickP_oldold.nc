@@ -9,6 +9,7 @@
 **/
 
 //TODO read only required registers
+//TODO make function prototypes and move internal functions to bottom of file
 //TODO remove volume block state
 
 #include <stdio.h>
@@ -19,7 +20,7 @@ module FMClickP {
     {
         interface Init;
         interface FMClick;
-    }
+    };
     uses
     {
         interface HplAtm128Interrupt as Int;
@@ -71,7 +72,6 @@ implementation {
     #define SEEKUP_MASK         0x0200
     #define SKMODE_MASK         0x0400
     #define SEEK_MASK           0x0100
-    #define RDSM_MASK           0x0800
 
     /* Channel */
     #define TUNE_MASK           0x8000
@@ -132,13 +132,12 @@ implementation {
     uint8_t comBuffer[REGISTER_NUM*REGISTER_WIDTH];
     uint8_t writeAddr;
 
-    enum driver_state {IDLE, INIT, TUNE, SEEK, VOL, RDS};
+    enum driver_state {IDLE, INIT, TUNE, SEEK, VOL, CONFRDS};
     enum com_state {REQ, COM};
     enum bus_state {NOOP, READ, WRITE};
     enum init_state {SETUP,INITREG, XOSCEN, WAITXOSC, ENABLE, WAITPOWERUP, READREGF, CONFIG, FINISH};
     enum tune_state {STARTTUNE, WAITTUNE, TUNECHAN, ENDTUNE, READTUNE, FINTUNE};
     enum seek_state {STARTSEEK, WAITSEEK, SEEKCHAN, ENDSEEK, READSEEK, FINSEEK};
-    enum rds_state {READRDS, DECODERDS};
 
     //TODO make bitfield
     struct
@@ -150,39 +149,16 @@ implementation {
         enum init_state     init;
         enum tune_state     tune;
         enum seek_state     seek;
-        enum rds_state      rds;
     } states;
 
     uint16_t currChannel;
     uint16_t nextChannel;
     seekmode_t seekMode;
 
-    /* RDS group type codes */
-    #define GT_0A 0x00
-    #define GT_0B 0x01
-    #define GT_2A 0x04
-    #define GT_2B 0x05
-    #define GT_4A 0x08
-
-    /* RDS blocks per message */
-    #define PS_BLOCKS   (PS_BUF_SZ/2)
-    #define RT_BLOCKS   (RT_BUF_SZ/4)
-
-    struct
-    {
-        uint8_t PSBlocks;
-        uint8_t RTBlocks;
-        uint8_t CTBlocks;
-        char PS[PS_BUF_SZ];
-        char RT[RT_BUF_SZ];
-        char CT[CT_BUF_SZ];
-    } rds;
-
     /* Task prototypes */
     task void init(void);
     task void tune(void);
     task void seek(void);
-    task void decodeRDS(void);
 
     /* Function prototypes */
     void readRegisters(void);
@@ -295,6 +271,7 @@ implementation {
      * @brief   Get the frequency of the channel the module is tuned to.
      * @return  The channel frequency * 10;
      */
+    //TODO safe current channel as global state
     command uint16_t FMClick.getChannel(void)
     {
         return currChannel;
@@ -325,39 +302,34 @@ implementation {
         return SUCCESS;
     }
 
-    //TODO maybe forcefully disable receiving RDS if seeking/tuning
     command error_t FMClick.receiveRDS(bool enable)
     {
         enum driver_state state;
         atomic { state = states.driver; }
-       
-        if (IDLE != state && RDS != state)
+        
+        if (IDLE != state)
             return FAIL;
 
-        //TODO compare with current RDS state and only send command if it changed
+        atomic { states.driver = CONFRDS; }
 
+        //TODO compare with current RDS state and only send command if it changed
+        
         if (enable)
         {
-            call Int.clear();
-            call Int.enable();
-            atomic 
-            { 
-                shadowRegisters[SYSCONF1_REG] |= RDS_MASK | RDSIEN_MASK;
-                rds.PSBlocks = 0;
-                rds.RTBlocks = 0;
-                rds.CTBlocks = 0;
+            atomic
+            {
+                shadowRegisters[SYSCONF1_REG] |= RDS_MASK;
+                shadowRegisters[SYSCONF1_REG] |= RDSIEN_MASK;
                 writeAddr = SYSCONF1_REG;
-                states.driver = RDS;
             }
         }
         else
         {
-            call Int.disable();
-            atomic 
-            { 
-                shadowRegisters[SYSCONF1_REG] &= ~(RDS_MASK | RDSIEN_MASK); 
+            atomic
+            {
+                shadowRegisters[SYSCONF1_REG] &= ~RDS_MASK;
+                shadowRegisters[SYSCONF1_REG] &= ~RDSIEN_MASK;
                 writeAddr = SYSCONF1_REG;
-                states.driver = IDLE;
             }
         }
 
@@ -447,8 +419,6 @@ implementation {
 
             atomic
             {
-                /* Enable RDS verbose mode */
-                //shadowRegisters[POWERCONF_REG] |= RDSM_MASK;
                 /* Enable STC interrupt and configure GPIO2 for interrupt transmission */
                 shadowRegisters[SYSCONF1_REG] = (shadowRegisters[SYSCONF1_REG] & ~(GPIO2_MASK | BLNDADJ_MASK)) |
                                                 GPIO2_VAL | BLNDADJ_VAL | STCIEN_MASK | DE_MASK;
@@ -482,7 +452,6 @@ implementation {
         
         if (STARTTUNE == state)
         {
-            call Glcd.drawText("1", 0, 30);
             atomic
             {
                 shadowRegisters[CHANNEL_REG] = TUNE_MASK | (CHAN_MASK & (nextChannel - BAND_LOW_END)); 
@@ -493,7 +462,6 @@ implementation {
         }
         else if (WAITTUNE == state)
         {
-            call Glcd.drawText("2", 0, 30);
             /* Enable STC interrupt */
             //TODO timeout for interrupt
             atomic { states.tune = TUNECHAN; }
@@ -502,13 +470,11 @@ implementation {
         }
         else if (TUNECHAN == state)
         {
-            call Glcd.drawText("3", 0, 30);
             atomic { states.tune = ENDTUNE; }
             readRegisters();
         }
         else if (ENDTUNE == state)
         {
-            call Glcd.drawText("4", 0, 30);
             /* Read channel and disable tuning */
             atomic
             {
@@ -521,7 +487,6 @@ implementation {
         }
         else if (READTUNE == state)
         {
-            call Glcd.drawText("5", 0, 30);
             /* Read registers to check STC bit */
             atomic { states.tune = FINTUNE; }
             readRegisters();
@@ -530,8 +495,6 @@ implementation {
         {
             uint8_t stc;
             atomic { stc = (shadowRegisters[STATRSSI_REG] & STC_MASK) >> 8; }
-
-            call Glcd.drawText("6", 0, 30);
 
             /* Tuning complete */
             if (!stc)
@@ -557,6 +520,8 @@ implementation {
         seekmode_t mode;
         static uint8_t sfbl;
 
+        call Glcd.drawText("seek", 0, 30);
+
         atomic 
         {
             mode = seekMode;
@@ -565,7 +530,6 @@ implementation {
         
         if (STARTSEEK == state)
         {
-            call Glcd.drawText("a", 0, 30);
             /* Start at lower band end and stop at high band end for band seek */
             if (BAND == mode)
                 atomic { shadowRegisters[POWERCONF_REG] = shadowRegisters[POWERCONF_REG] | SKMODE_MASK | SEEK_MASK; }
@@ -587,7 +551,6 @@ implementation {
         }
         else if (WAITSEEK == state)
         {
-            call Glcd.drawText("b", 0, 30);
             /* Enable STC interrupt */
             atomic { states.seek = SEEKCHAN; }
             call Int.clear();
@@ -595,13 +558,11 @@ implementation {
         }
         else if (SEEKCHAN == state)
         {
-            call Glcd.drawText("c", 0, 30);
             atomic { states.seek = ENDSEEK; }
             readRegisters();
         }
         else if (ENDSEEK == state)
         {
-            call Glcd.drawText("d", 0, 30);
             /* Read sfbl bit and channel and disable seeking */
             atomic {   
                 sfbl = (uint8_t)((shadowRegisters[STATRSSI_REG] & SFBL_MASK) >> 8);
@@ -614,7 +575,6 @@ implementation {
         }
         else if (READSEEK == state)
         {
-            call Glcd.drawText("e", 0, 30);
             /* Read registers to check STC bit */
             atomic { states.seek = FINSEEK; }
             readRegisters();
@@ -623,8 +583,6 @@ implementation {
         {   
             uint8_t stc; 
             atomic { stc = (shadowRegisters[STATRSSI_REG] & STC_MASK) >> 8; }
-            
-            call Glcd.drawText("f", 0, 30);
             
             /* Seek complete */
             if (!stc)
@@ -653,116 +611,6 @@ implementation {
                 atomic { states.seek = READSEEK; }
                 post seek();
             }
-        }
-    }
-
-    /*
-     * @brief Decodeing state machine for RDS messages. Signals rdsReceived().
-     */
-    //TODO pass PICode to app
-    void task decodeRDS(void)
-    {
-        enum rds_state state;
-        char buf[5];
-        
-        atomic { state = states.rds; }
-        
-        if (READRDS == state)
-        {
-            atomic { states.rds = DECODERDS; }
-            readRegisters();
-        }
-        else if (DECODERDS == state)
-        {
-            uint8_t groupType; 
-            uint16_t RDSA, RDSB, RDSC, RDSD;
-            uint8_t offset, blocks;
-            uint8_t hours, minutes, localOffset;
-
-            //TODO find out if this buffering is needed
-            atomic 
-            {
-                RDSA = shadowRegisters[RDSA_REG];
-                RDSB = shadowRegisters[RDSB_REG];
-                RDSC = shadowRegisters[RDSC_REG];
-                RDSD = shadowRegisters[RDSD_REG];
-            }
-
-            groupType = (uint8_t)(RDSB >> 11);
-
-            sprintf(buf, "0x%X", groupType);
-            call Glcd.drawText(buf, 0, 60);
-
-            switch (groupType)
-            {
-                /* Intended fallthrough, packets get decoded in the same way */
-                case GT_0A:
-                case GT_0B:
-                    offset = ((uint8_t)RDSB) & 0x03;
-                    atomic 
-                    { 
-                        rds.PS[offset<<1] = (char)(RDSD >> 8);
-                        rds.PS[(offset<<1)+1] = (char)RDSD;
-                        blocks = rds.PSBlocks;
-                        rds.PSBlocks = (rds.PSBlocks+1) & (PS_BLOCKS-1);
-                    }
-                    //TODO maybe copy to different buffer for signalling
-                    if (blocks == PS_BLOCKS-1)
-                        signal FMClick.rdsReceived(PS, rds.PS);
-                    break;
-                
-                case GT_2B:
-                    
-                    //call Glcd.drawText("RT", 0, 60);
-                    
-                    offset = ((uint8_t)RDSB) & 0x0f;
-                    atomic 
-                    { 
-                        //rds.RT[offset<<1] = (char)(RDSC >> 8);
-                        //rds.RT[(offset<<1)+1] = (char)RDSC;
-                        //rds.RT[(offset<<1)+2] = (char)(RDSD >> 8);
-                        //rds.RT[(offset<<1)+3] = (char)RDSD;
-                        rds.RT[(offset<<1)] = (char)(RDSD >> 8);
-                        rds.RT[(offset<<1)+1] = (char)RDSD;
-                        blocks = rds.RTBlocks;
-                        rds.PSBlocks = (rds.RTBlocks+1) & (RT_BLOCKS-1);
-                    }
-                    //TODO maybe copy to different buffer for signalling
-                    if (blocks == RT_BLOCKS-1)
-                        signal FMClick.rdsReceived(RT, rds.RT);
-                    break;
-                
-                case GT_4A:
-                    hours = (uint8_t)(RDSD >> 12) | ((uint8_t)(RDSC << 4) & 0x10);
-                    minutes = ((uint8_t)(RDSD >> 6) & 0x3f);
-                    localOffset = ((uint8_t)RDSD) & 0x1f;
-
-                    /* Determine time offset sign */
-                    if (RDSD & 0x0020)
-                    {
-                        hours -= localOffset >> 1;
-                        minutes -= localOffset & 0x01;
-                    }
-                    else
-                    {
-                        hours += localOffset >> 1;
-                        minutes += localOffset & 0x01;
-                    }
-
-                    atomic
-                    {
-                        memset(rds.CT, 0, CT_BUF_SZ);
-                        sprintf(rds.CT, "%02d:%02d", hours, minutes);
-                    }
-
-                    signal FMClick.rdsReceived(TIME, rds.CT);
-                    break;
-
-                default:
-                    break;
-            }
-
-            atomic { states.rds = READRDS; }
         }
     }
 
@@ -913,10 +761,6 @@ implementation {
             case SEEK:
                 post seek();
                 break;
-
-            case RDS:
-                post decodeRDS();
-                break;
             
             default:
                 break;
@@ -952,6 +796,10 @@ implementation {
                 post seek();
                 break;
             
+            case CONFRDS:
+                atomic { states.driver = IDLE; }
+                break;
+            
             case VOL:
                 atomic { states.driver = IDLE; }
                 break;
@@ -965,11 +813,10 @@ implementation {
     {
         enum driver_state state;
         atomic { state = states.driver; }
-
-        /* TUNE and SEEK only need a single interrupt */
-        if (TUNE == state || SEEK == state)
-            call Int.disable();
         
+        //TODO first int STC, subseq. ints RDS
+        call Int.disable(); //TODO disable after all RDS info has been received if enabled
+
         switch (state)
         {
             case TUNE:
@@ -978,10 +825,6 @@ implementation {
 
             case SEEK:
                 post seek();
-                break;
-            
-            case RDS:
-                post decodeRDS();
                 break;
             
             default:
@@ -1010,4 +853,5 @@ implementation {
         }
     }
 }
+
 

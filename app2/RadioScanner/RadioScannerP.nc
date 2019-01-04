@@ -93,6 +93,7 @@ implementation {
                     break;
 
                 case 't':
+                    call Radio.receiveRDS(FALSE);
                     atomic
                     {
                         tuneInput.idx = 0;
@@ -146,7 +147,6 @@ implementation {
         {
             uint16_t channel = (uint16_t)strtoul(buf, NULL, 10);
             atomic { appState = TUNE; }
-            call Radio.receiveRDS(FALSE);
             call Radio.tune(channel);
         }
     }
@@ -266,10 +266,10 @@ implementation {
         atomic { currChan = channel; }
         post finishedSeeking();
     }
-    
+   
+    //TODO only post task if app is idle
     async event void Radio.rdsReceived(RDSType type, char *buf)
     { 
-        call Glcd.drawText("recRDS", 0, 50);
         switch (type)
         {
             case PS:

@@ -157,12 +157,11 @@ implementation {
     uint16_t nextChannel;
     seekmode_t seekMode;
 
+
     /* RDS group type codes */
-    #define GT_0A 0x00
-    #define GT_0B 0x01
-    #define GT_2A 0x04
-    #define GT_2B 0x05
-    #define GT_4A 0x08
+    #define GT_PS 0x00
+    #define GT_RT 0x02
+    #define GT_CT 0x05
 
     /* RDS blocks per message */
     #define PS_BLOCKS   (PS_BUF_SZ/2)
@@ -331,15 +330,14 @@ implementation {
         enum driver_state state;
         atomic { state = states.driver; }
        
-        if (IDLE != state && RDS != state)
+        if (IDLE != state)
             return FAIL;
 
         //TODO compare with current RDS state and only send command if it changed
+        //TODO smh merge atomic blocks?
 
         if (enable)
         {
-            call Int.clear();
-            call Int.enable();
             atomic 
             { 
                 shadowRegisters[SYSCONF1_REG] |= RDS_MASK | RDSIEN_MASK;
@@ -349,16 +347,18 @@ implementation {
                 writeAddr = SYSCONF1_REG;
                 states.driver = RDS;
             }
+            call Int.clear();
+            call Int.enable();
         }
         else
         {
-            call Int.disable();
             atomic 
             { 
                 shadowRegisters[SYSCONF1_REG] &= ~(RDS_MASK | RDSIEN_MASK); 
                 writeAddr = SYSCONF1_REG;
                 states.driver = IDLE;
             }
+            call Int.disable();
         }
 
         writeRegisters();
@@ -447,8 +447,6 @@ implementation {
 
             atomic
             {
-                /* Enable RDS verbose mode */
-                //shadowRegisters[POWERCONF_REG] |= RDSM_MASK;
                 /* Enable STC interrupt and configure GPIO2 for interrupt transmission */
                 shadowRegisters[SYSCONF1_REG] = (shadowRegisters[SYSCONF1_REG] & ~(GPIO2_MASK | BLNDADJ_MASK)) |
                                                 GPIO2_VAL | BLNDADJ_VAL | STCIEN_MASK | DE_MASK;
@@ -482,7 +480,6 @@ implementation {
         
         if (STARTTUNE == state)
         {
-            call Glcd.drawText("1", 0, 30);
             atomic
             {
                 shadowRegisters[CHANNEL_REG] = TUNE_MASK | (CHAN_MASK & (nextChannel - BAND_LOW_END)); 
@@ -493,7 +490,6 @@ implementation {
         }
         else if (WAITTUNE == state)
         {
-            call Glcd.drawText("2", 0, 30);
             /* Enable STC interrupt */
             //TODO timeout for interrupt
             atomic { states.tune = TUNECHAN; }
@@ -502,13 +498,11 @@ implementation {
         }
         else if (TUNECHAN == state)
         {
-            call Glcd.drawText("3", 0, 30);
             atomic { states.tune = ENDTUNE; }
             readRegisters();
         }
         else if (ENDTUNE == state)
         {
-            call Glcd.drawText("4", 0, 30);
             /* Read channel and disable tuning */
             atomic
             {
@@ -521,7 +515,6 @@ implementation {
         }
         else if (READTUNE == state)
         {
-            call Glcd.drawText("5", 0, 30);
             /* Read registers to check STC bit */
             atomic { states.tune = FINTUNE; }
             readRegisters();
@@ -530,8 +523,6 @@ implementation {
         {
             uint8_t stc;
             atomic { stc = (shadowRegisters[STATRSSI_REG] & STC_MASK) >> 8; }
-
-            call Glcd.drawText("6", 0, 30);
 
             /* Tuning complete */
             if (!stc)
@@ -565,7 +556,6 @@ implementation {
         
         if (STARTSEEK == state)
         {
-            call Glcd.drawText("a", 0, 30);
             /* Start at lower band end and stop at high band end for band seek */
             if (BAND == mode)
                 atomic { shadowRegisters[POWERCONF_REG] = shadowRegisters[POWERCONF_REG] | SKMODE_MASK | SEEK_MASK; }
@@ -587,7 +577,6 @@ implementation {
         }
         else if (WAITSEEK == state)
         {
-            call Glcd.drawText("b", 0, 30);
             /* Enable STC interrupt */
             atomic { states.seek = SEEKCHAN; }
             call Int.clear();
@@ -595,13 +584,11 @@ implementation {
         }
         else if (SEEKCHAN == state)
         {
-            call Glcd.drawText("c", 0, 30);
             atomic { states.seek = ENDSEEK; }
             readRegisters();
         }
         else if (ENDSEEK == state)
         {
-            call Glcd.drawText("d", 0, 30);
             /* Read sfbl bit and channel and disable seeking */
             atomic {   
                 sfbl = (uint8_t)((shadowRegisters[STATRSSI_REG] & SFBL_MASK) >> 8);
@@ -614,7 +601,6 @@ implementation {
         }
         else if (READSEEK == state)
         {
-            call Glcd.drawText("e", 0, 30);
             /* Read registers to check STC bit */
             atomic { states.seek = FINSEEK; }
             readRegisters();
@@ -623,8 +609,6 @@ implementation {
         {   
             uint8_t stc; 
             atomic { stc = (shadowRegisters[STATRSSI_REG] & STC_MASK) >> 8; }
-            
-            call Glcd.drawText("f", 0, 30);
             
             /* Seek complete */
             if (!stc)
@@ -659,24 +643,21 @@ implementation {
     /*
      * @brief Decodeing state machine for RDS messages. Signals rdsReceived().
      */
-    //TODO pass PICode to app
     void task decodeRDS(void)
     {
         enum rds_state state;
-        char buf[5];
         
         atomic { state = states.rds; }
-        
+
         if (READRDS == state)
         {
-            atomic { states.rds = DECODERDS; }
             readRegisters();
+            atomic { states.rds = DECODERDS; }
         }
         else if (DECODERDS == state)
         {
-            uint8_t groupType; 
+            uint8_t groupType, offset, blocks; 
             uint16_t RDSA, RDSB, RDSC, RDSD;
-            uint8_t offset, blocks;
             uint8_t hours, minutes, localOffset;
 
             //TODO find out if this buffering is needed
@@ -690,19 +671,13 @@ implementation {
 
             groupType = (uint8_t)(RDSB >> 11);
 
-            sprintf(buf, "0x%X", groupType);
-            call Glcd.drawText(buf, 0, 60);
-
             switch (groupType)
             {
-                /* Intended fallthrough, packets get decoded in the same way */
-                case GT_0A:
-                case GT_0B:
+                case GT_PS:
                     offset = ((uint8_t)RDSB) & 0x03;
                     atomic 
                     { 
-                        rds.PS[offset<<1] = (char)(RDSD >> 8);
-                        rds.PS[(offset<<1)+1] = (char)RDSD;
+                        rds.PS[offset] = RDSD;
                         blocks = rds.PSBlocks;
                         rds.PSBlocks = (rds.PSBlocks+1) & (PS_BLOCKS-1);
                     }
@@ -711,19 +686,12 @@ implementation {
                         signal FMClick.rdsReceived(PS, rds.PS);
                     break;
                 
-                case GT_2B:
-                    
-                    //call Glcd.drawText("RT", 0, 60);
-                    
+                case GT_RT:
                     offset = ((uint8_t)RDSB) & 0x0f;
                     atomic 
                     { 
-                        //rds.RT[offset<<1] = (char)(RDSC >> 8);
-                        //rds.RT[(offset<<1)+1] = (char)RDSC;
-                        //rds.RT[(offset<<1)+2] = (char)(RDSD >> 8);
-                        //rds.RT[(offset<<1)+3] = (char)RDSD;
-                        rds.RT[(offset<<1)] = (char)(RDSD >> 8);
-                        rds.RT[(offset<<1)+1] = (char)RDSD;
+                        rds.RT[offset] = RDSC; 
+                        rds.RT[offset+1] = RDSD; 
                         blocks = rds.RTBlocks;
                         rds.PSBlocks = (rds.RTBlocks+1) & (RT_BLOCKS-1);
                     }
@@ -732,8 +700,8 @@ implementation {
                         signal FMClick.rdsReceived(RT, rds.RT);
                     break;
                 
-                case GT_4A:
-                    hours = (uint8_t)(RDSD >> 12) | ((uint8_t)(RDSC << 4) & 0x10);
+                case GT_CT:
+                    hours = (uint8_t)(RDSD >> 11) | (uint8_t)(RDSC << 4);
                     minutes = ((uint8_t)(RDSD >> 6) & 0x3f);
                     localOffset = ((uint8_t)RDSD) & 0x1f;
 
@@ -752,7 +720,7 @@ implementation {
                     atomic
                     {
                         memset(rds.CT, 0, CT_BUF_SZ);
-                        sprintf(rds.CT, "%02d:%02d", hours, minutes);
+                        sprintf(rds.CT, "%d:%d", hours, minutes);
                     }
 
                     signal FMClick.rdsReceived(TIME, rds.CT);
@@ -965,9 +933,11 @@ implementation {
     {
         enum driver_state state;
         atomic { state = states.driver; }
+        
+        //TODO first int STC, subseq. ints RDS
+        //call Int.disable(); //TODO disable after all RDS info has been received if enabled
 
-        /* TUNE and SEEK only need a single interrupt */
-        if (TUNE == state || SEEK == state)
+        if (RDS != state)
             call Int.disable();
         
         switch (state)
@@ -1010,4 +980,5 @@ implementation {
         }
     }
 }
+
 

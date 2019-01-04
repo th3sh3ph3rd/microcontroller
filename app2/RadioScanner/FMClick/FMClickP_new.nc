@@ -331,15 +331,13 @@ implementation {
         enum driver_state state;
         atomic { state = states.driver; }
        
-        if (IDLE != state && RDS != state)
+        if (IDLE != state)
             return FAIL;
 
         //TODO compare with current RDS state and only send command if it changed
 
         if (enable)
         {
-            call Int.clear();
-            call Int.enable();
             atomic 
             { 
                 shadowRegisters[SYSCONF1_REG] |= RDS_MASK | RDSIEN_MASK;
@@ -349,6 +347,8 @@ implementation {
                 writeAddr = SYSCONF1_REG;
                 states.driver = RDS;
             }
+            call Int.clear();
+            call Int.enable();
         }
         else
         {
@@ -447,8 +447,6 @@ implementation {
 
             atomic
             {
-                /* Enable RDS verbose mode */
-                //shadowRegisters[POWERCONF_REG] |= RDSM_MASK;
                 /* Enable STC interrupt and configure GPIO2 for interrupt transmission */
                 shadowRegisters[SYSCONF1_REG] = (shadowRegisters[SYSCONF1_REG] & ~(GPIO2_MASK | BLNDADJ_MASK)) |
                                                 GPIO2_VAL | BLNDADJ_VAL | STCIEN_MASK | DE_MASK;
@@ -659,14 +657,13 @@ implementation {
     /*
      * @brief Decodeing state machine for RDS messages. Signals rdsReceived().
      */
-    //TODO pass PICode to app
     void task decodeRDS(void)
     {
         enum rds_state state;
         char buf[5];
         
         atomic { state = states.rds; }
-        
+
         if (READRDS == state)
         {
             atomic { states.rds = DECODERDS; }
@@ -698,11 +695,13 @@ implementation {
                 /* Intended fallthrough, packets get decoded in the same way */
                 case GT_0A:
                 case GT_0B:
+
+                    call Glcd.drawText("PS", 0, 60);
+                    
                     offset = ((uint8_t)RDSB) & 0x03;
                     atomic 
                     { 
-                        rds.PS[offset<<1] = (char)(RDSD >> 8);
-                        rds.PS[(offset<<1)+1] = (char)RDSD;
+                        rds.PS[offset] = RDSD;
                         blocks = rds.PSBlocks;
                         rds.PSBlocks = (rds.PSBlocks+1) & (PS_BLOCKS-1);
                     }
@@ -713,17 +712,13 @@ implementation {
                 
                 case GT_2B:
                     
-                    //call Glcd.drawText("RT", 0, 60);
+                    call Glcd.drawText("RT", 0, 60);
                     
                     offset = ((uint8_t)RDSB) & 0x0f;
                     atomic 
                     { 
-                        //rds.RT[offset<<1] = (char)(RDSC >> 8);
-                        //rds.RT[(offset<<1)+1] = (char)RDSC;
-                        //rds.RT[(offset<<1)+2] = (char)(RDSD >> 8);
-                        //rds.RT[(offset<<1)+3] = (char)RDSD;
-                        rds.RT[(offset<<1)] = (char)(RDSD >> 8);
-                        rds.RT[(offset<<1)+1] = (char)RDSD;
+                        rds.RT[offset] = RDSC; 
+                        rds.RT[offset+1] = RDSD; 
                         blocks = rds.RTBlocks;
                         rds.PSBlocks = (rds.RTBlocks+1) & (RT_BLOCKS-1);
                     }
@@ -733,7 +728,10 @@ implementation {
                     break;
                 
                 case GT_4A:
-                    hours = (uint8_t)(RDSD >> 12) | ((uint8_t)(RDSC << 4) & 0x10);
+                    
+                    call Glcd.drawText("CT", 0, 60);
+                    
+                    hours = (uint8_t)(RDSD >> 11) | (uint8_t)(RDSC << 4);
                     minutes = ((uint8_t)(RDSD >> 6) & 0x3f);
                     localOffset = ((uint8_t)RDSD) & 0x1f;
 
@@ -752,7 +750,7 @@ implementation {
                     atomic
                     {
                         memset(rds.CT, 0, CT_BUF_SZ);
-                        sprintf(rds.CT, "%02d:%02d", hours, minutes);
+                        sprintf(rds.CT, "%d:%d", hours, minutes);
                     }
 
                     signal FMClick.rdsReceived(TIME, rds.CT);
@@ -967,8 +965,8 @@ implementation {
         atomic { state = states.driver; }
 
         /* TUNE and SEEK only need a single interrupt */
-        if (TUNE == state || SEEK == state)
-            call Int.disable();
+        //if (RDS != state)
+        call Int.disable();
         
         switch (state)
         {
