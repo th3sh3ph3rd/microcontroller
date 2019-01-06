@@ -690,9 +690,6 @@ implementation {
 
             groupType = (uint8_t)(RDSB >> 11);
 
-            sprintf(buf, "0x%X", groupType);
-            call Glcd.drawText(buf, 0, 60);
-
             switch (groupType)
             {
                 /* Intended fallthrough, packets get decoded in the same way */
@@ -711,26 +708,35 @@ implementation {
                         signal FMClick.rdsReceived(PS, rds.PS);
                     break;
                 
-                case GT_2B:
-                    
-                    //call Glcd.drawText("RT", 0, 60);
-                    
+                case GT_2A:
                     offset = ((uint8_t)RDSB) & 0x0f;
                     atomic 
                     { 
-                        //rds.RT[offset<<1] = (char)(RDSC >> 8);
-                        //rds.RT[(offset<<1)+1] = (char)RDSC;
-                        //rds.RT[(offset<<1)+2] = (char)(RDSD >> 8);
-                        //rds.RT[(offset<<1)+3] = (char)RDSD;
-                        rds.RT[(offset<<1)] = (char)(RDSD >> 8);
-                        rds.RT[(offset<<1)+1] = (char)RDSD;
+                        rds.RT[offset<<2] = (char)(RDSC >> 8);
+                        rds.RT[(offset<<2)+1] = (char)RDSC;
+                        rds.RT[(offset<<2)+2] = (char)(RDSD >> 8);
+                        rds.RT[(offset<<2)+3] = (char)RDSD;
                         blocks = rds.RTBlocks;
-                        rds.PSBlocks = (rds.RTBlocks+1) & (RT_BLOCKS-1);
+                        rds.RTBlocks = (rds.RTBlocks+1) & (RT_BLOCKS-1);
                     }
                     //TODO maybe copy to different buffer for signalling
                     if (blocks == RT_BLOCKS-1)
                         signal FMClick.rdsReceived(RT, rds.RT);
-                    break;
+                break;
+
+//                case GT_2B:
+//                    offset = ((uint8_t)RDSB) & 0x0f;
+//                    atomic 
+//                    { 
+//                        rds.RT[(offset<<1)] = (char)(RDSD >> 8);
+//                        rds.RT[(offset<<1)+1] = (char)RDSD;
+//                        blocks = rds.RTBlocks;
+//                        rds.RTBlocks = (rds.RTBlocks+1) & (RT_BLOCKS-1);
+//                    }
+//                    //TODO maybe copy to different buffer for signalling
+//                    if (blocks == RT_BLOCKS-1)
+//                        signal FMClick.rdsReceived(RT, rds.RT);
+//                    break;
                 
                 case GT_4A:
                     hours = (uint8_t)(RDSD >> 12) | ((uint8_t)(RDSC << 4) & 0x10);

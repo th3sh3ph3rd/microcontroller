@@ -49,8 +49,8 @@ implementation {
     #define CT_BUF_SZ   6
     struct
     {
-        char PS[PS_BUF_SZ];
-        char RT[RT_BUF_SZ];
+        char PS[PS_BUF_SZ+1];
+        char RT[RT_BUF_SZ+1];
         char CT[CT_BUF_SZ];
     } rds;
 
@@ -147,7 +147,7 @@ implementation {
         {
             uint16_t channel = (uint16_t)strtoul(buf, NULL, 10);
             atomic { appState = TUNE; }
-            call Radio.tune(channel);
+            call Radio.tune(channel); //TODO on failure change state back to KBCTRL - also for other commands!!
         }
     }
 
@@ -204,9 +204,21 @@ implementation {
 
     task void handleRDS(void)
     {
+        char line1[21], line2[21], line3[25];
+        memcpy(line1, rds.RT, 20);
+        memcpy(line2, rds.RT+20, 20);
+        memcpy(line3, rds.RT+40, 24);
+        line1[20] = '\0';
+        line2[20] = '\0';
+        line3[24] = '\0';
+
+        call Glcd.fill(0x00);
         call Glcd.drawText(rds.PS, 0, 20);
-        call Glcd.drawText(rds.RT, 0, 30);
-        call Glcd.drawText(rds.CT, 0, 40);
+//        call Glcd.drawText(rds.RT, 0, 30);
+        call Glcd.drawText(line1, 0, 30);
+        call Glcd.drawText(line2, 0, 40);
+        call Glcd.drawText(line3, 0, 50);
+        call Glcd.drawText(rds.CT, 0, 60);
     }
     
     ////////////////////////
@@ -268,18 +280,19 @@ implementation {
     }
    
     //TODO only post task if app is idle
+    //TODO only set PS once, then ignore
     async event void Radio.rdsReceived(RDSType type, char *buf)
     { 
         switch (type)
         {
             case PS:
-                memset(rds.PS, 0, PS_BUF_SZ);
+                memset(rds.PS, 0, PS_BUF_SZ+1);
                 memcpy(rds.PS, buf, PS_BUF_SZ);
                 post handleRDS();
                 break;
 
             case RT:
-                memset(rds.RT, 0, RT_BUF_SZ);
+                memset(rds.RT, 0, RT_BUF_SZ+1);
                 memcpy(rds.RT, buf, RT_BUF_SZ);
                 post handleRDS();
                 break;
