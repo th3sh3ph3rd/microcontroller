@@ -236,7 +236,7 @@ implementation {
         atomic { appState = INIT; }
         call Glcd.fill(0x00);
         call Keyboard.init();
-        //call RadioInit.init();
+        call RadioInit.init();
         call DBInit.init();
         call Glcd.drawText("init fm", 0, 10);
     }
