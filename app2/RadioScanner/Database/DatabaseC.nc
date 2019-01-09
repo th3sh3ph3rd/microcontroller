@@ -25,7 +25,8 @@ implementation {
     #define RECV_Q_LEN  5
     #define POOL_SIZE (SEND_Q_LEN+RECV_Q_LEN)
 
-    components DatabaseP;
+    components DatabaseP, IpTransceiverC, LlcTransceiverP, GlcdC;
+    components Enc28j60C as EthernetC;
     components new UdpC(UDP_PORT);
     components new PoolC(udp_msg_t, POOL_SIZE) as UdpMsgPool;
     components new QueueC(udp_msg_t*, SEND_Q_LEN) as UdpSendQ;
@@ -34,10 +35,16 @@ implementation {
     Init = DatabaseP.Init;
     Database = DatabaseP.Database;
 
-    Database.UdpSend -> UdpC;
-    Database.UdpReceive -> UdpC;
-    Database.MsgPool -> UdpMsgPool;
-    Database.SendQ -> UdpSendQ;
-    Database.RecvQ -> UdpRecvQ;
+    LlcTransceiverP.Mac -> EthernetC;
+
+    DatabaseP.UdpSend -> UdpC;
+    DatabaseP.UdpReceive -> UdpC;
+    DatabaseP.IpControl -> IpTransceiverC;
+    DatabaseP.Control -> EthernetC;
+    DatabaseP.MsgPool -> UdpMsgPool;
+    DatabaseP.SendQ -> UdpSendQ;
+    DatabaseP.RecvQ -> UdpRecvQ;
+
+    DatabaseP.Glcd -> GlcdC;
 }
 

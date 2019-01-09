@@ -5,13 +5,13 @@
 
 #define UDP_PORT    50000UL
 // note the ',' (instead of the usual '.') between numbers
-#define DESTINATION 10,60,0,1
+#define DESTINATION 192,168,42,1
 
 // the following settings are only applied if CUSTOM_IP_SETTINGS is defined
 // note the ',' (instead of the usual '.') between numbers
-#define IP	10,60,0,10
+#define IP	192,168,42,2
 #define NETMASK	255,255,255,0
-#define GATEWAY	10,60,0,1
+#define GATEWAY	192,168,42,1
 
 // Memory Pool Settings
 #define MAX_MSG_LEN     128

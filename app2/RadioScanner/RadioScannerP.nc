@@ -17,6 +17,8 @@ module RadioScannerP {
     {
         interface Boot;
         interface Glcd;
+        interface Init as DBInit;
+        interface Database as DB;
         interface Init as RadioInit;
         interface FMClick as Radio;
         interface PS2 as Keyboard;
@@ -232,9 +234,10 @@ implementation {
     event void Boot.booted()
     {
         atomic { appState = INIT; }
-        call Keyboard.init();
-        call RadioInit.init();
         call Glcd.fill(0x00);
+        call Keyboard.init();
+        //call RadioInit.init();
+        call DBInit.init();
         call Glcd.drawText("init fm", 0, 10);
     }
     
@@ -319,5 +322,15 @@ implementation {
         //TODO maybe post task
         //TODO maybe use logarithmic scaling
         call Radio.setVolume((uint8_t)(val >> 6));    
+    }
+    
+    event void DB.receivedChannelEntry(uint8_t id, channelInfo channel)
+    {
+
+    }
+
+    event void DB.savedChannel(uint8_t id, uint8_t result)
+    {
+
     }
 }

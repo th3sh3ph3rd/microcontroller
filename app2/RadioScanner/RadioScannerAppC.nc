@@ -14,11 +14,13 @@ configuration RadioScannerAppC {
 }
 
 implementation {
-	components MainC, RadioScannerP, FMClickC, PS2C, GlcdC, VolumeAdcC;
+	components MainC, RadioScannerP, DatabaseC, FMClickC, PS2C, GlcdC, VolumeAdcC;
         components new TimerMilliC() as Timer;
 
         RadioScannerP.Boot -> MainC.Boot;
         RadioScannerP.Glcd -> GlcdC.Glcd;
+        RadioScannerP.DBInit -> DatabaseC.Init;
+        RadioScannerP.DB -> DatabaseC.Database;
         RadioScannerP.RadioInit -> FMClickC.Init;
         RadioScannerP.Radio -> FMClickC.FMClick;
         RadioScannerP.Keyboard -> PS2C.PS2;

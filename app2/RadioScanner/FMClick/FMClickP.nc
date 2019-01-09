@@ -663,7 +663,6 @@ implementation {
     void task decodeRDS(void)
     {
         enum rds_state state;
-        char buf[5];
         
         atomic { state = states.rds; }
         

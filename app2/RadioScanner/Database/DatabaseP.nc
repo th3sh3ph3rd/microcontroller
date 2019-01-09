@@ -8,6 +8,7 @@
  *
 **/
 
+#include <ip.h>
 #include <stdio.h>
 #include <string.h>
 #include <udp_config.h>
@@ -26,9 +27,13 @@ module DatabaseP {
     {
         interface UdpSend;
         interface UdpReceive;
+        interface IpControl;
+        interface SplitControl as Control;
         interface Pool<udp_msg_t> as MsgPool;
         interface Queue<udp_msg_t *> as SendQ;
         interface Queue<udp_msg_t *> as RecvQ;
+
+        interface Glcd;
     }
 }
 
@@ -52,13 +57,29 @@ implementation {
     /* Interface commands */
     ////////////////////////
 
-    //TODO signal initDone event
-    command Init.init()
+    command error_t Init.init(void)
     {
-        //TODO check if some ip init is necessary
-        MsgPool.init();
+        in_addr_t *ip;
+        in_addr_t cip = { .bytes {IP}};
+        in_addr_t cnm = { .bytes {NETMASK}};
+        in_addr_t cgw = { .bytes {GATEWAY}};
+        char ipBuf[17];
+
+        call IpControl.setIp(&cip);
+        call IpControl.setIp(&cnm);
+        call IpControl.setIp(&cgw);
+
+        ip = call IpControl.getIp();
+
+        sprintf(ipBuf, ">%03d.%03d.%03d.%03d", ip->bytes.b1, ip->bytes.b2, ip->bytes.b3, ip->bytes.b4);
+        call Glcd.drawText(ipBuf, 0, 60);
+
         sendBusy = FALSE;
         recvBusy = FALSE;
+
+        call Control.start();
+
+        return SUCCESS;
     }
 
     /**
@@ -69,7 +90,7 @@ implementation {
      */
     //TODO make sure no \r and \n are in the values and the name is exactly 8 char and note max 40 char, make part of contract -> set last byte to 0
     //TODO implement update channel, probably make dependant on id
-    command void saveChannel(uint8_t id, channelInfo *channel)
+    command void Database.saveChannel(uint8_t id, channelInfo *channel)
     {
         /* Allocate memory for the udp message */
         udp_msg_t *udpMsg = call MsgPool.get();
@@ -78,7 +99,7 @@ implementation {
         /* Compose udp message */
         sprintf(udpMsg->data, "add\rid=%d,name=%s,qdial=%d,freq=%d,picode=%d,note=%s\n",
                 id, channel->name, channel->quickDial, channel->frequency, channel->pi_code);
-        udpMsg->[MAX_MSG_LEN-1];
+        udpMsg->data[MAX_MSG_LEN-1] = '\0';
         udpMsg->len = strlen(udpMsg->data);
 
         call SendQ.enqueue(udpMsg);
@@ -93,7 +114,7 @@ implementation {
      * @param onlyFavorites tells server to send only the channels with a
      *        registered quickDial number, if not zero
      */
-    command void getChannelList(uint8_t onlyFavorites)
+    command void Database.getChannelList(uint8_t onlyFavorites)
     {
         /* Allocate memory for the udp message */
         udp_msg_t *udpMsg = call MsgPool.get();
@@ -113,7 +134,7 @@ implementation {
      * Request the channel list from the database server
      * Received channels will be signaled through receivedChannelEntry
      */
-    command void getChannel(uint8_t id)
+    command void Database.getChannel(uint8_t id)
     {
         /* Allocate memory for the udp message */
         udp_msg_t *udpMsg = call MsgPool.get();
@@ -133,7 +154,7 @@ implementation {
      * Request that the Database purges all channels and their state
      * Received channels will be signaled through receivedChannelEntry
      */
-    command void purgeChannelList()
+    command void Database.purgeChannelList()
     {
         /* Allocate memory for the udp message */
         udp_msg_t *udpMsg = call MsgPool.get();
@@ -173,7 +194,7 @@ implementation {
     task void recvTask(void)
     {
         udp_msg_t *udpMsg = call RecvQ.dequeue();
-        
+       
         decodeMessage(udpMsg);
 
         /* Free up memory */
@@ -197,7 +218,7 @@ implementation {
         if (!prepareMessage(msg, &paramStart))
             return;
 
-        if (strncmp(msg, "ok\0", 3) == 0)
+        if (strncmp((char *) msg->data, "ok\0", 3) == 0)
         {
             //add: ok\rid=...\n signal savedChannel
             //get: ok\rid=...,freq=...,name=...,qdial=...,picode=...,note=...\n signal receivedChannelEntry
@@ -220,26 +241,31 @@ implementation {
                 {
                     /* add or get respond with just the id */
                     if (strchr(sp, ',') == NULL)
-                        signal savedChannel(id, 0);
+                        signal Database.savedChannel(id, 0);
                     /* We got some channel response */ 
                     else
                     {
+                        char name[8];
+                        char notes[40];
+                        channelInfo channel;
+                        channel.name = name;
+                        channel.notes = notes;
                         if (parseChannelInfo(k, &channel))
-                            signal receivedChannelEntry(id, channel);
+                            signal Database.receivedChannelEntry(id, channel);
                     }   
                 }
             }
             //TODO deal with list response at this point
             //TODO put all ids in a queue and call getChannel for every entry
         }
-        else if (strncmp(msg, "err\0", 4) == 0)
+        else if (strncmp((char *) msg->data, "err\0", 4) == 0)
         {
             //add: err\rcmd=add,msg=...\n signal savedChannel
             //update: err\rcmd=update,msg=...\n signal savedChannel
             //get: err\rcmd=update,msg=...\n
             //purgeall: err\rcmd=update,msg=...\n
             
-            char *k, *sp;
+            char *k, *v, *sp;
             char workBuf[msg->len-3];
             uint8_t cmd = 0;
             uint8_t res = 0;
@@ -248,7 +274,7 @@ implementation {
             
             k = strtok_r(workBuf, "=", &sp);
             if (k == NULL) 
-                return FALSE;
+                return;
 
             while (k != NULL)
             {
@@ -277,7 +303,7 @@ implementation {
             }
 
             if (cmd != 0)
-                signal savedChannel(0xff, res); //TODO which ID to signal?
+                signal Database.savedChannel(0xff, res); //TODO which ID to signal?
         }
     }
 
@@ -290,7 +316,7 @@ implementation {
         msg->data[msg->len-1] = '\0';
 
         /* Search start of parameter string */
-        *paramStart = strchr(msg->data, '\r');
+        *paramStart = (uint8_t *) strchr((char *) msg->data, '\r');
         if (*paramStart != NULL)
         {
             **paramStart = '\0';
@@ -319,8 +345,8 @@ implementation {
             {
                 uint16_t freq = (uint16_t) strtol(v, NULL, 10);
                 if (freq < 875 || freq > 1080)
-                    return FALSE
-                channel->freq = freq;
+                    return FALSE;
+                channel->frequency = freq;
             } 
             else if (strcmp("picode", k) == 0) 
             {
@@ -338,7 +364,7 @@ implementation {
             else if (strcmp("name", k) == 0) 
             {
                 //TODO what is it doing???
-                snprintf(channel->name, 9, "%-8s", name);
+                snprintf(channel->name, 9, "%-8s", v);
                 channel->name[8] = '\0';
                 
                 sp += 8;
@@ -350,7 +376,7 @@ implementation {
             } 
             else if (strcmp("note", k) == 0) 
             {
-                strncpy(channel->note, note, 40);
+                strncpy(channel->notes, v, 40);
                 channel->name[40] = '\0';
                  
                 /* According to specification, note is the last parameter */
@@ -390,11 +416,12 @@ implementation {
 
     event void UdpReceive.received(in_addr_t *srcIp, uint16_t srcPort, uint8_t *data, uint16_t len)
     {
+        udp_msg_t *udpMsg = call MsgPool.get();
+        
         /* Truncate message if too long */
         if (len > MAX_MSG_LEN)
-            len = MAX_MSG_LEN
+            len = MAX_MSG_LEN;
 
-        udp_msg_t *udpMsg = call MsgPool.get();
         memcpy(udpMsg->data, data, len);
         udpMsg->len = len;
         call RecvQ.enqueue(udpMsg);
@@ -403,5 +430,14 @@ implementation {
             post recvTask();
     }
 
+    event void Control.startDone(error_t error)
+    {
+
+    }
+
+    event void Control.stopDone(error_t error)
+    {
+
+    }
 }
 
