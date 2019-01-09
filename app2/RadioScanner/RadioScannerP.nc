@@ -61,7 +61,8 @@ implementation {
     ////////////////////////
     /* Tasks              */
     ////////////////////////
-    
+   
+    //TODO clear RDS buffers between channel switches
     task void handleChar(void)
     {
         char c;
@@ -160,8 +161,11 @@ implementation {
 
     task void readyScreen(void)
     {
+        channelInfo chan = {1, 1038, 12345, "  FM4   ", "YOLO"};
         call Glcd.fill(0x00);
         call Glcd.drawText("Radio initialized.", 0, 10);
+        call DB.saveChannel(1, &chan);
+        //call DB.purgeChannelList();
     }
 
     task void radioInitFail(void)
@@ -331,6 +335,6 @@ implementation {
 
     event void DB.savedChannel(uint8_t id, uint8_t result)
     {
-
+        call Glcd.drawText("sc ev", 0, 40);
     }
 }

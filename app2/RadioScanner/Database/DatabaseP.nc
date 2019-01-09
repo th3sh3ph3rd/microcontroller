@@ -66,8 +66,8 @@ implementation {
         char ipBuf[17];
 
         call IpControl.setIp(&cip);
-        call IpControl.setIp(&cnm);
-        call IpControl.setIp(&cgw);
+        call IpControl.setNetmask(&cnm);
+        call IpControl.setGateway(&cgw);
 
         ip = call IpControl.getIp();
 
@@ -98,7 +98,7 @@ implementation {
 
         /* Compose udp message */
         sprintf(udpMsg->data, "add\rid=%d,name=%s,qdial=%d,freq=%d,picode=%d,note=%s\n",
-                id, channel->name, channel->quickDial, channel->frequency, channel->pi_code);
+                id, channel->name, channel->quickDial, channel->frequency, channel->pi_code, channel->notes);
         udpMsg->data[MAX_MSG_LEN-1] = '\0';
         udpMsg->len = strlen(udpMsg->data);
 
@@ -161,8 +161,8 @@ implementation {
         memset(udpMsg->data, 0, MAX_MSG_LEN);
 
         /* Compose udp message */
-        sprintf(udpMsg->data, "purgeall\r\n");
-        udpMsg->len = strlen(udpMsg->data);
+        sprintf((char *) udpMsg->data, "purgeall\r\n");
+        udpMsg->len = strlen((char *) udpMsg->data)+1;
 
         call SendQ.enqueue(udpMsg);
 
@@ -178,7 +178,7 @@ implementation {
     {
         if (! (call SendQ.empty()))
         {
-            static in_addr_t destination = { .bytes {DESTINATION}};
+            in_addr_t destination = { .bytes {DESTINATION}};
             udp_msg_t *udpMsg = call SendQ.head();
 
             //TODO repost task on error?
@@ -417,7 +417,9 @@ implementation {
     event void UdpReceive.received(in_addr_t *srcIp, uint16_t srcPort, uint8_t *data, uint16_t len)
     {
         udp_msg_t *udpMsg = call MsgPool.get();
-        
+       
+        call Glcd.drawText(data, 0, 50);
+
         /* Truncate message if too long */
         if (len > MAX_MSG_LEN)
             len = MAX_MSG_LEN;
@@ -435,6 +437,7 @@ implementation {
 
     }
 
+    //TODO maybe do some error handling
     event void Control.stopDone(error_t error)
     {
 
