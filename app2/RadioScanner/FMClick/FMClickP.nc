@@ -702,7 +702,6 @@ implementation {
                         blocks = rds.PSBlocks;
                         rds.PSBlocks = (rds.PSBlocks+1) & (PS_BLOCKS-1);
                     }
-                    //TODO maybe copy to different buffer for signalling
                     if (blocks == PS_BLOCKS-1)
                         signal FMClick.rdsReceived(PS, rds.PS);
                     break;
@@ -718,24 +717,30 @@ implementation {
                         blocks = rds.RTBlocks;
                         rds.RTBlocks = (rds.RTBlocks+1) & (RT_BLOCKS-1);
                     }
-                    //TODO maybe copy to different buffer for signalling
                     if (blocks == RT_BLOCKS-1)
+                    {
                         signal FMClick.rdsReceived(RT, rds.RT);
-                break;
+                        memset(rds.RT, 0, RT_BUF_SZ);
+                        rds.RTBlocks = 0;
+                    }
+                    break;
 
-//                case GT_2B:
-//                    offset = ((uint8_t)RDSB) & 0x0f;
-//                    atomic 
-//                    { 
-//                        rds.RT[(offset<<1)] = (char)(RDSD >> 8);
-//                        rds.RT[(offset<<1)+1] = (char)RDSD;
-//                        blocks = rds.RTBlocks;
-//                        rds.RTBlocks = (rds.RTBlocks+1) & (RT_BLOCKS-1);
-//                    }
-//                    //TODO maybe copy to different buffer for signalling
-//                    if (blocks == RT_BLOCKS-1)
-//                        signal FMClick.rdsReceived(RT, rds.RT);
-//                    break;
+                case GT_2B:
+                    offset = ((uint8_t)RDSB) & 0x0f;
+                    atomic 
+                    { 
+                        rds.RT[(offset<<1)] = (char)(RDSD >> 8);
+                        rds.RT[(offset<<1)+1] = (char)RDSD;
+                        blocks = rds.RTBlocks;
+                        rds.RTBlocks = (rds.RTBlocks+1) & (RT_BLOCKS-1);
+                    }
+                    if (blocks == RT_BLOCKS-1)
+                    {
+                        signal FMClick.rdsReceived(RT, rds.RT);
+                        memset(rds.RT, 0, RT_BUF_SZ);
+                        rds.RTBlocks = 0;
+                    }
+                    break;
                 
                 case GT_4A:
                     hours = (uint8_t)(RDSD >> 12) | ((uint8_t)(RDSC << 4) & 0x10);
