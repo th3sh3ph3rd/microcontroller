@@ -97,8 +97,12 @@ implementation {
         memset(udpMsg->data, 0, MAX_MSG_LEN);
 
         /* Compose udp message */
-        sprintf(udpMsg->data, "add\rid=%d,name=%s,qdial=%d,freq=%d,picode=%d,note=%s\n",
-                id, channel->name, channel->quickDial, channel->frequency, channel->pi_code, channel->notes);
+        if (id == 0xff)
+            sprintf(udpMsg->data, "add\rid=%d,name=%s,qdial=%d,freq=%d,picode=%d,note=%s\n",
+                    0, channel->name, channel->quickDial, channel->frequency, channel->pi_code, channel->notes);
+        else if (id >= 0 && id <= 15)
+            sprintf(udpMsg->data, "update\rid=%d,name=%s,qdial=%d,freq=%d,picode=%d,note=%s\n",
+                    id, channel->name, channel->quickDial, channel->frequency, channel->pi_code, channel->notes);
         udpMsg->data[MAX_MSG_LEN-1] = '\0';
         udpMsg->len = strlen(udpMsg->data);
 
@@ -121,8 +125,8 @@ implementation {
         memset(udpMsg->data, 0, MAX_MSG_LEN);
 
         /* Compose udp message */
-        sprintf(udpMsg->data, "list\r\n");
-        udpMsg->len = strlen(udpMsg->data);
+        sprintf((char *) udpMsg->data, "list\r\n");
+        udpMsg->len = strlen((char *) udpMsg->data);
 
         call SendQ.enqueue(udpMsg);
 
@@ -141,8 +145,8 @@ implementation {
         memset(udpMsg->data, 0, MAX_MSG_LEN);
 
         /* Compose udp message */
-        sprintf(udpMsg->data, "get\rid=%d\n", id);
-        udpMsg->len = strlen(udpMsg->data);
+        sprintf((char *) udpMsg->data, "get\rid=%d\n", id);
+        udpMsg->len = strlen((char *) udpMsg->data);
 
         call SendQ.enqueue(udpMsg);
 
@@ -217,6 +221,8 @@ implementation {
         /* Invalid message */
         if (!prepareMessage(msg, &paramStart))
             return;
+        
+        //call Glcd.drawText(msg->data, 0, 20);
 
         if (strncmp((char *) msg->data, "ok\0", 3) == 0)
         {
@@ -255,8 +261,24 @@ implementation {
                     }   
                 }
             }
-            //TODO deal with list response at this point
-            //TODO put all ids in a queue and call getChannel for every entry
+            else
+            {
+                uint8_t id;
+                sp = NULL;
+                memcpy(workBuf, paramStart, msg->len-3);
+                workBuf[msg->len-2] = '\0'; 
+
+                k = strtok_r(workBuf, ",", &sp);
+
+                while (k != NULL)
+                {
+                    id = (uint8_t) strtol(k, NULL, 10);
+                    if (id >= 0 && id <= 15)
+                        call Database.getChannel(id);
+
+                    k = strtok_r(NULL, ",", &sp);
+                }
+            }
         }
         else if (strncmp((char *) msg->data, "err\0", 4) == 0)
         {
@@ -270,7 +292,7 @@ implementation {
             uint8_t cmd = 0;
             uint8_t res = 0;
             memcpy(workBuf, paramStart, msg->len-4);
-            workBuf[msg->len-3] = '\0'; //TODO is this needed?
+            workBuf[msg->len-3] = '\0'; 
             
             k = strtok_r(workBuf, "=", &sp);
             if (k == NULL) 
@@ -320,11 +342,11 @@ implementation {
         if (*paramStart != NULL)
         {
             **paramStart = '\0';
-            *paramStart++;
+            (*paramStart)++;
         } 
         else 
             *paramStart = &msg->data[msg->len-1];
-
+        
         return TRUE;    
     }
 
@@ -404,10 +426,9 @@ implementation {
     ////////////////////////
 
     event void UdpSend.sendDone(error_t error)
-    {
+    {    
         /* Free up memory and remove queue entry */
         call MsgPool.put(call SendQ.dequeue());
-
         if (! (call SendQ.empty()))
             post sendTask();
         else

@@ -21,7 +21,7 @@ configuration DatabaseC {
 
 implementation {
     //TODO tweak accordingly
-    #define SEND_Q_LEN  5
+    #define SEND_Q_LEN  20
     #define RECV_Q_LEN  5
     #define POOL_SIZE (SEND_Q_LEN+RECV_Q_LEN)
 

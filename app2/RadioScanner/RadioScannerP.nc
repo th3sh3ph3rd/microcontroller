@@ -161,11 +161,20 @@ implementation {
 
     task void readyScreen(void)
     {
-        channelInfo chan = {1, 1038, 12345, "  FM4   ", "YOLO"};
+        channelInfo chan1 = {1, 1038, 12345, "  FM4   ", "YOLO"};
+        channelInfo chan2 = {1, 1038, 12345, "  OE3   ", ""};
+        channelInfo chan3 = {1, 1038, 12345, "  OE1   ", "yo servas habe dere"};
+        channelInfo chan4 = {1, 920, 15645, "  OE23  ", "78489hj 893zlaw8z jkhsdf "};
         call Glcd.fill(0x00);
         call Glcd.drawText("Radio initialized.", 0, 10);
-        call DB.saveChannel(1, &chan);
+        //call DB.saveChannel(1, &chan1);
+        //call DB.saveChannel(1, &chan2);
+        //call DB.saveChannel(1, &chan3);
+        //call DB.saveChannel(1, &chan4);
         //call DB.purgeChannelList();
+        //call DB.getChannel(0);
+        //call DB.getChannelList(FALSE);
+        //call DB.saveChannel(7, &chan4);
     }
 
     task void radioInitFail(void)
@@ -330,11 +339,13 @@ implementation {
     
     event void DB.receivedChannelEntry(uint8_t id, channelInfo channel)
     {
-
+        char buf[128];
+        sprintf(buf, "q=%d,f=%d,p=%d,n=%s,n=%s\n", channel.quickDial, channel.frequency, channel.pi_code, channel.name, channel.notes);
+        call Glcd.drawText(buf, 0, 40);
     }
 
     event void DB.savedChannel(uint8_t id, uint8_t result)
     {
-        call Glcd.drawText("sc ev", 0, 40);
+        //call Glcd.drawText("sc ev", 0, 40);
     }
 }
