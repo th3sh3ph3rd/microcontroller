@@ -173,7 +173,7 @@ implementation {
         uint8_t PSBlocks;
         uint8_t RTBlocks;
         uint8_t CTBlocks;
-        char PS[PS_BUF_SZ];
+        char PS[PS_BUF_SZ+2];
         char RT[RT_BUF_SZ];
         char CT[CT_BUF_SZ];
     } rds;
@@ -340,6 +340,7 @@ implementation {
         {
             call Int.clear();
             call Int.enable();
+
             atomic 
             { 
                 shadowRegisters[SYSCONF1_REG] |= RDS_MASK | RDSIEN_MASK;
@@ -349,6 +350,10 @@ implementation {
                 writeAddr = SYSCONF1_REG;
                 states.driver = RDS;
             }
+
+            memset(rds.PS, ' ', PS_BUF_SZ);
+            memset(rds.RT, ' ', RT_BUF_SZ);
+            memset(rds.CT, ' ', CT_BUF_SZ);
         }
         else
         {
@@ -697,13 +702,21 @@ implementation {
                     offset = ((uint8_t)RDSB) & 0x03;
                     atomic 
                     { 
+                        /* PI code */
+                        rds.PS[PS_BUF_SZ+1] = (char) (RDSA >> 8);
+                        rds.PS[PS_BUF_SZ+2] = (char) RDSA;
+                        /* Station Name */
                         rds.PS[offset<<1] = (char)(RDSD >> 8);
                         rds.PS[(offset<<1)+1] = (char)RDSD;
                         blocks = rds.PSBlocks;
                         rds.PSBlocks = (rds.PSBlocks+1) & (PS_BLOCKS-1);
                     }
                     if (blocks == PS_BLOCKS-1)
+                    {
                         signal FMClick.rdsReceived(PS, rds.PS);
+                        memset(rds.PS, ' ', PS_BUF_SZ);
+                        rds.PSBlocks = 0;
+                    }
                     break;
                 
                 case GT_2A:
@@ -720,7 +733,7 @@ implementation {
                     if (blocks == RT_BLOCKS-1)
                     {
                         signal FMClick.rdsReceived(RT, rds.RT);
-                        memset(rds.RT, 0, RT_BUF_SZ);
+                        memset(rds.RT, ' ', RT_BUF_SZ);
                         rds.RTBlocks = 0;
                     }
                     break;
@@ -737,7 +750,7 @@ implementation {
                     if (blocks == RT_BLOCKS-1)
                     {
                         signal FMClick.rdsReceived(RT, rds.RT);
-                        memset(rds.RT, 0, RT_BUF_SZ);
+                        memset(rds.RT, ' ', RT_BUF_SZ);
                         rds.RTBlocks = 0;
                     }
                     break;

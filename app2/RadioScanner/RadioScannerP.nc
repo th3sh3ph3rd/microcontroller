@@ -51,6 +51,7 @@ implementation {
     #define CT_BUF_SZ   6
     struct
     {
+        uint16_t piCode;
         char PS[PS_BUF_SZ+1];
         char RT[RT_BUF_SZ+1];
         char CT[CT_BUF_SZ];
@@ -219,7 +220,9 @@ implementation {
 
     task void handleRDS(void)
     {
-        char line1[21], line2[21], line3[25];
+        char piCode[6], line1[21], line2[21], line3[25];
+        sprintf(piCode, "%d", rds.piCode);
+        piCode[5] = '\0';
         memcpy(line1, rds.RT, 20);
         memcpy(line2, rds.RT+20, 20);
         memcpy(line3, rds.RT+40, 24);
@@ -229,6 +232,7 @@ implementation {
 
         call Glcd.fill(0x00);
         call Glcd.drawText(rds.PS, 0, 20);
+        call Glcd.drawText(piCode, 50, 20);
 //        call Glcd.drawText(rds.RT, 0, 30);
         call Glcd.drawText(line1, 0, 30);
         call Glcd.drawText(line2, 0, 40);
@@ -304,6 +308,8 @@ implementation {
             case PS:
                 memset(rds.PS, 0, PS_BUF_SZ+1);
                 memcpy(rds.PS, buf, PS_BUF_SZ);
+                rds.piCode = ((uint16_t)buf[PS_BUF_SZ+2]) & 0x00ff;
+                rds.piCode |= ((uint16_t)buf[PS_BUF_SZ+1]) << 8;
                 post handleRDS();
                 break;
 
