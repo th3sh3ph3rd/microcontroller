@@ -133,7 +133,7 @@ implementation {
     uint8_t comBuffer[REGISTER_NUM*REGISTER_WIDTH];
     uint8_t writeAddr;
 
-    enum driver_state {IDLE, INIT, TUNE, SEEK, VOL, RDS};
+    enum driver_state {IDLE, INIT, TUNE, SEEK, RDS};
     enum com_state {REQ, COM};
     enum bus_state {NOOP, READ, WRITE};
     enum init_state {SETUP,INITREG, XOSCEN, WAITXOSC, ENABLE, WAITPOWERUP, READREGF, CONFIG, FINISH};
@@ -326,7 +326,6 @@ implementation {
  
         atomic
         { 
-            states.driver = VOL;
             shadowRegisters[SYSCONF2_REG] = (shadowRegisters[SYSCONF2_REG] & ~VOLUME_MASK) | 
                                             (volume & VOLUME_MASK);
             writeAddr = SYSCONF2_REG;
@@ -345,6 +344,7 @@ implementation {
     {
         enum driver_state state;
         bool en;
+
         atomic 
         { 
             en = RDSen;
@@ -609,7 +609,8 @@ implementation {
         {
             call Glcd.drawText("d", 0, 30);
             /* Read sfbl bit and channel and disable seeking */
-            atomic {   
+            atomic 
+            {   
                 sfbl = (uint8_t)((shadowRegisters[STATRSSI_REG] & SFBL_MASK) >> 8);
                 currChannel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + BAND_LOW_END;
                 shadowRegisters[POWERCONF_REG] &= ~SEEK_MASK;
@@ -660,11 +661,7 @@ implementation {
                 /* Reached band end / no valid channel found */
                 else
                 {
-                    atomic 
-                    { 
-                        rds.RTMaxBlocks = RT_BLOCKS-1;
-                        states.driver = IDLE; 
-                    }
+                    atomic { states.driver = IDLE; }
                     if (RDSen)
                         enableRDS(TRUE);
                 }
@@ -722,8 +719,8 @@ implementation {
                     atomic 
                     { 
                         /* PI code */
-                        rds.PS[PS_BUF_SZ+1] = (char) (RDSA >> 8);
-                        rds.PS[PS_BUF_SZ+2] = (char) RDSA;
+                        rds.PS[PS_BUF_SZ] = (char) (RDSA >> 8);
+                        rds.PS[PS_BUF_SZ+1] = (char) RDSA;
                         /* Station Name */
                         rds.PS[offset<<1] = (char)(RDSD >> 8);
                         rds.PS[(offset<<1)+1] = (char)RDSD;
@@ -747,7 +744,7 @@ implementation {
                         rds.RT[(offset<<2)+2] = (char)(RDSD >> 8);
                         rds.RT[(offset<<2)+3] = (char)RDSD;
                     }
-                    /* Some stations don't adhere to the standard, and just terminate RDS
+                    /* Some stations don't adhere to the standard and just terminate RDS
                      * info with '\r' instead of sending all blocks */
                     if (rds.RT[offset<<2] == '\r' ||
                         rds.RT[(offset<<2)+1] == '\r' ||
@@ -776,7 +773,7 @@ implementation {
                         rds.RT[(offset<<1)] = (char)(RDSD >> 8);
                         rds.RT[(offset<<1)+1] = (char)RDSD;
                     }
-                    /* Some stations don't adhere to the standard, and just terminate RDS
+                    /* Some stations don't adhere to the standard and just terminate RDS
                      * info with '\r' instead of sending all blocks */
                     if (rds.RT[offset<<1] == '\r' ||
                         rds.RT[(offset<<1)+1] == '\r')
@@ -933,9 +930,6 @@ implementation {
     {
         if (enable)
         {
-            call Int.clear();
-            call Int.enable();
-
             atomic 
             { 
                 shadowRegisters[SYSCONF1_REG] |= (RDS_MASK | RDSIEN_MASK);
@@ -948,6 +942,9 @@ implementation {
             memset(rds.PS, ' ', PS_BUF_SZ);
             memset(rds.RT, ' ', RT_BUF_SZ);
             memset(rds.CT, ' ', CT_BUF_SZ);
+            
+            call Int.clear();
+            call Int.enable();
         }
         else
         {
@@ -1052,10 +1049,6 @@ implementation {
                 post seek();
                 break;
             
-            case VOL:
-                atomic { states.driver = IDLE; }
-                break;
-            
             default:
                 break;
         }
@@ -1065,10 +1058,6 @@ implementation {
     {
         enum driver_state state;
         atomic { state = states.driver; }
-
-        /* TUNE and SEEK only need a single interrupt */
-        //if (TUNE == state || SEEK == state)
-        //    call Int.disable();
         
         switch (state)
         {

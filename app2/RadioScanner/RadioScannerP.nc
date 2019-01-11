@@ -62,6 +62,7 @@ implementation {
     uint8_t newVolume;
 
     task void inputTuneChannel(void);
+    task void displayChannelInfo(void);
     task void setVolume(void);
 
     static void printVolume(void);
@@ -193,10 +194,10 @@ implementation {
         //call Glcd.fill(0x00);
         call Glcd.drawText("Radio init failed!", 0, 10);
     }
-
-    task void finishedTuning(void)
+    
+    task void displayChannelInfo(void)
     {
-        char buf[5];
+        char freqBuf[5];
         uint16_t chan;
         
         atomic 
@@ -205,50 +206,31 @@ implementation {
             appState = KBCTRL; 
         }
 
-        sprintf(buf, "%u", chan);
-        call Glcd.drawText("tuned to station", 0, 10);
-        call Glcd.drawText(buf, 0, 40);
-        
-        call Radio.receiveRDS(TRUE);
-    }
+        sprintf(freqBuf, "%d.%d", chan/10, chan%10);
+        call Glcd.fill(0x00);
+        call Glcd.drawText("Channel: ", 0, 7);
+        call Glcd.drawText(freqBuf, 54, 7);
+        call Glcd.drawText("MHz", 94, 7);
 
-    task void finishedSeeking(void)
-    {
-        char buf[5];
-        uint16_t chan;
-        
-        atomic 
-        { 
-            chan = currChan;
-            appState = KBCTRL; 
-        }
-
-        sprintf(buf, "%u", chan);
-        call Glcd.drawText("next station", 0, 10);
-        call Glcd.drawText(buf, 0, 40);
         call Radio.receiveRDS(TRUE);
     }
 
     task void handleRDS(void)
     {
-        char piCode[6], line1[21], line2[21], line3[25];
-        sprintf(piCode, "%d", rds.piCode);
-        piCode[5] = '\0';
-        memcpy(line1, rds.RT, 20);
-        memcpy(line2, rds.RT+20, 20);
-        memcpy(line3, rds.RT+40, 24);
-        line1[20] = '\0';
-        line2[20] = '\0';
-        line3[24] = '\0';
+        char line1[22], line2[22], line3[23];
+        memcpy(line1, rds.RT, 21);
+        memcpy(line2, rds.RT+21, 21);
+        memcpy(line3, rds.RT+42, 22);
+        line1[21] = '\0';
+        line2[21] = '\0';
+        line3[22] = '\0';
 
         call Glcd.fill(0x00);
-        call Glcd.drawText(rds.PS, 0, 20);
-        call Glcd.drawText(piCode, 50, 20);
-//        call Glcd.drawText(rds.RT, 0, 30);
-        call Glcd.drawText(line1, 0, 30);
-        call Glcd.drawText(line2, 0, 40);
-        call Glcd.drawText(line3, 0, 50);
-        call Glcd.drawText(rds.CT, 0, 60);
+        call Glcd.drawText(rds.PS, 0, 15);
+        call Glcd.drawText(rds.CT, 54, 15);
+        call Glcd.drawText(line1, 122, 23);
+        call Glcd.drawText(line2, 122, 31);
+        call Glcd.drawText(line3, 122, 39);
     }
 
     /* 
@@ -326,24 +308,14 @@ implementation {
 
     async event void Radio.tuneComplete(uint16_t channel)
     {
-        enum app_state state; 
-        
-        atomic 
-        { 
-            currChan = channel;
-            state = appState;
-        }
-       
-        if (BANDSEEK == state)
-            post seekBand();
-        else
-            post finishedTuning();
+        atomic { currChan = channel; }
+        post displayChannelInfo();
     }
 
     async event void Radio.seekComplete(uint16_t channel)
     {
         atomic { currChan = channel; }
-        post finishedSeeking();
+        post displayChannelInfo();
     }
    
     //TODO only post task if app is idle
@@ -355,8 +327,8 @@ implementation {
             case PS:
                 memset(rds.PS, 0, PS_BUF_SZ+1);
                 memcpy(rds.PS, buf, PS_BUF_SZ);
-                rds.piCode = ((uint16_t)buf[PS_BUF_SZ+2]) & 0x00ff;
-                rds.piCode |= ((uint16_t)buf[PS_BUF_SZ+1]) << 8;
+                rds.piCode = ((uint16_t)buf[PS_BUF_SZ+1]) & 0x00ff;
+                rds.piCode |= ((uint16_t)buf[PS_BUF_SZ]) << 8;
                 post handleRDS();
                 break;
 
