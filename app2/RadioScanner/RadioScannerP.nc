@@ -17,6 +17,7 @@ module RadioScannerP {
     {
         interface Boot;
         interface Glcd;
+        interface BufferedLcd as Lcd;
         interface Init as DBInit;
         interface Database as DB;
         interface Init as RadioInit;
@@ -57,7 +58,13 @@ implementation {
         char CT[CT_BUF_SZ];
     } rds;
 
-    task void inputTuneChannel();
+    uint8_t oldVolume;
+    uint8_t newVolume;
+
+    task void inputTuneChannel(void);
+    task void setVolume(void);
+
+    static void printVolume(void);
 
     ////////////////////////
     /* Tasks              */
@@ -239,10 +246,38 @@ implementation {
         call Glcd.drawText(line3, 0, 50);
         call Glcd.drawText(rds.CT, 0, 60);
     }
+
+    /* 
+     * @brief Set the volume on the FMClick board if the value has changed.
+     */
+    task void setVolume(void)
+    {
+        if (newVolume != oldVolume)
+        {
+            call Radio.setVolume(newVolume);
+            oldVolume = newVolume;
+            printVolume();
+        }
+    }
     
     ////////////////////////
     /* Internal functions */
     ////////////////////////
+   
+    /* 
+     * @brief Print the current volume value on the lcd screen.
+     */
+    static void printVolume(void)
+    {
+        char volBuf[3];
+        
+        sprintf(volBuf, "%02d", oldVolume);
+        volBuf[2] = '\0';
+
+        call Lcd.goTo(0,8);
+        call Lcd.write(volBuf);
+        call Lcd.forceRefresh();
+    }
     
     ////////////////////////
     /* Events */
@@ -251,6 +286,14 @@ implementation {
     event void Boot.booted()
     {
         atomic { appState = INIT; }
+
+        oldVolume = 0;
+        newVolume = 0;
+
+        call Lcd.goTo(0,0);
+        call Lcd.write("Volume:");
+        printVolume();
+
         call Glcd.fill(0x00);
         call Keyboard.init();
         call RadioInit.init();
@@ -335,12 +378,10 @@ implementation {
         call volumeKnob.read();
     }
 
-    //TODO only set volume if value has actually changed
     event void volumeKnob.readDone(error_t res, uint16_t val)
     {
-        //TODO maybe post task
-        //TODO maybe use logarithmic scaling
-        call Radio.setVolume((uint8_t)(val >> 6));    
+        newVolume = (uint8_t)(val >> 6);
+        post setVolume();
     }
     
     event void DB.receivedChannelEntry(uint8_t id, channelInfo channel)

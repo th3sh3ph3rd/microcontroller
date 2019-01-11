@@ -8,8 +8,9 @@
  *
 **/
 
+//TODO RDS - enable
+//maybe atomatically enable/disable before/after seek/tune, based on current setting
 //TODO read only required registers
-//TODO remove volume block state
 
 #include <stdio.h>
 #include <string.h>
@@ -153,6 +154,8 @@ implementation {
         enum rds_state      rds;
     } states;
 
+    bool RDSen;
+
     uint16_t currChannel;
     uint16_t nextChannel;
     seekmode_t seekMode;
@@ -213,6 +216,7 @@ implementation {
             states.write = REQ;
             states.bus = NOOP;
             states.init = SETUP;
+            RDSen = FALSE;
             memset(shadowRegisters, 0, sizeof(shadowRegisters));
             memset(comBuffer, 0, sizeof(comBuffer));
         }
@@ -331,7 +335,7 @@ implementation {
         enum driver_state state;
         atomic { state = states.driver; }
        
-        if (IDLE != state && RDS != state)
+        if (IDLE != state)
             return FAIL;
 
         //TODO compare with current RDS state and only send command if it changed
@@ -348,7 +352,7 @@ implementation {
                 rds.RTBlocks = 0;
                 rds.CTBlocks = 0;
                 writeAddr = SYSCONF1_REG;
-                states.driver = RDS;
+                RDSen = TRUE;
             }
 
             memset(rds.PS, ' ', PS_BUF_SZ);
@@ -362,6 +366,7 @@ implementation {
             { 
                 shadowRegisters[SYSCONF1_REG] &= ~(RDS_MASK | RDSIEN_MASK); 
                 writeAddr = SYSCONF1_REG;
+                RDSen = FALSE;
                 states.driver = IDLE;
             }
         }
@@ -669,7 +674,11 @@ implementation {
     {
         enum rds_state state;
         
-        atomic { state = states.rds; }
+        atomic 
+        {
+            states.driver = RDS;
+            state = states.rds; 
+        }
         
         if (READRDS == state)
         {
@@ -764,12 +773,12 @@ implementation {
                     if (RDSD & 0x0020)
                     {
                         hours -= localOffset >> 1;
-                        minutes -= localOffset & 0x01;
+                        //minutes -= 30*(localOffset & 0x01);
                     }
                     else
                     {
                         hours += localOffset >> 1;
-                        minutes += localOffset & 0x01;
+                        //minutes += 30*(localOffset & 0x01);
                     }
 
                     atomic
@@ -785,7 +794,11 @@ implementation {
                     break;
             }
 
-            atomic { states.rds = READRDS; }
+            atomic 
+            { 
+                states.rds = READRDS;
+                states.driver = IDLE;
+            }
         }
     }
 
@@ -1003,8 +1016,9 @@ implementation {
                 post seek();
                 break;
             
-            case RDS:
-                post decodeRDS();
+            case IDLE:
+                if (RDSen)
+                    post decodeRDS();
                 break;
             
             default:
