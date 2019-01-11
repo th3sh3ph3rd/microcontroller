@@ -87,17 +87,20 @@ implementation {
             switch (c)
             {
                 case 'h':
+                    call Radio.receiveRDS(FALSE);
                     atomic { appState = SEEK; }
                     call Radio.seek(DOWN);
                     break;
 
                 case 'l':
+                    call Radio.receiveRDS(FALSE);
                     atomic { appState = SEEK; }
                     call Radio.seek(UP);
                     break;
                 
                 //TODO tune to channel 0 (875) before seek
                 case 's':
+                    call Radio.receiveRDS(FALSE);
                     atomic { appState = BANDSEEK; }
                     //call Radio.tune(875);
                     call Radio.seek(BAND);
@@ -223,6 +226,7 @@ implementation {
         sprintf(buf, "%u", chan);
         call Glcd.drawText("next station", 0, 10);
         call Glcd.drawText(buf, 0, 40);
+        call Radio.receiveRDS(TRUE);
     }
 
     task void handleRDS(void)

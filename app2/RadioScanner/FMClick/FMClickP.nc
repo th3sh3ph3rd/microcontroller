@@ -176,6 +176,7 @@ implementation {
         uint8_t PSBlocks;
         uint8_t RTBlocks;
         uint8_t CTBlocks;
+        uint8_t RTMaxBlocks;
         char PS[PS_BUF_SZ+2];
         char RT[RT_BUF_SZ];
         char CT[CT_BUF_SZ];
@@ -191,6 +192,7 @@ implementation {
     void readRegisters(void);
     void registerWriteback(void);
     void writeRegisters(void);
+    void enableRDS(bool enable);
 
     ////////////////////////
     /* Interface commands */
@@ -249,6 +251,7 @@ implementation {
     command error_t FMClick.tune(uint16_t channel)
     {
         enum driver_state state;
+
         atomic { state = states.driver; }
         
         if (IDLE != state)
@@ -265,6 +268,8 @@ implementation {
             nextChannel = channel;
         }
 
+        call Int.disable();
+        call Int.clear();
         post tune();
         return SUCCESS;
     }
@@ -291,6 +296,8 @@ implementation {
             seekMode = mode;
         }
 
+        call Int.disable();
+        call Int.clear();
         post seek();
         return SUCCESS;
     }
@@ -329,49 +336,29 @@ implementation {
         return SUCCESS;
     }
 
-    //TODO maybe forcefully disable receiving RDS if seeking/tuning
+    /*
+     * @brief           Set the volume of the sound output on the FMClick module.
+     * @param volume    The volume to set (max. 15).
+     * @return          If volume setting was started, SUCCESS is returned, else FAIL.
+     */
     command error_t FMClick.receiveRDS(bool enable)
     {
         enum driver_state state;
-        atomic { state = states.driver; }
+        bool en;
+        atomic 
+        { 
+            en = RDSen;
+            state = states.driver; 
+        }
        
-        if (IDLE != state)
+        if (IDLE != state && RDS != state)
             return FAIL;
 
-        //TODO compare with current RDS state and only send command if it changed
-
-        if (enable)
+        if (enable != en)
         {
-            call Int.clear();
-            call Int.enable();
-
-            atomic 
-            { 
-                shadowRegisters[SYSCONF1_REG] |= RDS_MASK | RDSIEN_MASK;
-                rds.PSBlocks = 0;
-                rds.RTBlocks = 0;
-                rds.CTBlocks = 0;
-                writeAddr = SYSCONF1_REG;
-                RDSen = TRUE;
-            }
-
-            memset(rds.PS, ' ', PS_BUF_SZ);
-            memset(rds.RT, ' ', RT_BUF_SZ);
-            memset(rds.CT, ' ', CT_BUF_SZ);
+            atomic { RDSen = enable; } 
+            enableRDS(enable);
         }
-        else
-        {
-            call Int.disable();
-            atomic 
-            { 
-                shadowRegisters[SYSCONF1_REG] &= ~(RDS_MASK | RDSIEN_MASK); 
-                writeAddr = SYSCONF1_REG;
-                RDSen = FALSE;
-                states.driver = IDLE;
-            }
-        }
-
-        writeRegisters();
 
         return SUCCESS;
     }
@@ -460,7 +447,8 @@ implementation {
                 /* Enable RDS verbose mode */
                 //shadowRegisters[POWERCONF_REG] |= RDSM_MASK;
                 /* Enable STC interrupt and configure GPIO2 for interrupt transmission */
-                shadowRegisters[SYSCONF1_REG] = (shadowRegisters[SYSCONF1_REG] & ~(GPIO2_MASK | BLNDADJ_MASK)) |
+                shadowRegisters[SYSCONF1_REG] = (shadowRegisters[SYSCONF1_REG] &
+                                                ~(GPIO2_MASK | BLNDADJ_MASK | RDS_MASK | RDSIEN_MASK)) |
                                                 GPIO2_VAL | BLNDADJ_VAL | STCIEN_MASK | DE_MASK;
                 /* General and regional configuration */
                 shadowRegisters[SYSCONF2_REG] = (shadowRegisters[SYSCONF2_REG] &
@@ -496,7 +484,8 @@ implementation {
             atomic
             {
                 shadowRegisters[CHANNEL_REG] = TUNE_MASK | (CHAN_MASK & (nextChannel - BAND_LOW_END)); 
-                writeAddr = CHANNEL_REG;
+                shadowRegisters[SYSCONF1_REG] &= ~(RDS_MASK | RDSIEN_MASK); 
+                writeAddr = SYSCONF1_REG; 
                 states.tune = WAITTUNE;
             }
             writeRegisters();
@@ -546,7 +535,13 @@ implementation {
             /* Tuning complete */
             if (!stc)
             {
-                atomic { states.driver = IDLE; }
+                atomic 
+                {
+                    rds.RTMaxBlocks = RT_BLOCKS-1;
+                    states.driver = IDLE; 
+                }
+                if (RDSen)
+                    enableRDS(TRUE);
                 signal FMClick.tuneComplete(currChannel);
             }
             /* Read the register file until STC is cleared */
@@ -590,7 +585,8 @@ implementation {
 
             atomic 
             { 
-                writeAddr = POWERCONF_REG; 
+                shadowRegisters[SYSCONF1_REG] &= ~(RDS_MASK | RDSIEN_MASK); 
+                writeAddr = SYSCONF1_REG; 
                 states.seek = WAITSEEK;
             }
             writeRegisters();
@@ -651,11 +647,27 @@ implementation {
                         post seek(); 
                     }
                     else
-                        atomic { states.driver = IDLE; }
+                    {
+                        atomic 
+                        { 
+                            rds.RTMaxBlocks = RT_BLOCKS-1;
+                            states.driver = IDLE; 
+                        }
+                        if (RDSen)
+                            enableRDS(TRUE);
+                    }
                 }
                 /* Reached band end / no valid channel found */
                 else
-                    atomic { states.driver = IDLE; }
+                {
+                    atomic 
+                    { 
+                        rds.RTMaxBlocks = RT_BLOCKS-1;
+                        states.driver = IDLE; 
+                    }
+                    if (RDSen)
+                        enableRDS(TRUE);
+                }
             }
             /* Read the register file until STC is cleared */
             else
@@ -669,7 +681,6 @@ implementation {
     /*
      * @brief Decodeing state machine for RDS messages. Signals rdsReceived().
      */
-    //TODO pass PICode to app
     void task decodeRDS(void)
     {
         enum rds_state state;
@@ -692,7 +703,6 @@ implementation {
             uint8_t offset, blocks;
             uint8_t hours, minutes, localOffset;
 
-            //TODO find out if this buffering is needed
             atomic 
             {
                 RDSA = shadowRegisters[RDSA_REG];
@@ -736,10 +746,22 @@ implementation {
                         rds.RT[(offset<<2)+1] = (char)RDSC;
                         rds.RT[(offset<<2)+2] = (char)(RDSD >> 8);
                         rds.RT[(offset<<2)+3] = (char)RDSD;
-                        blocks = rds.RTBlocks;
-                        rds.RTBlocks = (rds.RTBlocks+1) & (RT_BLOCKS-1);
                     }
-                    if (blocks == RT_BLOCKS-1)
+                    /* Some stations don't adhere to the standard, and just terminate RDS
+                     * info with '\r' instead of sending all blocks */
+                    if (rds.RT[offset<<2] == '\r' ||
+                        rds.RT[(offset<<2)+1] == '\r' ||
+                        rds.RT[(offset<<2)+2] == '\r' ||
+                        rds.RT[(offset<<2)+3] == '\r')
+                    {
+                        rds.RTMaxBlocks = offset;
+                    }
+                    atomic
+                    {
+                        rds.RTBlocks++;
+                        blocks = rds.RTBlocks;
+                    }
+                    if (blocks == rds.RTMaxBlocks+1)
                     {
                         signal FMClick.rdsReceived(RT, rds.RT);
                         memset(rds.RT, ' ', RT_BUF_SZ);
@@ -753,10 +775,20 @@ implementation {
                     { 
                         rds.RT[(offset<<1)] = (char)(RDSD >> 8);
                         rds.RT[(offset<<1)+1] = (char)RDSD;
-                        blocks = rds.RTBlocks;
-                        rds.RTBlocks = (rds.RTBlocks+1) & (RT_BLOCKS-1);
                     }
-                    if (blocks == RT_BLOCKS-1)
+                    /* Some stations don't adhere to the standard, and just terminate RDS
+                     * info with '\r' instead of sending all blocks */
+                    if (rds.RT[offset<<1] == '\r' ||
+                        rds.RT[(offset<<1)+1] == '\r')
+                    {
+                        rds.RTMaxBlocks = offset;
+                    }
+                    atomic
+                    {
+                        rds.RTBlocks++;
+                        blocks = rds.RTBlocks;
+                    }
+                    if (blocks == rds.RTMaxBlocks+1)
                     {
                         signal FMClick.rdsReceived(RT, rds.RT);
                         memset(rds.RT, ' ', RT_BUF_SZ);
@@ -771,15 +803,9 @@ implementation {
 
                     /* Determine time offset sign */
                     if (RDSD & 0x0020)
-                    {
                         hours -= localOffset >> 1;
-                        //minutes -= 30*(localOffset & 0x01);
-                    }
                     else
-                    {
                         hours += localOffset >> 1;
-                        //minutes += 30*(localOffset & 0x01);
-                    }
 
                     atomic
                     {
@@ -898,6 +924,44 @@ implementation {
             atomic { states.write = REQ; }
         }
     }
+   
+    /*
+     * @brief           Enable/disable reception of RDS information on the FMCLick board.
+     * @param enable    Enable/disable RDS information.
+     */
+    void enableRDS(bool enable)
+    {
+        if (enable)
+        {
+            call Int.clear();
+            call Int.enable();
+
+            atomic 
+            { 
+                shadowRegisters[SYSCONF1_REG] |= (RDS_MASK | RDSIEN_MASK);
+                rds.PSBlocks = 0;
+                rds.RTBlocks = 0;
+                rds.CTBlocks = 0;
+                writeAddr = SYSCONF1_REG;
+            }
+
+            memset(rds.PS, ' ', PS_BUF_SZ);
+            memset(rds.RT, ' ', RT_BUF_SZ);
+            memset(rds.CT, ' ', CT_BUF_SZ);
+        }
+        else
+        {
+            call Int.disable();
+            atomic 
+            { 
+                shadowRegisters[SYSCONF1_REG] &= ~(RDS_MASK | RDSIEN_MASK); 
+                writeAddr = SYSCONF1_REG;
+                states.driver = IDLE;
+            }
+        }
+
+        writeRegisters();
+    }
 
     ////////////////////////
     /* Events */
@@ -1003,16 +1067,18 @@ implementation {
         atomic { state = states.driver; }
 
         /* TUNE and SEEK only need a single interrupt */
-        if (TUNE == state || SEEK == state)
-            call Int.disable();
+        //if (TUNE == state || SEEK == state)
+        //    call Int.disable();
         
         switch (state)
         {
             case TUNE:
+                call Int.disable();
                 post tune();
                 break;
 
             case SEEK:
+                call Int.disable();
                 post seek();
                 break;
             
@@ -1022,6 +1088,7 @@ implementation {
                 break;
             
             default:
+                call Int.disable();
                 break;
         }
     }
