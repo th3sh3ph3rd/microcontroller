@@ -8,8 +8,7 @@
  *
 **/
 
-//TODO RDS - enable
-//maybe atomatically enable/disable before/after seek/tune, based on current setting
+//TODO split read/write states in one function and one task for writing, repost on error
 //TODO read only required registers
 
 #include <stdio.h>
