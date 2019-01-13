@@ -121,9 +121,9 @@ implementation {
     /* Read Channel */
     #define READCHAN_MASK       0x03ff
 
-    #define RESET_DELAY_MS      10
+    #define RESET_DELAY_MS      1
     #define READ_DELAY_MS       1000
-    #define XOSCEN_DELAY_MS     600
+    #define XOSCEN_DELAY_MS     750
     #define POWERUP_DELAY_MS    150
 
     #define BAND_LOW_END        875
@@ -133,10 +133,10 @@ implementation {
     uint8_t comBuffer[REGISTER_NUM*REGISTER_WIDTH];
     uint8_t writeAddr;
 
-    enum driver_state {IDLE, INIT, TUNE, SEEK, RDS};
+    enum driver_state {IDLE, INIT, TUNE, SEEK, RDSEN, VOL, RDS};
     enum com_state {REQ, COM};
     enum bus_state {NOOP, READ, WRITE};
-    enum init_state {SETUP,INITREG, XOSCEN, WAITXOSC, ENABLE, WAITPOWERUP, READREGF, CONFIG, FINISH};
+    enum init_state {SETUP, INITREG, XOSCEN, WAITXOSC, ENABLE, WAITPOWERUP, READREGF, CONFIG, FINISH};
     enum tune_state {STARTTUNE, WAITTUNE, TUNECHAN, ENDTUNE, READTUNE, FINTUNE};
     enum seek_state {STARTSEEK, WAITSEEK, SEEKCHAN, ENDSEEK, READSEEK, FINSEEK};
     enum rds_state {READRDS, DECODERDS};
@@ -168,8 +168,8 @@ implementation {
     #define GT_4A 0x08
 
     /* RDS blocks per message */
-    #define PS_BLOCKS   (PS_BUF_SZ/2)
-    #define RT_BLOCKS   (RT_BUF_SZ/4)
+        #define PS_BLOCKS   (PS_BUF_SZ/2)
+        #define RT_BLOCKS   (RT_BUF_SZ/4)
 
     struct
     {
@@ -177,7 +177,7 @@ implementation {
         uint8_t RTBlocks;
         uint8_t CTBlocks;
         uint8_t RTMaxBlocks;
-        char PS[PS_BUF_SZ+2];
+        char PS[PS_BUF_SZ+2]; /* Two additional bytes for storing the PI code */
         char RT[RT_BUF_SZ];
         char CT[CT_BUF_SZ];
     } rds;
@@ -187,11 +187,11 @@ implementation {
     task void tune(void);
     task void seek(void);
     task void decodeRDS(void);
+    void readRegisters(void);
+    task void registerWriteback(void);
+    void writeRegisters(void);
 
     /* Function prototypes */
-    void readRegisters(void);
-    void registerWriteback(void);
-    void writeRegisters(void);
     void enableRDS(bool enable);
 
     ////////////////////////
@@ -223,6 +223,7 @@ implementation {
             memset(comBuffer, 0, sizeof(comBuffer));
         }
 
+        //TODO set CLK, DIO, RST as output
         /* Start board reset */
         call RSTPin.makeOutput();
         call RSTPin.clr();
@@ -236,7 +237,6 @@ implementation {
         call INTPin.clr();
         call Int.edge(FALSE);
 
-        //post init();
         call Timer.startOneShot(RESET_DELAY_MS);
         return SUCCESS; 
     }
@@ -329,6 +329,7 @@ implementation {
             shadowRegisters[SYSCONF2_REG] = (shadowRegisters[SYSCONF2_REG] & ~VOLUME_MASK) | 
                                             (volume & VOLUME_MASK);
             writeAddr = SYSCONF2_REG;
+            states.driver = VOL;
         }
         writeRegisters();
 
@@ -351,12 +352,17 @@ implementation {
             state = states.driver; 
         }
        
+        //if (IDLE != state)
         if (IDLE != state && RDS != state)
             return FAIL;
 
         if (enable != en)
         {
-            atomic { RDSen = enable; } 
+            atomic 
+            { 
+                RDSen = enable; 
+                states.driver = RDSEN;
+            } 
             enableRDS(enable);
         }
 
@@ -381,6 +387,7 @@ implementation {
             call RSTPin.set();
             call Timer.startOneShot(READ_DELAY_MS); 
             atomic { states.init = INITREG; }
+            //atomic { states.init = XOSCEN; }
         }
         if (INITREG == state)
         {
@@ -394,6 +401,7 @@ implementation {
             atomic
             { 
                 shadowRegisters[TEST1_REG] |= XOSCEN_MASK;
+                //shadowRegisters[TEST1_REG] = 0x8100;
                 shadowRegisters[RDSD_REG] = 0x0000;
                 writeAddr = RDSD_REG;
                 states.init = WAITXOSC;
@@ -411,8 +419,9 @@ implementation {
             atomic
             {
                 /* Start device powerup and disable mute */
-                shadowRegisters[POWERCONF_REG] = (shadowRegisters[POWERCONF_REG] & ~DISABLE_MASK) |
-                                                 ENABLE_MASK | DMUTE_MASK;
+                //shadowRegisters[POWERCONF_REG] = (shadowRegisters[POWERCONF_REG] & ~DISABLE_MASK) |
+                //                                 ENABLE_MASK | DMUTE_MASK;
+                shadowRegisters[POWERCONF_REG] = 0x4001;
                 writeAddr = POWERCONF_REG;
                 states.init = WAITPOWERUP;
             }
@@ -444,8 +453,6 @@ implementation {
 
             atomic
             {
-                /* Enable RDS verbose mode */
-                //shadowRegisters[POWERCONF_REG] |= RDSM_MASK;
                 /* Enable STC interrupt and configure GPIO2 for interrupt transmission */
                 shadowRegisters[SYSCONF1_REG] = (shadowRegisters[SYSCONF1_REG] &
                                                 ~(GPIO2_MASK | BLNDADJ_MASK | RDS_MASK | RDSIEN_MASK)) |
@@ -607,7 +614,11 @@ implementation {
         }
         else if (ENDSEEK == state)
         {
+            char buf[7];
             call Glcd.drawText("d", 0, 30);
+            sprintf(buf, "0x%X", shadowRegisters[SYSCONF1_REG]);
+            call Glcd.drawText(buf, 0, 60);
+
             /* Read sfbl bit and channel and disable seeking */
             atomic 
             {   
@@ -844,24 +855,32 @@ implementation {
                 states.read = COM;
             }
 
-            //TODO check error?
-            call I2CResource.request();
+            if (call I2CResource.request() != SUCCESS)
+                call Glcd.drawText("x", 20, 40);
         }
         else if (COM == state)
         {
             //TODO maybe throw error (GLCD?) instead of hanging
-            while (call I2C.read(I2C_START | I2C_STOP,
+            if(call I2C.read(I2C_START | I2C_STOP,
                    DEVICE_READ_ADDR,
                    REGISTER_NUM*REGISTER_WIDTH,
-                   comBuffer) != SUCCESS);
-            atomic { states.read = REQ; }
+                   comBuffer) != SUCCESS)
+            {
+                //readRegisters();
+                call Glcd.drawText("y", 10, 40);
+            }
+            else
+            {
+                atomic { states.read = REQ; }
+                call Glcd.drawText("z", 10, 40);
+            }
         }
     }
 
     /*
      * @brief Write the read register values to the shadow register file in the correct order.
      */
-    void registerWriteback(void)
+    task void registerWriteback(void)
     {
         uint8_t i = READ_START_ADDR;
         uint8_t j;
@@ -904,9 +923,8 @@ implementation {
                 states.bus = WRITE;
                 states.write = COM;
             }
-
-            //TODO check error?
-            call I2CResource.request();
+            if (call I2CResource.request() != SUCCESS)
+                call Glcd.drawText("u", 20, 40);
         } 
         else if (COM == state)
         {
@@ -914,11 +932,19 @@ implementation {
             atomic { bytesToSend = (writeAddr-WRITE_START_ADDR+1)*REGISTER_WIDTH; }
             
             //TODO maybe throw error (GLCD?) instead of hanging
-            while (call I2C.write(I2C_START | I2C_STOP, 
+            if (call I2C.write(I2C_START | I2C_STOP, 
                    DEVICE_WRITE_ADDR,
                    bytesToSend,
-                   comBuffer) != SUCCESS);
-            atomic { states.write = REQ; }
+                   comBuffer) != SUCCESS)
+            {
+                //writeRegisters();
+                call Glcd.drawText("v", 10, 40);
+            }
+            else
+            {
+                atomic { states.write = REQ; }
+                call Glcd.drawText("w", 10, 40);
+            }
         }
     }
    
@@ -928,6 +954,8 @@ implementation {
      */
     void enableRDS(bool enable)
     {
+        char buf[7];
+
         if (enable)
         {
             atomic 
@@ -957,6 +985,9 @@ implementation {
             }
         }
 
+        sprintf(buf, "0x%X", shadowRegisters[SYSCONF1_REG]);
+        call Glcd.drawText(buf, 0, 50);
+
         writeRegisters();
     }
 
@@ -980,7 +1011,6 @@ implementation {
         }
     }
    
-    //TODO handle error
     async event void I2C.readDone(error_t error, uint16_t addr, uint8_t length, uint8_t *data)
     {
         enum driver_state state;
@@ -995,7 +1025,7 @@ implementation {
         call I2CResource.release();
         atomic { states.bus = NOOP; }
         
-        registerWriteback();
+        post registerWriteback();
 
         switch (state)
         {
@@ -1020,7 +1050,6 @@ implementation {
         }
     }
 
-    //TODO handle error
     async event void I2C.writeDone(error_t error, uint16_t addr, uint8_t length, uint8_t *data)
     {
         enum driver_state state;
@@ -1047,6 +1076,12 @@ implementation {
 
             case SEEK:
                 post seek();
+                break;
+
+            /* Intended fallthrough */
+            case VOL:
+            case RDSEN:
+                atomic { states.driver = IDLE; }
                 break;
             
             default:
