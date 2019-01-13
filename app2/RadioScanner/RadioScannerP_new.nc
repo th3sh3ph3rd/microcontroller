@@ -83,6 +83,12 @@ implementation {
         uint8_t current;
         channel_t list[CHANNEL_LIST_SZ]; 
     } channels;
+    #define FAV_CNT         9
+    static struct
+    {
+        uint8_t entries;
+        uint8_t table[FAV_CNT];
+    } favourites;
 
     static uint8_t oldVolume;
     static uint8_t newVolume;
@@ -98,6 +104,7 @@ implementation {
     static void printVolume(void);
     static void clearRDSData(void);
     static void addChannel(void);
+    static void addFavourite(void);
 
     ////////////////////////
     /* Tasks              */
@@ -118,26 +125,43 @@ implementation {
         {
             switch (c)
             {
+                /* Add/update current channel info */
                 case 'a':
                     call Radio.receiveRDS(FALSE);
                     atomic { appState = ADD; }
                     addChannel();
                     break;
 
-                case 'h':
-                    call Radio.receiveRDS(FALSE);
-                    clearRDSData();
-                    atomic { appState = SEEK; }
-                    call Radio.seek(DOWN);
+                /* Add current channel to favourites */
+                case 'f':
+                    atomic { appState = ADD; }
+                    addFavourite();
                     break;
 
-                case 'l':
-                    call Radio.receiveRDS(FALSE);
-                    clearRDSData();
-                    atomic { appState = SEEK; }
-                    call Radio.seek(UP);
+                /* Tune to previous list entry */
+                case 'h':
+                    if (channels.current == 0)
+                        channels.current = channels.entries-1;
+                    else
+                        channel.current--;
+                    atomic { appState = TUNE; }
+                    call Radio.tune(channels.list[channels.current].info.frequency);
                     break;
-                
+
+                /* Tune to next list entry */
+                case 'l':
+                    if (channels.current == channels.entries-1)
+                        channels.current = 0;
+                    else
+                        channel.current++;
+                    atomic { appState = TUNE; }
+                    call Radio.tune(channels.list[channels.current].info.frequency);
+                    break;
+
+                /* Add note */
+                //case 'n':
+                //    call Radio.receiveRDS(FALSE);
+
                 //TODO tune to channel 0 (875) before seek
                 case 's':
                     call Radio.receiveRDS(FALSE);
@@ -147,6 +171,7 @@ implementation {
                     call Radio.seek(BAND);
                     break;
 
+                /* Enter frequency and tune to channel */
                 case 't':
                     call Radio.receiveRDS(FALSE);
                     clearRDSData();
@@ -159,14 +184,38 @@ implementation {
                     post inputTuneChannel();
                     break;
 
+                /* Seek next higher channel */
+                case ',':
+                    call Radio.receiveRDS(FALSE);
+                    clearRDSData();
+                    atomic { appState = SEEK; }
+                    call Radio.seek(DOWN);
+                    break;
+
+                /* Seek next lower channel */
+                case '.':
+                    call Radio.receiveRDS(FALSE);
+                    clearRDSData();
+                    atomic { appState = SEEK; }
+                    call Radio.seek(UP);
+                    break;
+
                 default:
+                    /* Favourites access */
+                    if (isdigit(c))
+                    {
+                        uint8_t fav = (uint8_t) strtoul(c, NULL, 10);
+                        if (fav > 0)
+                        {
+                            atomic { appState = TUNE; }
+                            call Radio.tune(channels.list[favourites.list[fav]].info.frequency);
+                        }
+                    }
                     break;
             }
         }
         else if (TUNEINP == state)
-        {
             post inputTuneChannel();
-        }
     }
 
     //TODO only write text once
@@ -324,6 +373,10 @@ implementation {
                 call Glcd.drawTextPgm(text_listFull, 0, 20);
                 break;
 
+            case E_FAVS_FULL:
+                call Glcd.drawTextPgm(text_favsFull, 0, 20);
+                break;
+
             default:
                 call Glcd.drawTextPgm(text_unknownError, 0, 20);
                 break;
@@ -446,6 +499,33 @@ implementation {
             }
         }
     }
+
+    /*
+     * @brief Add the current channel to the favourites list.
+     */
+    static void addFavourite(void)
+    {
+        if (favourites.entries < FAV_CNT)
+        {
+            //TODO handle case if channel not even in list
+            if (currChan != channels.list[channels.current].info.frequency)
+            {
+
+            }
+            else
+            {
+                favourites.list[favourites.entries] = channels.current;
+                channels.list[channels.entries].info.quickDial = favourites.entries++;
+                addChannel();
+            }
+        }
+        else
+        {
+            errno = E_FAVS_FULL;
+            post displaySoftError();
+        }
+    }
+
     
     ////////////////////////
     /* Events */
@@ -458,6 +538,7 @@ implementation {
 
         channels.entries = 0;
         channels.current = 0;
+        favourites.entries = 0;
 
         oldVolume = 0;
         newVolume = 0;

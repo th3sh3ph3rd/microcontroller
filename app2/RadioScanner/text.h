@@ -31,6 +31,8 @@ const char text_FMClickInitFail[] PROGMEM = "FMClick init failed!";
 const char text_bandLimit[] PROGMEM = "Out of band limits!";
 #define E_LIST_FULL 2
 const char text_listFull[] PROGMEM = "Channel list full!";
+#define E_FAVS_FULL 3
+const char text_favsFull[] PROGMEM = "Favourites full!";
 
 #endif
 
