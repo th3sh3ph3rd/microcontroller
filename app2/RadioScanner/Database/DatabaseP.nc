@@ -98,13 +98,13 @@ implementation {
 
         /* Compose udp message */
         if (id == 0xff)
-            sprintf(udpMsg->data, "add\rid=%d,name=%s,qdial=%d,freq=%d,picode=%d,note=%s\n",
+            sprintf((char *) udpMsg->data, "add\rid=%d,name=%s,qdial=%d,freq=%d,picode=%d,note=%s\n",
                     0, channel->name, channel->quickDial, channel->frequency, channel->pi_code, channel->notes);
         else if (id >= 0 && id <= 15)
-            sprintf(udpMsg->data, "update\rid=%d,name=%s,qdial=%d,freq=%d,picode=%d,note=%s\n",
+            sprintf((char *) udpMsg->data, "update\rid=%d,name=%s,qdial=%d,freq=%d,picode=%d,note=%s\n",
                     id, channel->name, channel->quickDial, channel->frequency, channel->pi_code, channel->notes);
         udpMsg->data[MAX_MSG_LEN-1] = '\0';
-        udpMsg->len = strlen(udpMsg->data);
+        udpMsg->len = strlen((char *) udpMsg->data);
 
         call SendQ.enqueue(udpMsg);
 
