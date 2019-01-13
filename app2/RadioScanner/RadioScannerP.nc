@@ -88,27 +88,27 @@ implementation {
             switch (c)
             {
                 case 'h':
-                    call Radio.receiveRDS(FALSE);
+                    while(call Radio.receiveRDS(FALSE) != SUCCESS);
                     atomic { appState = SEEK; }
                     call Radio.seek(DOWN);
                     break;
 
                 case 'l':
-                    call Radio.receiveRDS(FALSE);
+                    while(call Radio.receiveRDS(FALSE) != SUCCESS);
                     atomic { appState = SEEK; }
                     call Radio.seek(UP);
                     break;
                 
                 //TODO tune to channel 0 (875) before seek
                 case 's':
-                    call Radio.receiveRDS(FALSE);
+                    while(call Radio.receiveRDS(FALSE) != SUCCESS);
                     atomic { appState = BANDSEEK; }
                     //call Radio.tune(875);
                     call Radio.seek(BAND);
                     break;
 
                 case 't':
-                    call Radio.receiveRDS(FALSE);
+                    while(call Radio.receiveRDS(FALSE) != SUCCESS);
                     atomic
                     {
                         tuneInput.idx = 0;
@@ -212,7 +212,7 @@ implementation {
         call Glcd.drawText(freqBuf, 54, 7);
         call Glcd.drawText("MHz", 94, 7);
 
-        call Radio.receiveRDS(TRUE);
+        while (call Radio.receiveRDS(TRUE) != SUCCESS);
     }
 
     task void handleRDS(void)
@@ -240,9 +240,11 @@ implementation {
     {
         if (newVolume != oldVolume)
         {
-            call Radio.setVolume(newVolume);
-            oldVolume = newVolume;
-            printVolume();
+            if (call Radio.setVolume(newVolume) == SUCCESS)
+            {
+                oldVolume = newVolume;
+                printVolume();
+            }
         }
     }
     
