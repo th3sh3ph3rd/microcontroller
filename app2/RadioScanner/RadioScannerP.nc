@@ -32,6 +32,9 @@ implementation {
     #define FM4 1038
     #define RADIO 921
     #define RADIOW 899
+    
+    #define BAND_LIMIT_LO   875
+    #define BAND_LIMIT_HI   1080
 
     enum app_state {INIT, KBCTRL, TUNEINP, TUNE, SEEK, BANDSEEK};
     enum app_state appState;
@@ -64,6 +67,8 @@ implementation {
     task void inputTuneChannel(void);
     task void displayChannelInfo(void);
     task void setVolume(void);
+    task void startSeekUp(void);
+    task void startSeekDown(void);
 
     static void printVolume(void);
 
@@ -76,6 +81,7 @@ implementation {
     {
         char c;
         enum app_state state;
+        static uint8_t cnt = 0;
 
         atomic 
         { 
@@ -85,30 +91,31 @@ implementation {
 
         if (KBCTRL == appState)
         {
+            char buf[3];
             switch (c)
             {
                 case 'h':
-                    call Radio.receiveRDS(FALSE);
                     atomic { appState = SEEK; }
-                    call Radio.seek(DOWN);
+                    //call Glcd.drawText("h", 0, 60);
+                    post startSeekDown();
                     break;
 
                 case 'l':
-                    call Radio.receiveRDS(FALSE);
                     atomic { appState = SEEK; }
-                    call Radio.seek(UP);
+                    //call Glcd.drawText("h", 0, 60);
+                    //call Radio.seek(UP);
+                    //call Glcd.drawText("j", 0, 60);
+                    post startSeekUp();
                     break;
                 
                 //TODO tune to channel 0 (875) before seek
                 case 's':
-                    call Radio.receiveRDS(FALSE);
                     atomic { appState = BANDSEEK; }
                     //call Radio.tune(875);
                     call Radio.seek(BAND);
                     break;
 
                 case 't':
-                    call Radio.receiveRDS(FALSE);
                     atomic
                     {
                         appState = TUNEINP;
@@ -143,6 +150,7 @@ implementation {
 
         call Glcd.fill(0x00);
         call Glcd.drawText("Enter channel:", 0, 10);
+        call Glcd.drawText("p", 30, 40);
         
         if (isdigit(c))
         {
@@ -207,12 +215,13 @@ implementation {
         }
 
         sprintf(freqBuf, "%d.%d", chan/10, chan%10);
-        call Glcd.fill(0x00);
+        //call Glcd.fill(0x00);
         call Glcd.drawText("Channel: ", 0, 7);
         call Glcd.drawText(freqBuf, 54, 7);
         call Glcd.drawText("MHz", 94, 7);
 
         call Radio.receiveRDS(TRUE);
+        call Glcd.drawText("g", 0, 60);
     }
 
     task void handleRDS(void)
@@ -225,7 +234,7 @@ implementation {
         line2[21] = '\0';
         line3[22] = '\0';
 
-        call Glcd.fill(0x00);
+        //call Glcd.fill(0x00);
         call Glcd.drawText(rds.PS, 0, 15);
         call Glcd.drawText(rds.CT, 54, 15);
         call Glcd.drawText(line1, 122, 23);
@@ -235,6 +244,9 @@ implementation {
 
     /* 
      * @brief Set the volume on the FMClick board if the value has changed.
+    task void startSeekUp(void);
+    task void startSeekDown(void);
+    task void startTune(void);
      */
     task void setVolume(void)
     {
@@ -248,6 +260,18 @@ implementation {
         }
     }
     
+    task void startSeekUp(void)
+    {
+        if (call Radio.seek(UP) != SUCCESS)
+            post startSeekDown();
+    }
+    
+    task void startSeekDown(void)
+    {
+        if (call Radio.seek(DOWN) != SUCCESS)
+            post startSeekDown();
+    }
+
     ////////////////////////
     /* Internal functions */
     ////////////////////////
@@ -304,8 +328,15 @@ implementation {
  
     async event void Keyboard.receivedChar(uint8_t c)
     {
-        atomic { kbChar = c; }
-        post handleChar();
+        enum app_state state;
+        atomic { state = appState; }
+
+        /* Only allow keyboard input during certain states */
+        if (state == KBCTRL || state == TUNEINP )
+        {
+            atomic { kbChar = c; }
+            post handleChar();
+        }
     }
 
     async event void Radio.tuneComplete(uint16_t channel)

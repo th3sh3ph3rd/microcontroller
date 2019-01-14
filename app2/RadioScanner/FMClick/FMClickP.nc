@@ -223,7 +223,6 @@ implementation {
             memset(comBuffer, 0, sizeof(comBuffer));
         }
 
-        //TODO set CLK, DIO, RST as output
         /* Start board reset */
         call RSTPin.makeOutput();
         call RSTPin.clr();
@@ -267,8 +266,6 @@ implementation {
             nextChannel = channel;
         }
 
-        call Int.disable();
-        call Int.clear();
         post tune();
         return SUCCESS;
     }
@@ -295,8 +292,6 @@ implementation {
             seekMode = mode;
         }
 
-        call Int.disable();
-        call Int.clear();
         post seek();
         return SUCCESS;
     }
@@ -397,7 +392,6 @@ implementation {
             atomic
             { 
                 shadowRegisters[TEST1_REG] |= XOSCEN_MASK;
-                //shadowRegisters[TEST1_REG] = 0x8100;
                 shadowRegisters[RDSD_REG] = 0x0000;
                 writeAddr = RDSD_REG;
                 states.init = WAITXOSC;
@@ -415,8 +409,6 @@ implementation {
             atomic
             {
                 /* Start device powerup and disable mute */
-                //shadowRegisters[POWERCONF_REG] = (shadowRegisters[POWERCONF_REG] & ~DISABLE_MASK) |
-                //                                 ENABLE_MASK | DMUTE_MASK;
                 shadowRegisters[POWERCONF_REG] = 0x4001;
                 writeAddr = POWERCONF_REG;
                 states.init = WAITPOWERUP;
@@ -483,7 +475,6 @@ implementation {
         
         if (STARTTUNE == state)
         {
-            call Glcd.drawText("1", 0, 30);
             atomic
             {
                 shadowRegisters[CHANNEL_REG] = TUNE_MASK | (CHAN_MASK & (nextChannel - BAND_LOW_END)); 
@@ -495,7 +486,6 @@ implementation {
         }
         else if (WAITTUNE == state)
         {
-            call Glcd.drawText("2", 0, 30);
             /* Enable STC interrupt */
             //TODO timeout for interrupt
             atomic { states.tune = TUNECHAN; }
@@ -504,13 +494,11 @@ implementation {
         }
         else if (TUNECHAN == state)
         {
-            call Glcd.drawText("3", 0, 30);
             atomic { states.tune = ENDTUNE; }
             post readRegisters();
         }
         else if (ENDTUNE == state)
         {
-            call Glcd.drawText("4", 0, 30);
             /* Read channel and disable tuning */
             atomic
             {
@@ -523,7 +511,6 @@ implementation {
         }
         else if (READTUNE == state)
         {
-            call Glcd.drawText("5", 0, 30);
             /* Read registers to check STC bit */
             atomic { states.tune = FINTUNE; }
             post readRegisters();
@@ -532,8 +519,6 @@ implementation {
         {
             uint8_t stc;
             atomic { stc = (shadowRegisters[STATRSSI_REG] & STC_MASK) >> 8; }
-
-            call Glcd.drawText("6", 0, 30);
 
             /* Tuning complete */
             if (!stc)
@@ -574,7 +559,6 @@ implementation {
         
         if (STARTSEEK == state)
         {
-            call Glcd.drawText("a", 0, 30);
             /* Start at lower band end and stop at high band end for band seek */
             if (BAND == mode)
                 atomic { shadowRegisters[POWERCONF_REG] = shadowRegisters[POWERCONF_REG] | SKMODE_MASK | SEEK_MASK; }
@@ -589,6 +573,7 @@ implementation {
 
             atomic 
             { 
+                shadowRegisters[SYSCONF1_REG] |= STCIEN_MASK;
                 shadowRegisters[SYSCONF1_REG] &= ~(RDS_MASK | RDSIEN_MASK); 
                 writeAddr = SYSCONF1_REG; 
                 states.seek = WAITSEEK;
@@ -597,7 +582,6 @@ implementation {
         }
         else if (WAITSEEK == state)
         {
-            call Glcd.drawText("b", 0, 30);
             /* Enable STC interrupt */
             atomic { states.seek = SEEKCHAN; }
             call Int.clear();
@@ -605,31 +589,26 @@ implementation {
         }
         else if (SEEKCHAN == state)
         {
-            call Glcd.drawText("c", 0, 30);
             atomic { states.seek = ENDSEEK; }
             post readRegisters();
         }
         else if (ENDSEEK == state)
         {
-            char buf[7];
-            call Glcd.drawText("d", 0, 30);
-            sprintf(buf, "0x%X", shadowRegisters[SYSCONF1_REG]);
-            call Glcd.drawText(buf, 0, 60);
-
             /* Read sfbl bit and channel and disable seeking */
             atomic 
             {   
                 sfbl = (uint8_t)((shadowRegisters[STATRSSI_REG] & SFBL_MASK) >> 8);
                 currChannel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + BAND_LOW_END;
                 shadowRegisters[POWERCONF_REG] &= ~SEEK_MASK;
-                writeAddr = POWERCONF_REG;
+                shadowRegisters[SYSCONF1_REG] &= ~STCIEN_MASK;
+                //writeAddr = POWERCONF_REG;
+                writeAddr = SYSCONF1_REG;
                 states.seek = READSEEK;
             }
             post writeRegisters();
         }
         else if (READSEEK == state)
         {
-            call Glcd.drawText("e", 0, 30);
             /* Read registers to check STC bit */
             atomic { states.seek = FINSEEK; }
             post readRegisters();
@@ -638,8 +617,6 @@ implementation {
         {   
             uint8_t stc; 
             atomic { stc = (shadowRegisters[STATRSSI_REG] & STC_MASK) >> 8; }
-            
-            call Glcd.drawText("f", 0, 30);
             
             /* Seek complete */
             if (!stc)
@@ -660,6 +637,7 @@ implementation {
                         atomic { rds.RTMaxBlocks = RT_BLOCKS-1; }
                         if (RDSen)
                         {
+                            //atomic { states.driver = IDLE; } 
                             atomic { states.driver = RDSEN; } 
                             enableRDS(TRUE);
                         }
@@ -671,8 +649,11 @@ implementation {
                 //TODO maybe need signal here as well
                 else
                 {
+                    signal FMClick.seekComplete(0xffff);
+                    
                     if (RDSen)
                     {
+                        //atomic { states.driver = IDLE; } 
                         atomic { states.driver = RDSEN; } 
                         enableRDS(TRUE);
                     }
@@ -696,11 +677,7 @@ implementation {
     {
         enum rds_state state;
         
-        atomic 
-        {
-            states.driver = RDS;
-            state = states.rds; 
-        }
+        atomic { state = states.rds; }
         
         if (READRDS == state)
         {
@@ -861,13 +838,11 @@ implementation {
         atomic { state = states.bus; }
         if (NOOP != state)
         {
-            call Glcd.drawText("x", 10, 40);
             post readRegisters();
             return;
         }
 
         atomic { states.bus = READ; }
-
         call I2CResource.request();
     }
 
@@ -881,12 +856,7 @@ implementation {
                REGISTER_NUM*REGISTER_WIDTH,
                comBuffer) != SUCCESS)
         {
-            call Glcd.drawText("y", 10, 40);
             post readI2C();
-        }
-        else
-        {
-            call Glcd.drawText("z", 10, 40);
         }
     }
 
@@ -905,7 +875,6 @@ implementation {
         atomic { state = states.bus; }
         if (NOOP != state)
         {
-            call Glcd.drawText("u", 10, 40);
             post writeRegisters();
             return;
         }
@@ -943,12 +912,7 @@ implementation {
                bytesToSend,
                comBuffer) != SUCCESS)
         {
-            call Glcd.drawText("v", 10, 40);
             post writeI2C();
-        }
-        else
-        {
-            call Glcd.drawText("w", 10, 40);
         }
     }
     
@@ -1003,12 +967,8 @@ implementation {
             { 
                 shadowRegisters[SYSCONF1_REG] &= ~(RDS_MASK | RDSIEN_MASK); 
                 writeAddr = SYSCONF1_REG;
-                states.driver = IDLE;
             }
         }
-
-        //sprintf(buf, "0x%X", shadowRegisters[SYSCONF1_REG]);
-        //call Glcd.drawText(buf, 0, 50);
 
         post writeRegisters();
     }
@@ -1038,7 +998,7 @@ implementation {
         enum driver_state state;
         atomic { state = states.driver; }
         
-        if (FAIL == error)
+        if (FAIL == error) 
         {
             post readI2C();
             return;
@@ -1075,7 +1035,9 @@ implementation {
     async event void I2C.writeDone(error_t error, uint16_t addr, uint8_t length, uint8_t *data)
     {
         enum driver_state state;
+        char buf[3];
         atomic { state = states.driver; }
+
 
         if (FAIL == error)
         {
@@ -1130,7 +1092,10 @@ implementation {
             
             case IDLE:
                 if (RDSen)
+                {
+                    atomic { states.driver = RDS; }
                     post decodeRDS();
+                }
                 break;
             
             default:
