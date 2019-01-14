@@ -940,8 +940,6 @@ implementation {
      */
     static void enableRDS(bool enable)
     {
-        char buf[7];
-
         if (enable)
         {
             atomic 
@@ -1035,9 +1033,7 @@ implementation {
     async event void I2C.writeDone(error_t error, uint16_t addr, uint8_t length, uint8_t *data)
     {
         enum driver_state state;
-        char buf[3];
         atomic { state = states.driver; }
-
 
         if (FAIL == error)
         {
