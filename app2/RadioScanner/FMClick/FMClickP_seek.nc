@@ -8,8 +8,8 @@
  *
 **/
 
-//TODO seek not working properly when RDS is enbaled -> some register or interrupt conflict
-//TODO RDS not very reliable, have to find way to handle PS and RT group types properly
+//TODO split read/write states in one function and one task for writing, repost on error
+//TODO read only required registers
 
 #include <stdio.h>
 #include <string.h>
@@ -186,14 +186,12 @@ implementation {
     task void tune(void);
     task void seek(void);
     task void decodeRDS(void);
-    task void readRegisters(void);
-    task void readI2C(void);
-    task void writeRegisters(void);
-    task void writeI2C(void);
+    void readRegisters(void);
     task void registerWriteback(void);
+    void writeRegisters(void);
 
     /* Function prototypes */
-    static void enableRDS(bool enable);
+    void enableRDS(bool enable);
 
     ////////////////////////
     /* Interface commands */
@@ -203,6 +201,7 @@ implementation {
      * @brief   Initialize the FMClick module.
      * @return  If the initialization was started, SUCCESS is returned, else FAIL.
      */
+    //TODO check if RESET and READ delay can be removed
     command error_t Init.init(void)
     {
         enum driver_state state;
@@ -247,6 +246,7 @@ implementation {
      * @return              If the channel is in the band and the tuning process was 
      *                      started, SUCCESS is returned, else FAIL.
      */
+    //TODO check if board has been initialized (internal state)
     command error_t FMClick.tune(uint16_t channel)
     {
         enum driver_state state;
@@ -325,12 +325,12 @@ implementation {
  
         atomic
         { 
-            states.driver = VOL;
             shadowRegisters[SYSCONF2_REG] = (shadowRegisters[SYSCONF2_REG] & ~VOLUME_MASK) | 
                                             (volume & VOLUME_MASK);
             writeAddr = SYSCONF2_REG;
+            states.driver = VOL;
         }
-        post writeRegisters();
+        writeRegisters();
 
         return SUCCESS;
     }
@@ -349,17 +349,20 @@ implementation {
         { 
             en = RDSen;
             state = states.driver; 
-            RDSen = enable; 
         }
+       
+        //if (IDLE != state)
+        if (IDLE != state && RDS != state)
+            return FAIL;
 
-        //if (IDLE != state && RDS != state)
-        if (IDLE == state)
+        if (enable != en)
         {
-            if (enable != en)
-            {
-                atomic { states.driver = RDSEN; } 
-                enableRDS(enable);
-            }
+            atomic 
+            { 
+                RDSen = enable; 
+                states.driver = RDSEN;
+            } 
+            enableRDS(enable);
         }
 
         return SUCCESS;
@@ -389,7 +392,7 @@ implementation {
         {
             /* Read initial register file state */
             atomic { states.init = XOSCEN; }
-            post readRegisters(); 
+            readRegisters(); 
         }
         else if (XOSCEN == state)
         {
@@ -402,7 +405,7 @@ implementation {
                 writeAddr = RDSD_REG;
                 states.init = WAITXOSC;
             }
-            post writeRegisters();
+            writeRegisters();
         }
         else if (WAITXOSC == state)
         {
@@ -421,7 +424,7 @@ implementation {
                 writeAddr = POWERCONF_REG;
                 states.init = WAITPOWERUP;
             }
-            post writeRegisters();
+            writeRegisters();
         }
         else if (WAITPOWERUP == state)
         {
@@ -433,7 +436,7 @@ implementation {
         {
             /* Read register file state */
             atomic { states.init = CONFIG; }
-            post readRegisters();
+            readRegisters();
         }
         else if (CONFIG == state)
         {
@@ -464,7 +467,7 @@ implementation {
                 states.init = FINISH;
             }
 
-            post writeRegisters();
+            writeRegisters();
         }
         else if (FINISH == state)
         {
@@ -491,7 +494,7 @@ implementation {
                 writeAddr = SYSCONF1_REG; 
                 states.tune = WAITTUNE;
             }
-            post writeRegisters();
+            writeRegisters();
         }
         else if (WAITTUNE == state)
         {
@@ -506,7 +509,7 @@ implementation {
         {
             call Glcd.drawText("3", 0, 30);
             atomic { states.tune = ENDTUNE; }
-            post readRegisters();
+            readRegisters();
         }
         else if (ENDTUNE == state)
         {
@@ -519,14 +522,14 @@ implementation {
                 writeAddr = CHANNEL_REG;
                 states.tune = READTUNE;
             }
-            post writeRegisters();
+            writeRegisters();
         }
         else if (READTUNE == state)
         {
             call Glcd.drawText("5", 0, 30);
             /* Read registers to check STC bit */
             atomic { states.tune = FINTUNE; }
-            post readRegisters();
+            readRegisters();
         }
         else if (FINTUNE == state)
         {
@@ -538,15 +541,14 @@ implementation {
             /* Tuning complete */
             if (!stc)
             {
-                signal FMClick.tuneComplete(currChannel);
-                atomic { rds.RTMaxBlocks = RT_BLOCKS-1; }
-                if (RDSen)
+                atomic 
                 {
-                    atomic { states.driver = RDSEN; } 
-                    enableRDS(TRUE);
+                    rds.RTMaxBlocks = RT_BLOCKS-1;
+                    states.driver = IDLE; 
                 }
-                else
-                    atomic { states.driver = IDLE; } 
+                if (RDSen)
+                    enableRDS(TRUE);
+                signal FMClick.tuneComplete(currChannel);
             }
             /* Read the register file until STC is cleared */
             else
@@ -593,7 +595,7 @@ implementation {
                 writeAddr = SYSCONF1_REG; 
                 states.seek = WAITSEEK;
             }
-            post writeRegisters();
+            writeRegisters();
         }
         else if (WAITSEEK == state)
         {
@@ -607,7 +609,7 @@ implementation {
         {
             call Glcd.drawText("c", 0, 30);
             atomic { states.seek = ENDSEEK; }
-            post readRegisters();
+            readRegisters();
         }
         else if (ENDSEEK == state)
         {
@@ -625,14 +627,14 @@ implementation {
                 writeAddr = POWERCONF_REG;
                 states.seek = READSEEK;
             }
-            post writeRegisters();
+            writeRegisters();
         }
         else if (READSEEK == state)
         {
             call Glcd.drawText("e", 0, 30);
             /* Read registers to check STC bit */
             atomic { states.seek = FINSEEK; }
-            post readRegisters();
+            readRegisters();
         }
         else if (FINSEEK == state)
         {   
@@ -657,27 +659,21 @@ implementation {
                     }
                     else
                     {
-                        atomic { rds.RTMaxBlocks = RT_BLOCKS-1; }
-                        if (RDSen)
-                        {
-                            atomic { states.driver = RDSEN; } 
-                            enableRDS(TRUE);
+                        atomic 
+                        { 
+                            rds.RTMaxBlocks = RT_BLOCKS-1;
+                            states.driver = IDLE; 
                         }
-                        else
-                            atomic { states.driver = IDLE; } 
+                        if (RDSen)
+                            enableRDS(TRUE);
                     }
                 }
                 /* Reached band end / no valid channel found */
-                //TODO maybe need signal here as well
                 else
                 {
+                    atomic { states.driver = IDLE; }
                     if (RDSen)
-                    {
-                        atomic { states.driver = RDSEN; } 
                         enableRDS(TRUE);
-                    }
-                    else
-                        atomic { states.driver = IDLE; } 
                 }
             }
             /* Read the register file until STC is cleared */
@@ -705,7 +701,7 @@ implementation {
         if (READRDS == state)
         {
             atomic { states.rds = DECODERDS; }
-            post readRegisters();
+            readRegisters();
         }
         else if (DECODERDS == state)
         {
@@ -738,10 +734,10 @@ implementation {
                         /* Station Name */
                         rds.PS[offset<<1] = (char)(RDSD >> 8);
                         rds.PS[(offset<<1)+1] = (char)RDSD;
-                        rds.PSBlocks |= (1<<offset);
                         blocks = rds.PSBlocks;
+                        rds.PSBlocks = (rds.PSBlocks+1) & (PS_BLOCKS-1);
                     }
-                    if (blocks == 0x0f)
+                    if (blocks == PS_BLOCKS-1)
                     {
                         signal FMClick.rdsReceived(PS, rds.PS);
                         memset(rds.PS, ' ', PS_BUF_SZ);
@@ -772,13 +768,12 @@ implementation {
                         rds.RTBlocks++;
                         blocks = rds.RTBlocks;
                     }
-                    //if (blocks == rds.RTMaxBlocks+1)
-                    //{
-                    //    signal FMClick.rdsReceived(RT, rds.RT);
-                    //    memset(rds.RT, ' ', RT_BUF_SZ);
-                    //    rds.RTBlocks = 0;
-                    //}
-                    signal FMClick.rdsReceived(RT, rds.RT);
+                    if (blocks == rds.RTMaxBlocks+1)
+                    {
+                        signal FMClick.rdsReceived(RT, rds.RT);
+                        memset(rds.RT, ' ', RT_BUF_SZ);
+                        rds.RTBlocks = 0;
+                    }
                     break;
 
                 case GT_2B:
@@ -800,13 +795,12 @@ implementation {
                         rds.RTBlocks++;
                         blocks = rds.RTBlocks;
                     }
-                    //if (blocks == rds.RTMaxBlocks+1)
-                    //{
-                    //    signal FMClick.rdsReceived(RT, rds.RT);
-                    //    memset(rds.RT, ' ', RT_BUF_SZ);
-                    //    rds.RTBlocks = 0;
-                    //}
-                    signal FMClick.rdsReceived(RT, rds.RT);
+                    if (blocks == rds.RTMaxBlocks+1)
+                    {
+                        signal FMClick.rdsReceived(RT, rds.RT);
+                        memset(rds.RT, ' ', RT_BUF_SZ);
+                        rds.RTBlocks = 0;
+                    }
                     break;
                 
                 case GT_4A:
@@ -833,125 +827,55 @@ implementation {
                     break;
             }
 
-            if (!RDSen)
-            {
-                atomic 
-                { 
-                    states.driver = RDSEN;
-                    states.rds = READRDS; 
-                } 
-                enableRDS(FALSE);
-            }
-            else
-            {
-                atomic 
-                { 
-                    states.driver = IDLE;  
-                    states.rds = READRDS; 
-                }
+            atomic 
+            { 
+                states.rds = READRDS;
+                states.driver = IDLE;
             }
         }
     }
-  
-    task void readRegisters(void)
-    {
-        enum bus_state state;
-        
-        /* Make sure the bus is clear */
-        atomic { state = states.bus; }
-        if (NOOP != state)
-        {
-            call Glcd.drawText("x", 10, 40);
-            post readRegisters();
-            return;
-        }
 
-        atomic { states.bus = READ; }
-
-        call I2CResource.request();
-    }
-
+    ////////////////////////
+    /* Internal functions */
+    ////////////////////////
+    
     /*
-     * @brief Send read request to the FMClick module.
+     * @brief Read all registers of the FMClick module.
      */
-    task void readI2C(void)
+    void readRegisters(void)
     {
-        if(call I2C.read(I2C_START | I2C_STOP,
-               DEVICE_READ_ADDR,
-               REGISTER_NUM*REGISTER_WIDTH,
-               comBuffer) != SUCCESS)
-        {
-            call Glcd.drawText("y", 10, 40);
-            post readI2C();
-        }
-        else
-        {
-            call Glcd.drawText("z", 10, 40);
-        }
-    }
-
-    /*
-     * @brief Write all registers of the FMClick module up until the address specified in the global writeAddr.
-     */
-    task void writeRegisters(void)
-    {
-        /* Write buffered registers to communication buffer */
-        uint8_t i = WRITE_START_ADDR;
-        uint8_t j;
-        uint8_t bytesToSend;
-        enum bus_state state;
-       
-        /* Make sure the bus is clear */
-        atomic { state = states.bus; }
-        if (NOOP != state)
-        {
-            call Glcd.drawText("u", 10, 40);
-            post writeRegisters();
-            return;
-        }
-        
-        atomic 
-        { 
-            states.bus = WRITE;
-            bytesToSend = (writeAddr-WRITE_START_ADDR+1)*REGISTER_WIDTH; 
-        }
-      
-        /* Prepare communication buffer for writing */
-        for (j = 0; j < bytesToSend; j += REGISTER_WIDTH)
+        enum com_state state;
+        atomic { state = states.read; }
+        if (REQ == state)
         {
             atomic
             {
-                comBuffer[j] = (uint8_t) (shadowRegisters[i] >> 8);
-                comBuffer[j+1] = (uint8_t) shadowRegisters[i];
+                states.bus = READ;
+                states.read = COM;
             }
-            i = (i+1) & (REGISTER_NUM-1);
-        }
 
-        call I2CResource.request();
+            if (call I2CResource.request() != SUCCESS)
+                call Glcd.drawText("x", 20, 40);
+        }
+        else if (COM == state)
+        {
+            //TODO maybe throw error (GLCD?) instead of hanging
+            if(call I2C.read(I2C_START | I2C_STOP,
+                   DEVICE_READ_ADDR,
+                   REGISTER_NUM*REGISTER_WIDTH,
+                   comBuffer) != SUCCESS)
+            {
+                //readRegisters();
+                call Glcd.drawText("y", 10, 40);
+            }
+            else
+            {
+                atomic { states.read = REQ; }
+                call Glcd.drawText("z", 10, 40);
+            }
+        }
     }
 
-    /*
-     * @brief Send write request to the FMClick module.
-     */
-    task void writeI2C(void)
-    {
-        uint8_t bytesToSend;
-        atomic { bytesToSend = (writeAddr-WRITE_START_ADDR+1)*REGISTER_WIDTH; }
-       
-        if (call I2C.write(I2C_START | I2C_STOP, 
-               DEVICE_WRITE_ADDR,
-               bytesToSend,
-               comBuffer) != SUCCESS)
-        {
-            call Glcd.drawText("v", 10, 40);
-            post writeI2C();
-        }
-        else
-        {
-            call Glcd.drawText("w", 10, 40);
-        }
-    }
-    
     /*
      * @brief Write the read register values to the shadow register file in the correct order.
      */
@@ -966,15 +890,68 @@ implementation {
         }
     }
 
-    ////////////////////////
-    /* Internal functions */
-    ////////////////////////
+    /*
+     * @brief Write all registers of the FMClick module up until the address specified in the global writeAddr.
+     */
+    void writeRegisters(void)
+    {
+        enum com_state state;
+        atomic { state = states.write; }
+        
+        if (REQ == state)
+        {
+            /* Write buffered registers to communication buffer */
+            uint8_t i = WRITE_START_ADDR;
+            uint8_t j;
+            uint8_t bytesToSend;
+
+            atomic { bytesToSend = (writeAddr-WRITE_START_ADDR+1)*REGISTER_WIDTH; }
+           
+            for (j = 0; j < bytesToSend; j += REGISTER_WIDTH)
+            {
+                atomic
+                {
+                    comBuffer[j] = (uint8_t) (shadowRegisters[i] >> 8);
+                    comBuffer[j+1] = (uint8_t) shadowRegisters[i];
+                }
+                i = (i+1) & (REGISTER_NUM-1);
+            }
+
+            atomic
+            {
+                states.bus = WRITE;
+                states.write = COM;
+            }
+            if (call I2CResource.request() != SUCCESS)
+                call Glcd.drawText("u", 20, 40);
+        } 
+        else if (COM == state)
+        {
+            uint8_t bytesToSend;
+            atomic { bytesToSend = (writeAddr-WRITE_START_ADDR+1)*REGISTER_WIDTH; }
+            
+            //TODO maybe throw error (GLCD?) instead of hanging
+            if (call I2C.write(I2C_START | I2C_STOP, 
+                   DEVICE_WRITE_ADDR,
+                   bytesToSend,
+                   comBuffer) != SUCCESS)
+            {
+                //writeRegisters();
+                call Glcd.drawText("v", 10, 40);
+            }
+            else
+            {
+                atomic { states.write = REQ; }
+                call Glcd.drawText("w", 10, 40);
+            }
+        }
+    }
    
     /*
      * @brief           Enable/disable reception of RDS information on the FMCLick board.
      * @param enable    Enable/disable RDS information.
      */
-    static void enableRDS(bool enable)
+    void enableRDS(bool enable)
     {
         char buf[7];
 
@@ -1007,10 +984,10 @@ implementation {
             }
         }
 
-        //sprintf(buf, "0x%X", shadowRegisters[SYSCONF1_REG]);
-        //call Glcd.drawText(buf, 0, 50);
+        sprintf(buf, "0x%X", shadowRegisters[SYSCONF1_REG]);
+        call Glcd.drawText(buf, 0, 50);
 
-        post writeRegisters();
+        writeRegisters();
     }
 
     ////////////////////////
@@ -1040,7 +1017,7 @@ implementation {
         
         if (FAIL == error)
         {
-            post readI2C();
+            readRegisters();
             return;
         }
 
@@ -1079,7 +1056,7 @@ implementation {
 
         if (FAIL == error)
         {
-            post writeI2C();
+            writeRegisters();
             return;
         }
         
@@ -1147,11 +1124,11 @@ implementation {
         switch (state)
         {
             case READ:
-                post readI2C();
+                readRegisters();
                 break;
 
             case WRITE:
-                post writeI2C();
+                writeRegisters();
                 break;
 
             default:
