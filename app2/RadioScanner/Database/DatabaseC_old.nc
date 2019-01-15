@@ -28,6 +28,9 @@ implementation {
     components DatabaseP, IpTransceiverC, LlcTransceiverP, GlcdC;
     components Enc28j60C as EthernetC;
     components new UdpC(UDP_PORT);
+    components new PoolC(udp_msg_t, POOL_SIZE) as UdpMsgPool;
+    components new QueueC(udp_msg_t*, SEND_Q_LEN) as UdpSendQ;
+    components new QueueC(udp_msg_t*, RECV_Q_LEN) as UdpRecvQ;
 
     Init = DatabaseP.Init;
     Database = DatabaseP.Database;
@@ -38,6 +41,9 @@ implementation {
     DatabaseP.UdpReceive -> UdpC;
     DatabaseP.IpControl -> IpTransceiverC;
     DatabaseP.Control -> EthernetC;
+    DatabaseP.MsgPool -> UdpMsgPool;
+    DatabaseP.SendQ -> UdpSendQ;
+    DatabaseP.RecvQ -> UdpRecvQ;
 
     DatabaseP.Glcd -> GlcdC;
 }

@@ -76,8 +76,8 @@ implementation {
     typedef struct
     {
         channelInfo info;
-        char name[NAME_SZ];
-        char note[NOTE_SZ];
+        char name[NAME_SZ+1];
+        char note[NOTE_SZ+1];
     } channel_t;
     #define CHANNEL_LIST_SZ 15
     static struct
@@ -121,6 +121,9 @@ implementation {
         char c;
         enum app_state state;
 
+        //TODO only for debugging
+        channelInfo chan = {1, 1038, 12345, "  OE1   ", "yo servas habe dere"};
+        
         atomic 
         { 
             c = kbChar;
@@ -211,6 +214,19 @@ implementation {
                     call DisplayTimer.stop();
                     atomic { appState = SEEK; }
                     post startSeekUp();
+                    break;
+
+                //TODO following cases are for debugging only
+                case 'p':
+                    call DB.purgeChannelList();
+                    break;
+
+                case 'o':
+                    call DB.saveChannel(0xff, &chan);
+                    break;
+
+                case 'i':
+                    call DB.getChannelList(FALSE);
                     break;
 
                 default:
@@ -391,8 +407,6 @@ implementation {
                 call Glcd.drawTextPgm(text_unknownError, 0, 20);
                 break;
         }
-
-        //TODO may require endless loop here
     }
     
     /*
@@ -400,8 +414,11 @@ implementation {
      */
     task void displaySoftError(void)
     {
+        call DisplayTimer.stop();
+
         call Glcd.fill(0x00);
         call Glcd.drawTextPgm(text_error, 0, 10);
+        
         switch (errno)
         {
             case E_BAND_LIMIT:
@@ -414,6 +431,14 @@ implementation {
 
             case E_FAVS_FULL:
                 call Glcd.drawTextPgm(text_favsFull, 0, 20);
+                break;
+
+            case E_DB_FULL:
+                call Glcd.drawTextPgm(text_dbFull, 0, 20);
+                break;
+
+            case E_DB_ERR:
+                call Glcd.drawTextPgm(text_dbErr, 0, 20);
                 break;
 
             default:
@@ -686,28 +711,49 @@ implementation {
     
     event void DB.receivedChannelEntry(uint8_t id, channelInfo channel)
     {
-        char buf[128];
-        sprintf(buf, "q=%d,f=%d,p=%d,n=%s,n=%s\n", channel.quickDial, channel.frequency, channel.pi_code, channel.name, channel.notes);
-        call Glcd.drawText(buf, 0, 40);
+        if (id == 0xff)
+        {
+            call Glcd.drawText("list end", 0, 50);
+        }
+        else
+        {
+            char buf[128];
+            sprintf(buf, "q=%d,f=%d,p=%d,n=%s,n=%s\n", channel.quickDial, channel.frequency, channel.pi_code, channel.name, channel.notes);
+            call Glcd.drawText(buf, 0, 40);
+        }
     }
 
     event void DB.savedChannel(uint8_t id, uint8_t result)
     {
         uint8_t state;
         atomic { state = appState; }
-
-        switch (state)
+ 
+        if (result == 0)
         {
-            //TODO maybe notify user
-            case ADD:
-                atomic { state = KBCTRL; }
-                call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
-                break;
+            call Glcd.drawText("sc", 0, 40);
+            switch (state)
+            {
+                //TODO maybe notify user
+                case ADD:
+                    atomic { state = KBCTRL; }
+                    call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                    break;
 
-            default:
-                atomic { state = KBCTRL; }
-                call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
-                break;
+                default:
+                    atomic { state = KBCTRL; }
+                    call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                    break;
+            }
+        }
+        else if (result == 1)
+        {
+            errno = E_DB_FULL;
+            post displaySoftError();
+        }
+        else
+        {
+            errno = E_DB_ERR;
+            post displaySoftError();
         }
     }
 }

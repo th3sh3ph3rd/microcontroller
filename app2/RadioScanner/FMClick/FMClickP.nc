@@ -8,8 +8,8 @@
  *
 **/
 
-//TODO seek not working properly when RDS is enbaled -> some register or interrupt conflict
 //TODO RDS not very reliable, have to find way to handle PS and RT group types properly
+//TODO remove uneccessary states, e.g. REQ state
 
 #include <stdio.h>
 #include <string.h>

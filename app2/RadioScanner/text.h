@@ -33,6 +33,10 @@ const char text_bandLimit[] PROGMEM = "Out of band limits!";
 const char text_listFull[] PROGMEM = "Channel list full!";
 #define E_FAVS_FULL 3
 const char text_favsFull[] PROGMEM = "Favourites full!";
+#define E_DB_FULL 4
+const char text_dbFull[] PROGMEM = "DB full!";
+#define E_DB_ERR 5
+const char text_dbErr[] PROGMEM = "DB error!";
 
 #endif
 
