@@ -8,13 +8,19 @@
  *
 **/
 
-//TODO take strings from PROGMEM, also in database file!!
-
 #include <avr/pgmspace.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <text.h>
+
+//TODO fix tune
+//TODO use BANDSEEK option from driver, just remove automatic moving
+//TODO implement RDS timeout for band seek, maybe with timer and RDS received event
+//TODO put display timer start/stop in function and pari with enable/disable RDS and clear RDS data
+//TODO move handle char state switcher to event
+//TODO implement back key for functions with input
+//TODO implement stop key for band seek
 
 module RadioScannerP {
     uses
@@ -41,6 +47,7 @@ implementation {
     #define DISPLAY_UPDATE_RATE 1000
     #define VOLUME_UPDATE_RATE  100
     #define ERROR_MSG_TIMEOUT   1000
+    #define RDS_TIMEOUT         5000
 
     enum app_state {INIT, KBCTRL, TUNEINP, TUNE, SEEK, BANDSEEK, ADD};
     static enum app_state appState;
@@ -104,12 +111,12 @@ implementation {
     task void startSeekUp(void);
     task void startSeekDown(void);
     task void startTune(void);
+    task void addChannel(void);
     task void displayHardError(void);
     task void displaySoftError(void);
 
     static void printVolume(void);
     static void clearRDSData(void);
-    static void addChannel(void);
     static void addFavourite(void);
 
     ////////////////////////
@@ -138,7 +145,7 @@ implementation {
                 case 'a':
                     call Radio.receiveRDS(FALSE);
                     atomic { appState = ADD; }
-                    addChannel();
+                    post addChannel();
                     break;
 
                 /* Add current channel to favourites */
@@ -179,12 +186,14 @@ implementation {
                 //case 'n':
                 //    call Radio.receiveRDS(FALSE);
 
-                //TODO tune to channel 0 (875) before seek
                 case 's':
                     clearRDSData();
-                    atomic { appState = BANDSEEK; }
-                    //call Radio.tune(875);
-                    call Radio.seek(BAND);
+                    atomic 
+                    { 
+                        appState = BANDSEEK;
+                        nextChan = BAND_LIMIT_LO;
+                    }
+                    post startTune();
                     break;
 
                 /* Enter frequency and tune to channel */
@@ -288,7 +297,7 @@ implementation {
             atomic { appState = TUNE; }
             if (channel < BAND_LIMIT_LO || channel > BAND_LIMIT_HI)
             {
-                errno = E_BAND_LIMIT;
+                errno = E_CHAN_INVAL;
                 post displaySoftError();
             }
             else
@@ -391,98 +400,9 @@ implementation {
     }
 
     /*
-     * @brief Display an error message according to errno and remain in this state forever.
-     */
-    task void displayHardError(void)
-    {
-        call Glcd.fill(0x00);
-        call Glcd.drawTextPgm(text_error, 0, 10);
-        switch (errno)
-        {
-            case E_FMCLICK_INIT:
-                call Glcd.drawTextPgm(text_FMClickInitFail, 0, 20);
-                break;
-
-            default:
-                call Glcd.drawTextPgm(text_unknownError, 0, 20);
-                break;
-        }
-    }
-    
-    /*
-     * @brief Display an error message according to errno and return to previous state.
-     */
-    task void displaySoftError(void)
-    {
-        call DisplayTimer.stop();
-
-        call Glcd.fill(0x00);
-        call Glcd.drawTextPgm(text_error, 0, 10);
-        
-        switch (errno)
-        {
-            case E_BAND_LIMIT:
-                call Glcd.drawTextPgm(text_bandLimit, 0, 20);
-                break;
-            
-            case E_LIST_FULL:
-                call Glcd.drawTextPgm(text_listFull, 0, 20);
-                break;
-
-            case E_FAVS_FULL:
-                call Glcd.drawTextPgm(text_favsFull, 0, 20);
-                break;
-
-            case E_DB_FULL:
-                call Glcd.drawTextPgm(text_dbFull, 0, 20);
-                break;
-
-            case E_DB_ERR:
-                call Glcd.drawTextPgm(text_dbErr, 0, 20);
-                break;
-
-            default:
-                call Glcd.drawTextPgm(text_unknownError, 0, 20);
-                break;
-        }
-
-        call ErrorTimer.startOneShot(ERROR_MSG_TIMEOUT);
-    }
-
-    ////////////////////////
-    /* Internal functions */
-    ////////////////////////
-   
-    /* 
-     * @brief Print the current volume value on the lcd screen.
-     */
-    static void printVolume(void)
-    {
-        char volBuf[3];
-        
-        sprintf(volBuf, "%02d", oldVolume);
-        volBuf[2] = '\0';
-
-        call Lcd.goTo(0,8);
-        call Lcd.write(volBuf);
-        call Lcd.forceRefresh();
-    }
-
-    /*
-     * @brief Clear the RDS buffers.
-     */
-    static void clearRDSData(void)
-    {
-        atomic { rds.PSAvail = FALSE; }
-        memset(rds.PS, 0, PS_BUF_SZ+1);
-        memset(rds.RT, 0, RT_BUF_SZ+1);
-        memset(rds.CT, 0, CT_BUF_SZ);
-    }
-    
-    /*
      * @brief Add/update the current channel to the local list and the DB.
      */
-    static void addChannel(void)
+    task void addChannel(void)
     {
         uint8_t i, id;
         id = 0xff;
@@ -563,7 +483,99 @@ implementation {
             }
         }
     }
+    /*
+     * @brief Display an error message according to errno and remain in this state forever.
+     */
+    task void displayHardError(void)
+    {
+        call Glcd.fill(0x00);
+        call Glcd.drawTextPgm(text_error, 0, 10);
+        switch (errno)
+        {
+            case E_FMCLICK_INIT:
+                call Glcd.drawTextPgm(text_FMClickInitFail, 0, 20);
+                break;
 
+            default:
+                call Glcd.drawTextPgm(text_unknownError, 0, 20);
+                break;
+        }
+    }
+    
+    /*
+     * @brief Display an error message according to errno and return to previous state.
+     */
+    task void displaySoftError(void)
+    {
+        call DisplayTimer.stop();
+
+        call Glcd.fill(0x00);
+        call Glcd.drawTextPgm(text_error, 0, 10);
+        
+        switch (errno)
+        {
+            case E_CHAN_INVAL:
+                call Glcd.drawTextPgm(text_chanInval, 0, 20);
+                break;
+            
+            case E_LIST_FULL:
+                call Glcd.drawTextPgm(text_listFull, 0, 20);
+                break;
+
+            case E_FAVS_FULL:
+                call Glcd.drawTextPgm(text_favsFull, 0, 20);
+                break;
+
+            case E_DB_FULL:
+                call Glcd.drawTextPgm(text_dbFull, 0, 20);
+                break;
+
+            case E_DB_ERR:
+                call Glcd.drawTextPgm(text_dbErr, 0, 20);
+                break;
+            
+            case E_BAND_LIMIT:
+                call Glcd.drawTextPgm(text_bandLimit, 0, 20);
+                break;
+
+            default:
+                call Glcd.drawTextPgm(text_unknownError, 0, 20);
+                break;
+        }
+
+        call ErrorTimer.startOneShot(ERROR_MSG_TIMEOUT);
+    }
+
+    ////////////////////////
+    /* Internal functions */
+    ////////////////////////
+   
+    /* 
+     * @brief Print the current volume value on the lcd screen.
+     */
+    static void printVolume(void)
+    {
+        char volBuf[3];
+        
+        sprintf(volBuf, "%02d", oldVolume);
+        volBuf[2] = '\0';
+
+        call Lcd.goTo(0,8);
+        call Lcd.write(volBuf);
+        call Lcd.forceRefresh();
+    }
+
+    /*
+     * @brief Clear the RDS buffers.
+     */
+    static void clearRDSData(void)
+    {
+        atomic { rds.PSAvail = FALSE; }
+        memset(rds.PS, 0, PS_BUF_SZ+1);
+        memset(rds.RT, 0, RT_BUF_SZ+1);
+        memset(rds.CT, 0, CT_BUF_SZ);
+    }
+    
     /*
      * @brief Add the current channel to the favourites list.
      */
@@ -580,7 +592,7 @@ implementation {
             {
                 favourites.table[favourites.entries] = channels.current;
                 channels.list[channels.entries].info.quickDial = favourites.entries++;
-                addChannel();
+                post addChannel();
             }
         }
         else
@@ -589,7 +601,6 @@ implementation {
             post displaySoftError();
         }
     }
-
     
     ////////////////////////
     /* Events */
@@ -647,14 +658,62 @@ implementation {
 
     async event void Radio.tuneComplete(uint16_t channel)
     {
-        atomic { currChan = channel; }
-        call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+        enum app_state state;
+        atomic 
+        { 
+            currChan = channel;
+            state = appState;
+        }
+
+        switch (state)
+        {
+            case BANDSEEK:
+                post startSeekUp();
+                break;
+
+            case TUNE:
+                call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                break;
+
+            default:
+                call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                break;
+        }
     }
 
     async event void Radio.seekComplete(uint16_t channel)
     {
-        atomic { currChan = channel; }
-        call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+        enum app_state state;
+        atomic 
+        { 
+            currChan = channel;
+            state = appState;
+        }
+
+        switch (state)
+        {
+            case BANDSEEK:
+                if (channel < BAND_LIMIT_HI)
+                {
+                    //TODO maybe call clearRDS
+                    post displayChannelInfo();
+                    post addChannel();
+                }
+                else
+                {
+                    errno = E_BAND_LIMIT;
+                    post displaySoftError();
+                }
+                break;
+
+            case SEEK:
+                call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                break;
+
+            default:
+                call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                break;
+        }
     }
    
     async event void Radio.rdsReceived(RDSType type, char *buf)
@@ -737,6 +796,10 @@ implementation {
                 case ADD:
                     atomic { state = KBCTRL; }
                     call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                    break;
+
+                case BANDSEEK:
+                    post startSeekUp();
                     break;
 
                 default:

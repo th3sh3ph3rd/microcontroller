@@ -27,8 +27,8 @@ const char text_error[] PROGMEM = "Error:";
 const char text_unknownError[] PROGMEM = "Unknown error!";
 #define E_FMCLICK_INIT 0
 const char text_FMClickInitFail[] PROGMEM = "FMClick init failed!";
-#define E_BAND_LIMIT 1
-const char text_bandLimit[] PROGMEM = "Out of band limits!";
+#define E_CHAN_INVAL 1
+const char text_chanInval[] PROGMEM = "Invalid channel!";
 #define E_LIST_FULL 2
 const char text_listFull[] PROGMEM = "Channel list full!";
 #define E_FAVS_FULL 3
@@ -37,6 +37,8 @@ const char text_favsFull[] PROGMEM = "Favourites full!";
 const char text_dbFull[] PROGMEM = "DB full!";
 #define E_DB_ERR 5
 const char text_dbErr[] PROGMEM = "DB error!";
+#define E_BAND_LIMIT 6
+const char text_bandLimit[] PROGMEM = "Band limit reached!";
 
 #endif
 

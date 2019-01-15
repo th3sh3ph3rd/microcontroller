@@ -15,9 +15,9 @@
 #include <udp_config.h>
 #include <commands.h>
 
-//TODO find out if send queue is needed
-//TODO find out if cmd/param strings have to be stored in progmem
-//TODO response error (delete) on line 492 in database.c
+//TODO find bug in get/list
+//TODO put strings from commands in PROGMEM
+//TODO implement functionality in network stack
 
 module DatabaseP {
     provides 
