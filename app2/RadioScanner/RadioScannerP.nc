@@ -14,14 +14,17 @@
 #include <string.h>
 #include <text.h>
 
-//TODO move through list to next frequency, not entry
-//TODO move through list to next frequency, not entry!
+//TODO implement note feature
+//TODO database deepcopy note
 //TODO use BANDSEEK option from driver, just remove automatic moving
 //TODO implement RDS timeout for band seek, maybe with timer and RDS received event
+//TODO RDS probably doesnt get turned back on reliably
 //TODO move handle char state switcher to event
 //TODO automatically update RDS info to DB if available
 //TODO implement back key for functions with input
 //TODO implement stop key for band seek
+//TODO cleanup keyboard driver
+//TODO udp additional functionality
 
 module RadioScannerP {
     uses
@@ -49,7 +52,7 @@ implementation {
     #define ERROR_MSG_TIMEOUT   700
     #define RDS_TIMEOUT         5000
 
-    enum app_state {INIT, KBCTRL, TUNEINP, TUNE, SEEK, BANDSEEK, ADD, FAV};
+    enum app_state {INIT, KBCTRL, TUNEINP, TUNE, SEEK, BANDSEEK, ADD, FAV, NOTE};
     static enum app_state appState;
 
     static char kbChar;
@@ -62,7 +65,7 @@ implementation {
         uint8_t idx;
         char buf[TUNEINPUT_BUF_SZ];
     } tuneInput;
-    
+  
     //TODO defines should actually come from interface file
     #define PS_BUF_SZ   8
     #define RT_BUF_SZ   64
@@ -90,6 +93,12 @@ implementation {
         char note[NOTE_SZ+1];
     } channel_t;
 
+    static struct
+    {
+        uint8_t idx;
+        char buf[NOTE_SZ+1];
+    } noteInput;
+    
     /* The internal channel list */
     #define CHANNEL_LIST_SZ 15
     static struct
@@ -112,6 +121,7 @@ implementation {
     static uint8_t errno;
 
     task void inputTuneChannel(void);
+    task void inputNote(void);
     task void displayChannelInfo(void);
     task void displayRDS(void);
     task void setVolume(void);
@@ -126,6 +136,9 @@ implementation {
     static void clearRDSData(void);
     static void addFavourite(void);
     static uint8_t getListId(uint16_t channel);
+    static uint8_t getNextId(uint16_t channel);
+    static void tuneNextHighest(void);
+    static void addNote(void);
 
     ////////////////////////
     /* Tasks              */
@@ -144,7 +157,7 @@ implementation {
             c = kbChar;
             state = appState;
         }
-
+        
         if (KBCTRL == appState)
         {
             switch (c)
@@ -162,47 +175,16 @@ implementation {
                     addFavourite();
                     break;
 
-                /* Tune to previous list entry */
-                case 'h':
-                    if (channels.entries > 0)
-                    {
-                        call Radio.receiveRDS(FALSE);
-                        clearRDSData();
-                        if (channels.current == 0)
-                            channels.current = channels.entries-1;
-                        else
-                            channels.current--;
-                        atomic 
-                        { 
-                            appState = TUNE;
-                            nextChan = channels.list[channels.current].info.frequency;
-                        }
-                        post startTune();
-                    }
-                    break;
-
-                /* Tune to next list entry */
+                /* Tune to list entry with next highest frequency */
                 case 'l':
-                    if (channels.entries > 0)
-                    {
-                        call Radio.receiveRDS(FALSE);
-                        clearRDSData();
-                        if (channels.current == channels.entries-1)
-                            channels.current = 0;
-                        else
-                            channels.current++;
-                        atomic 
-                        { 
-                            appState = TUNE;
-                            nextChan = channels.list[channels.current].info.frequency;
-                        }
-                        post startTune();
-                    }
+                    tuneNextHighest();
                     break;
 
                 /* Add note */
-                //case 'n':
-                //    call Radio.receiveRDS(FALSE);
+                case 'n':
+                    atomic { appState = NOTE; }
+                    addNote();
+                    break;
 
                 case 's':
                     call Radio.receiveRDS(FALSE);
@@ -225,6 +207,8 @@ implementation {
                         memset(tuneInput.buf, 0, TUNEINPUT_BUF_SZ);
                         appState = TUNEINP;
                     }
+                    call Glcd.fill(0x00);
+                    call Glcd.drawTextPgm(text_channelInput, 0, 10);
                     post inputTuneChannel();
                     break;
 
@@ -289,42 +273,32 @@ implementation {
         }
         else if (TUNEINP == state)
             post inputTuneChannel();
+        else if (NOTE == state)
+            post inputNote();
     }
 
-    //TODO only write text once
-    //Clear only input line
     task void inputTuneChannel(void)
     {
         char c;
-        uint8_t idx;
-        char buf[TUNEINPUT_BUF_SZ];
-        
-        atomic 
-        { 
-            c = kbChar;
-            idx = tuneInput.idx; 
-        }
-
-        call Glcd.fill(0x00);
-        call Glcd.drawTextPgm(text_channelInput, 0, 10);
+        atomic { c = kbChar; }
         
         if (isdigit(c))
         {
-            if (idx < TUNEINPUT_BUF_SZ-1)
-                atomic { tuneInput.buf[tuneInput.idx++] = c; }
+            if (tuneInput.idx < TUNEINPUT_BUF_SZ-1)
+                tuneInput.buf[tuneInput.idx++] = c;
         }
 
         /* Backspace */
-        if (c == '\b' && idx > 0)
-            atomic { tuneInput.buf[--tuneInput.idx] = '\0'; }
+        if (c == '\b' && tuneInput.idx > 0)
+            tuneInput.buf[--tuneInput.idx] = '\0';
         
-        atomic { memcpy(buf, tuneInput.buf, TUNEINPUT_BUF_SZ); }
-        call Glcd.drawText(buf, 0, 20);
+        call Glcd.drawTextPgm(text_emptyTime, 0, 20);
+        call Glcd.drawText(tuneInput.buf, 0, 20);
 
         /* Complete entering channel */
-        if (c == 'g')
+        if (c == '\n')
         {
-            uint16_t channel = (uint16_t)strtoul(buf, NULL, 10);
+            uint16_t channel = (uint16_t) strtoul(tuneInput.buf, NULL, 10);
             atomic { appState = TUNE; }
             if (channel < BAND_LIMIT_LO || channel > BAND_LIMIT_HI)
             {
@@ -336,6 +310,52 @@ implementation {
                 atomic { nextChan = channel; }
                 post startTune();
             }
+        }
+    }
+    
+    task void inputNote(void)
+    {
+        char c;
+        char line[22];
+        atomic { c = kbChar; }
+        
+        /* Backspace */
+        if (c == '\b')
+        {
+            if (noteInput.idx > 0)
+                noteInput.buf[--noteInput.idx] = '\0';
+        }
+        else if (c != '\n' && c != '\r' && c != '\0')
+        {
+            if (noteInput.idx < NOTE_SZ)
+                noteInput.buf[noteInput.idx++] = c;
+        }
+      
+        /* Write input to screen */
+        memcpy(line, noteInput.buf, 21);
+        line[21] = '\0';
+        call Glcd.drawTextPgm(text_emptyLine, 122, 20);
+        call Glcd.drawText(line, 122, 20);
+        memcpy(line, noteInput.buf+21, 19);
+        line[19] = '\0';
+        call Glcd.drawTextPgm(text_emptyLine, 122, 30);
+        call Glcd.drawText(line, 122, 30);
+
+        /* Complete entering note */
+        if (c == '\n')
+        {
+            uint8_t id;
+            uint16_t channel;
+
+            atomic 
+            {
+                appState = ADD;
+                channel = currChan; 
+            }
+
+            id = getListId(channel);
+            memcpy(channels.list[id].note, noteInput.buf, NOTE_SZ+1);
+            call DB.saveChannel(id, &channels.list[id].info);            
         }
     }
 
@@ -350,7 +370,7 @@ implementation {
         call Glcd.drawText("Radio initialized.", 0, 10);
     }
    
-    //TODO move put line spacing in macros
+    //TODO put line spacing in macros
     task void displayChannelInfo(void)
     {
         char freqBuf[5], idBuf[3], line[22];
@@ -387,6 +407,16 @@ implementation {
                 idBuf[2] = '\0';
                 call Glcd.drawText(idBuf, 78, 7);
             }
+
+            /* Display note */
+            memcpy(line, channels.list[id].note, 21);
+            line[21] = '\0';
+            call Glcd.drawTextPgm(text_emptyLine, 122, 47);
+            call Glcd.drawText(line, 122, 47);
+            memcpy(line, channels.list[id].note+21, 19);
+            line[19] = '\0';
+            call Glcd.drawTextPgm(text_emptyLine, 122, 55);
+            call Glcd.drawText(line, 122, 55);
         }
 
         /* Display initial RDS data */
@@ -471,19 +501,28 @@ implementation {
             printVolume();
         }
     }
-    
+   
+    /*
+     * @brief Start seeking upwards.
+     */
     task void startSeekUp(void)
     {
         if (call Radio.seek(UP) != SUCCESS)
             post startSeekUp();
     }
     
+    /*
+     * @brief Start seeking downwards.
+     */
     task void startSeekDown(void)
     {
         if (call Radio.seek(DOWN) != SUCCESS)
             post startSeekDown();
     }
 
+    /*
+     * @brief Start tuning to a specific frequency.
+     */
     task void startTune(void)
     {
         uint16_t channel;
@@ -546,6 +585,10 @@ implementation {
                 newChan.notes = NULL;
 
                 memcpy(&channels.list[channels.entries].info, &newChan, sizeof(channelInfo));
+                channels.list[channels.entries].info.name = channels.list[channels.entries].name;
+                channels.list[channels.entries].info.notes = channels.list[channels.entries].note;
+                *channels.list[channels.entries].name = '\0';
+                *channels.list[channels.entries].note = '\0';
                 channels.current = channels.entries;
                 
                 if (PSAvail)
@@ -743,6 +786,87 @@ implementation {
         }
     
         return 0xff;
+    }
+    
+    /*
+     * @brief           Get the ID of the channel with the next highest frequency in the list.
+     * @param channel   Channel frequency to start from.
+     * @return          Return the channel ID if successful or 0xff on failure.
+     */
+    //TODO check if sub underflow always leads to channel with least freq if there is no higher
+    static uint8_t getNextId(uint16_t channel)
+    {
+        uint8_t id, next;
+        uint16_t currDist, minDist;
+
+        next = 0xff;
+        minDist = 0xffff;
+        for (id = 0; id < channels.entries; id++)
+        {
+            currDist = channels.list[id].info.frequency - channel;
+            if (currDist > 0 && currDist < minDist)
+            {
+                next = id;
+                minDist = currDist;
+            }
+        }
+
+        return next;
+    }
+
+    /*
+     * @brief Tune to the channel with the next highest frequency.
+     */
+    static void tuneNextHighest(void)
+    {
+        if (channels.entries > 0)
+        {
+            uint8_t nextId;
+            uint16_t channel;
+
+            atomic { channel = currChan; }
+            nextId = getNextId(channel);
+
+            if (nextId < CHANNEL_LIST_SZ)
+            {
+                call Radio.receiveRDS(FALSE);
+                clearRDSData();
+                atomic 
+                { 
+                    appState = TUNE;
+                    nextChan = channels.list[nextId].info.frequency;
+                }
+                post startTune();
+            }
+        }
+    }
+
+    /*
+     * @brief Start adding a note to a channel.
+     */
+    static void addNote(void)
+    {
+        uint8_t id;
+        uint16_t channel;
+
+        atomic { channel = currChan; }
+        id = getListId(channel);
+
+        if (id < CHANNEL_LIST_SZ)
+        {
+            call Radio.receiveRDS(FALSE);
+            atomic { kbChar = '\0'; }
+            noteInput.idx = 0;
+            memset(noteInput.buf, 0, NOTE_SZ+1);
+            call Glcd.fill(0x00);
+            call Glcd.drawTextPgm(text_noteInput, 0, 10);
+            post inputNote();
+        }
+        else
+        {
+            errno = E_CHAN_NLIST;
+            post displaySoftError();
+        }
     }
     
     ////////////////////////

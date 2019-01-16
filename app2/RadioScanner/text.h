@@ -18,6 +18,7 @@
 /* Application messages */
 
 const char text_channelInput[] PROGMEM = "Enter Channel:";
+const char text_noteInput[] PROGMEM = "Enter Note:";
 const char text_channel[] PROGMEM = "Channel: ";
 const char text_MHz[] PROGMEM = "MHz";
 const char text_volume[] PROGMEM = "Volume:";
