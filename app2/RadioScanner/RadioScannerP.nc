@@ -14,9 +14,9 @@
 #include <string.h>
 #include <text.h>
 
+//TODO instead of updating whole screen, write empty line
 //TODO use BANDSEEK option from driver, just remove automatic moving
 //TODO implement RDS timeout for band seek, maybe with timer and RDS received event
-//TODO instead of updating whole screen, write empty line
 //TODO put display timer start/stop in function and pair with enable/disable RDS and clear RDS data
 //TODO move handle char state switcher to event
 //TODO implement back key for functions with input
@@ -246,15 +246,25 @@ implementation {
                     if (isdigit(c))
                     {
                         uint8_t fav = (uint8_t)(c - '0');
-                        if (fav > 0)
+                        if (fav > 0 && fav <= 9)
                         {
-                            atomic 
-                            { 
-                                appState = TUNE; 
-                                nextChan = channels.list[favourites.table[fav]].info.frequency;
+                            uint8_t favId = favourites.table[fav];
+
+                            if (favId < CHANNEL_LIST_SZ)
+                            {
+                                atomic 
+                                { 
+                                    appState = TUNE; 
+                                    nextChan = channels.list[favId].info.frequency;
+                                }
+                                call DisplayTimer.stop();
+                                post startTune();
                             }
-                            call DisplayTimer.stop();
-                            post startTune();
+                            else
+                            {
+                                errno = E_FAV_NSET;
+                                post displaySoftError();
+                            }
                         }
                     }
                     break;
@@ -348,13 +358,13 @@ implementation {
         /* Display id and quick dial if channel is in list */
         if (id < CHANNEL_LIST_SZ)
         {
-            sprintf(idBuf, "i%d", id);
+            sprintf(idBuf, "c%d", id);
             idBuf[2] = '\0';
             call Glcd.drawText(idBuf, 60, 7);
 
             if (channels.list[id].info.quickDial > 0)
             {
-                sprintf(idBuf, "f%d", id);
+                sprintf(idBuf, "f%d", id+1);
                 idBuf[2] = '\0';
                 call Glcd.drawText(idBuf, 78, 7);
             }
@@ -532,6 +542,10 @@ implementation {
             case E_BAND_LIMIT:
                 call Glcd.drawTextPgm(text_bandLimit, 0, 20);
                 break;
+            
+            case E_FAV_NSET:
+                call Glcd.drawTextPgm(text_favNset, 0, 20);
+                break;
 
             default:
                 call Glcd.drawTextPgm(text_unknownError, 0, 20);
@@ -586,7 +600,7 @@ implementation {
             else
             {
                 favourites.table[favourites.entries] = channels.current;
-                channels.list[channels.entries].info.quickDial = favourites.entries++;
+                channels.list[channels.current].info.quickDial = favourites.entries++;
                 post addChannel();
             }
         }
@@ -627,6 +641,7 @@ implementation {
         channels.entries = 0;
         channels.current = 0;
         favourites.entries = 0;
+        memset(favourites.table, 0xff, FAV_CNT);
 
         oldVolume = 0;
         newVolume = 0;

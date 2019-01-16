@@ -39,6 +39,8 @@ const char text_dbFull[] PROGMEM = "DB full!";
 const char text_dbErr[] PROGMEM = "DB error!";
 #define E_BAND_LIMIT 6
 const char text_bandLimit[] PROGMEM = "Band limit reached!";
+#define E_FAV_NSET 7
+const char text_favNset[] PROGMEM = "Favourite not set!";
 
 #endif
 
