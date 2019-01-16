@@ -17,7 +17,6 @@ implementation {
 	components MainC, RadioScannerP, DatabaseC, FMClickC, PS2C, GlcdC, VolumeAdcC;
         components BufferedLcdC as Lcd;
         components new TimerMilliC() as VolumeTimer;
-        components new TimerMilliC() as DisplayTimer;
         components new TimerMilliC() as ErrorTimer;
 
         RadioScannerP.Boot -> MainC.Boot;
@@ -30,6 +29,5 @@ implementation {
         RadioScannerP.Keyboard -> PS2C.PS2;
         RadioScannerP.volumeKnob -> VolumeAdcC.Read;
         RadioScannerP.VolumeTimer -> VolumeTimer;
-        RadioScannerP.DisplayTimer -> DisplayTimer;
         RadioScannerP.ErrorTimer -> ErrorTimer;
 }

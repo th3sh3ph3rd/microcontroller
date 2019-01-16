@@ -21,6 +21,9 @@ const char text_channelInput[] PROGMEM = "Enter Channel:";
 const char text_channel[] PROGMEM = "Channel: ";
 const char text_MHz[] PROGMEM = "MHz";
 const char text_volume[] PROGMEM = "Volume:";
+const char text_emptyName[] PROGMEM = "        ";
+const char text_emptyTime[] PROGMEM = "     ";
+const char text_emptyLine[] PROGMEM = "                     ";
 
 /* Error messages */
 const char text_error[] PROGMEM = "Error:";
@@ -43,6 +46,8 @@ const char text_bandLimit[] PROGMEM = "Band limit reached!";
 const char text_favNset[] PROGMEM = "Favourite not set!";
 #define E_CHAN_NLIST 8
 const char text_chanNlist[] PROGMEM = "Channel not in list!";
+#define E_IS_FAV 9
+const char text_isFav[] PROGMEM = "Already favourite!";
 
 #endif
 

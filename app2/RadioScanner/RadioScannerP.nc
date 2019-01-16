@@ -14,11 +14,12 @@
 #include <string.h>
 #include <text.h>
 
-//TODO instead of updating whole screen, write empty line
+//TODO move through list to next frequency, not entry
+//TODO move through list to next frequency, not entry!
 //TODO use BANDSEEK option from driver, just remove automatic moving
 //TODO implement RDS timeout for band seek, maybe with timer and RDS received event
-//TODO put display timer start/stop in function and pair with enable/disable RDS and clear RDS data
 //TODO move handle char state switcher to event
+//TODO automatically update RDS info to DB if available
 //TODO implement back key for functions with input
 //TODO implement stop key for band seek
 
@@ -35,7 +36,6 @@ module RadioScannerP {
         interface PS2 as Keyboard;
         interface Read<uint16_t> as volumeKnob;
         interface Timer<TMilli> as VolumeTimer;
-        interface Timer<TMilli> as DisplayTimer;
         interface Timer<TMilli> as ErrorTimer;
     }
 }
@@ -46,10 +46,10 @@ implementation {
 
     #define DISPLAY_UPDATE_RATE 1000
     #define VOLUME_UPDATE_RATE  100
-    #define ERROR_MSG_TIMEOUT   1000
+    #define ERROR_MSG_TIMEOUT   700
     #define RDS_TIMEOUT         5000
 
-    enum app_state {INIT, KBCTRL, TUNEINP, TUNE, SEEK, BANDSEEK, ADD};
+    enum app_state {INIT, KBCTRL, TUNEINP, TUNE, SEEK, BANDSEEK, ADD, FAV};
     static enum app_state appState;
 
     static char kbChar;
@@ -70,6 +70,9 @@ implementation {
     static struct
     {
         bool PSAvail;
+        bool newPS;
+        bool newRT;
+        bool newCT;
         uint16_t piCode;
         /* Need space for null termination */
         char PS[PS_BUF_SZ+1];
@@ -110,6 +113,7 @@ implementation {
 
     task void inputTuneChannel(void);
     task void displayChannelInfo(void);
+    task void displayRDS(void);
     task void setVolume(void);
     task void startSeekUp(void);
     task void startSeekDown(void);
@@ -147,42 +151,53 @@ implementation {
             {
                 /* Add/update current channel info */
                 case 'a':
+                    call Radio.receiveRDS(FALSE);
                     atomic { appState = ADD; }
                     post addChannel();
                     break;
 
                 /* Add current channel to favourites */
                 case 'f':
-                    atomic { appState = ADD; }
+                    atomic { appState = FAV; }
                     addFavourite();
                     break;
 
                 /* Tune to previous list entry */
                 case 'h':
-                    if (channels.current == 0)
-                        channels.current = channels.entries-1;
-                    else
-                        channels.current--;
-                    atomic 
-                    { 
-                        appState = TUNE;
-                        nextChan = channels.list[channels.current].info.frequency;
+                    if (channels.entries > 0)
+                    {
+                        call Radio.receiveRDS(FALSE);
+                        clearRDSData();
+                        if (channels.current == 0)
+                            channels.current = channels.entries-1;
+                        else
+                            channels.current--;
+                        atomic 
+                        { 
+                            appState = TUNE;
+                            nextChan = channels.list[channels.current].info.frequency;
+                        }
+                        post startTune();
                     }
-                    post startTune();
                     break;
 
                 /* Tune to next list entry */
                 case 'l':
-                    if (channels.current == channels.entries-1)
-                        channels.current = 0;
-                    else
-                        channels.current++;
-                    atomic 
-                    { 
-                        appState = TUNE;
-                        nextChan = channels.list[channels.current].info.frequency;
+                    if (channels.entries > 0)
+                    {
+                        call Radio.receiveRDS(FALSE);
+                        clearRDSData();
+                        if (channels.current == channels.entries-1)
+                            channels.current = 0;
+                        else
+                            channels.current++;
+                        atomic 
+                        { 
+                            appState = TUNE;
+                            nextChan = channels.list[channels.current].info.frequency;
+                        }
+                        post startTune();
                     }
-                    post startTune();
                     break;
 
                 /* Add note */
@@ -190,6 +205,7 @@ implementation {
                 //    call Radio.receiveRDS(FALSE);
 
                 case 's':
+                    call Radio.receiveRDS(FALSE);
                     clearRDSData();
                     atomic 
                     { 
@@ -201,8 +217,8 @@ implementation {
 
                 /* Enter frequency and tune to channel */
                 case 't':
+                    call Radio.receiveRDS(FALSE);
                     clearRDSData();
-                    call DisplayTimer.stop();
                     atomic
                     {
                         tuneInput.idx = 0;
@@ -213,19 +229,19 @@ implementation {
                     break;
 
                 /* Seek next higher channel */
-                case ',':
+                case '.':
+                    call Radio.receiveRDS(FALSE);
                     clearRDSData();
-                    call DisplayTimer.stop();
                     atomic { appState = SEEK; }
-                    post startSeekDown();
+                    post startSeekUp();
                     break;
 
                 /* Seek next lower channel */
-                case '.':
+                case ',':
+                    call Radio.receiveRDS(FALSE);
                     clearRDSData();
-                    call DisplayTimer.stop();
                     atomic { appState = SEEK; }
-                    post startSeekUp();
+                    post startSeekDown();
                     break;
 
                 //TODO following cases are for debugging only
@@ -248,16 +264,17 @@ implementation {
                         uint8_t fav = (uint8_t)(c - '0');
                         if (fav > 0 && fav <= 9)
                         {
-                            uint8_t favId = favourites.table[fav];
+                            uint8_t favId = favourites.table[fav-1];
 
                             if (favId < CHANNEL_LIST_SZ)
                             {
+                                call Radio.receiveRDS(FALSE);
+                                clearRDSData();
                                 atomic 
                                 { 
                                     appState = TUNE; 
                                     nextChan = channels.list[favId].info.frequency;
                                 }
-                                call DisplayTimer.stop();
                                 post startTune();
                             }
                             else
@@ -275,6 +292,7 @@ implementation {
     }
 
     //TODO only write text once
+    //Clear only input line
     task void inputTuneChannel(void)
     {
         char c;
@@ -332,11 +350,10 @@ implementation {
         call Glcd.drawText("Radio initialized.", 0, 10);
     }
    
-    //TODO only use one line buffer and alternatingly print to glcd
+    //TODO move put line spacing in macros
     task void displayChannelInfo(void)
     {
-        char freqBuf[5], idBuf[3];
-        char line1[22], line2[22], line3[23];
+        char freqBuf[5], idBuf[3], line[22];
         uint8_t id, qdial;
         uint16_t chan;
        
@@ -358,33 +375,91 @@ implementation {
         /* Display id and quick dial if channel is in list */
         if (id < CHANNEL_LIST_SZ)
         {
+            channels.current = id;
             sprintf(idBuf, "c%d", id);
             idBuf[2] = '\0';
             call Glcd.drawText(idBuf, 60, 7);
-
-            if (channels.list[id].info.quickDial > 0)
+            
+            qdial = channels.list[id].info.quickDial;
+            if (qdial > 0)
             {
-                sprintf(idBuf, "f%d", id+1);
+                sprintf(idBuf, "f%d", qdial);
                 idBuf[2] = '\0';
                 call Glcd.drawText(idBuf, 78, 7);
             }
         }
 
-        /* Display RDS data */
-        memcpy(line1, rds.RT, 21);
-        memcpy(line2, rds.RT+21, 21);
-        memcpy(line3, rds.RT+42, 22);
-        line1[21] = '\0';
-        line2[21] = '\0';
-        line3[22] = '\0';
+        /* Display initial RDS data */
+        call Glcd.drawTextPgm(text_emptyName, 0, 15);
         call Glcd.drawText(rds.PS, 0, 15);
+        call Glcd.drawTextPgm(text_emptyTime, 0, 15);
         call Glcd.drawText(rds.CT, 54, 15);
-        call Glcd.drawText(line1, 122, 23);
-        call Glcd.drawText(line2, 122, 31);
-        call Glcd.drawText(line3, 122, 39);
+        memcpy(line, rds.RT, 21);
+        line[21] = '\0';
+        call Glcd.drawTextPgm(text_emptyLine, 122, 23);
+        call Glcd.drawText(line, 122, 23);
+        memcpy(line, rds.RT+21, 21);
+        line[21] = '\0';
+        call Glcd.drawTextPgm(text_emptyLine, 122, 31);
+        call Glcd.drawText(line, 122, 31);
+        memcpy(line, rds.RT+42, 21);
+        line[21] = '\0';
+        call Glcd.drawTextPgm(text_emptyLine, 122, 39);
+        call Glcd.drawText(line, 122, 39);
+
+        call Radio.receiveRDS(TRUE);
     }
 
-    /* 
+    /*
+     * @brief Update the RDS information on screen.
+     */
+    task void displayRDS(void)
+    {
+        bool newPS, newRT, newCT;
+
+        atomic
+        {
+            newPS = rds.newPS;
+            newRT = rds.newRT;
+            newCT = rds.newCT;
+        }
+
+        if (newPS)
+        {
+            call Glcd.drawTextPgm(text_emptyName, 0, 15);
+            call Glcd.drawText(rds.PS, 0, 15);
+            atomic { rds.newPS = FALSE; }
+        }
+        if (newCT)
+        {
+            call Glcd.drawTextPgm(text_emptyTime, 0, 15);
+            call Glcd.drawText(rds.CT, 54, 15);
+            atomic { rds.newCT = FALSE; }
+        }
+        if (newRT)
+        {
+            char line[22];
+            
+            memcpy(line, rds.RT, 21);
+            line[21] = '\0';
+            call Glcd.drawTextPgm(text_emptyLine, 122, 23);
+            call Glcd.drawText(line, 122, 23);
+
+            memcpy(line, rds.RT+21, 21);
+            line[21] = '\0';
+            call Glcd.drawTextPgm(text_emptyLine, 122, 31);
+            call Glcd.drawText(line, 122, 31);
+            
+            memcpy(line, rds.RT+42, 21);
+            line[21] = '\0';
+            call Glcd.drawTextPgm(text_emptyLine, 122, 39);
+            call Glcd.drawText(line, 122, 39);
+            
+            atomic { rds.newRT = FALSE; }
+        }
+    }
+
+    /*
      * @brief Set the volume on the FMClick board if the value has changed.
      */
     task void setVolume(void)
@@ -400,7 +475,7 @@ implementation {
     task void startSeekUp(void)
     {
         if (call Radio.seek(UP) != SUCCESS)
-            post startSeekDown();
+            post startSeekUp();
     }
     
     task void startSeekDown(void)
@@ -446,7 +521,7 @@ implementation {
             else
             {
                 atomic {appState = KBCTRL; }
-                call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                post displayChannelInfo();
             }
         }
         /* Add channel to list */
@@ -493,6 +568,7 @@ implementation {
      */
     task void displayHardError(void)
     {
+        call Radio.receiveRDS(FALSE);
         call Glcd.fill(0x00);
         call Glcd.drawTextPgm(text_error, 0, 10);
         switch (errno)
@@ -512,8 +588,7 @@ implementation {
      */
     task void displaySoftError(void)
     {
-        call DisplayTimer.stop();
-
+        call Radio.receiveRDS(FALSE);
         call Glcd.fill(0x00);
         call Glcd.drawTextPgm(text_error, 0, 10);
         
@@ -550,6 +625,10 @@ implementation {
             case E_CHAN_NLIST:
                 call Glcd.drawTextPgm(text_chanNlist, 0, 20);
                 break;
+            
+            case E_IS_FAV:
+                call Glcd.drawTextPgm(text_isFav, 0, 20);
+                break;
 
             default:
                 call Glcd.drawTextPgm(text_unknownError, 0, 20);
@@ -583,7 +662,13 @@ implementation {
      */
     static void clearRDSData(void)
     {
-        atomic { rds.PSAvail = FALSE; }
+        atomic 
+        { 
+            rds.PSAvail = FALSE;
+            rds.newPS = FALSE;
+            rds.newRT = FALSE;
+            rds.newCT = FALSE;
+        }
         memset(rds.PS, 0, PS_BUF_SZ+1);
         memset(rds.RT, 0, RT_BUF_SZ+1);
         memset(rds.CT, 0, CT_BUF_SZ);
@@ -596,16 +681,43 @@ implementation {
     {
         if (favourites.entries < FAV_CNT)
         {
-            if (currChan != channels.list[channels.current].info.frequency)
+            uint8_t id;
+            uint16_t chan;
+
+            atomic { chan = currChan; }
+            id = getListId(chan);
+
+            if (id < CHANNEL_LIST_SZ)
             {
-                errno = E_CHAN_NLIST;
-                post displaySoftError();
+                uint8_t i;
+                bool foundId = FALSE;
+
+                for (i = 0; i < favourites.entries; i++)
+                {
+                    if (favourites.table[i] == id)
+                    {
+                        foundId = TRUE;
+                        break;
+                    }
+                }
+
+                /* Channel already in favourites */
+                if (foundId)
+                {
+                    errno = E_IS_FAV;
+                    post displaySoftError();
+                }
+                else
+                {
+                    favourites.table[favourites.entries] = id;
+                    channels.list[id].info.quickDial = ++favourites.entries;
+                    call DB.saveChannel(id, &channels.list[id].info);
+                }
             }
             else
             {
-                favourites.table[favourites.entries] = channels.current;
-                channels.list[channels.current].info.quickDial = favourites.entries++;
-                post addChannel();
+                errno = E_CHAN_NLIST;
+                post displaySoftError();
             }
         }
         else
@@ -616,7 +728,7 @@ implementation {
     }
    
     /*
-     * @briefi          Check if the specified channel has been saved to the list.
+     * @brief           Check if the specified channel has been saved to the list.
      * @param channel   Channel frequency to check.
      * @return          Return the channel ID if successful or 0xff on failure.
      */
@@ -672,7 +784,6 @@ implementation {
             //TODO probably move this somewhere else
             call VolumeTimer.startPeriodic(VOLUME_UPDATE_RATE);
             atomic { appState = KBCTRL; }
-            call Radio.receiveRDS(TRUE);
             post readyScreen();
         }
         else
@@ -704,11 +815,11 @@ implementation {
                 break;
 
             case TUNE:
-                call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                post displayChannelInfo();
                 break;
 
             default:
-                call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                post displayChannelInfo();
                 break;
         }
     }
@@ -728,6 +839,7 @@ implementation {
                 if (channel < BAND_LIMIT_HI)
                 {
                     //TODO maybe call clearRDS
+                    //TODO take care about RDS and app state
                     post displayChannelInfo();
                     post addChannel();
                 }
@@ -739,11 +851,11 @@ implementation {
                 break;
 
             case SEEK:
-                call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                post displayChannelInfo();
                 break;
 
             default:
-                call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                post displayChannelInfo();
                 break;
         }
     }
@@ -758,17 +870,20 @@ implementation {
                 atomic 
                 { 
                     rds.PSAvail = TRUE;
+                    rds.newPS = TRUE;
                     rds.piCode = ((uint16_t)buf[PS_BUF_SZ+1]) & 0x00ff;
                     rds.piCode |= ((uint16_t)buf[PS_BUF_SZ]) << 8;
                 }
                 break;
 
             case RT:
+                atomic { rds.newRT = TRUE; }
                 memset(rds.RT, 0, RT_BUF_SZ+1);
                 memcpy(rds.RT, buf, RT_BUF_SZ);
                 break;
 
             case TIME:
+                atomic { rds.newCT = TRUE; }
                 memset(rds.CT, 0, CT_BUF_SZ);
                 memcpy(rds.CT, buf, CT_BUF_SZ);
                 break;
@@ -776,22 +891,19 @@ implementation {
             default:
                 break;
         }
+
+        post displayRDS();
     }
     
     event void VolumeTimer.fired()
     {
         call volumeKnob.read();
     }
-    
-    event void DisplayTimer.fired()
-    {
-        post displayChannelInfo(); 
-    }
 
     event void ErrorTimer.fired()
     {
         atomic { appState = KBCTRL; }
-        call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+        post displayChannelInfo();
     }
 
     event void volumeKnob.readDone(error_t res, uint16_t val)
@@ -830,10 +942,14 @@ implementation {
             call Glcd.drawText("sc", 0, 40);
             switch (state)
             {
-                //TODO maybe notify user
                 case ADD:
                     atomic { state = KBCTRL; }
-                    call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                    post displayChannelInfo();
+                    break;
+
+                case FAV:
+                    atomic { state = KBCTRL; }
+                    post displayChannelInfo();
                     break;
 
                 case BANDSEEK:
@@ -842,7 +958,7 @@ implementation {
 
                 default:
                     atomic { state = KBCTRL; }
-                    call DisplayTimer.startPeriodic(DISPLAY_UPDATE_RATE);
+                    post displayChannelInfo();
                     break;
             }
         }
