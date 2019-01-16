@@ -546,6 +546,10 @@ implementation {
             case E_FAV_NSET:
                 call Glcd.drawTextPgm(text_favNset, 0, 20);
                 break;
+            
+            case E_CHAN_NLIST:
+                call Glcd.drawTextPgm(text_chanNlist, 0, 20);
+                break;
 
             default:
                 call Glcd.drawTextPgm(text_unknownError, 0, 20);
@@ -592,10 +596,10 @@ implementation {
     {
         if (favourites.entries < FAV_CNT)
         {
-            //TODO handle case if channel not even in list
             if (currChan != channels.list[channels.current].info.frequency)
             {
-
+                errno = E_CHAN_NLIST;
+                post displaySoftError();
             }
             else
             {

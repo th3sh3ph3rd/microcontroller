@@ -41,6 +41,8 @@ const char text_dbErr[] PROGMEM = "DB error!";
 const char text_bandLimit[] PROGMEM = "Band limit reached!";
 #define E_FAV_NSET 7
 const char text_favNset[] PROGMEM = "Favourite not set!";
+#define E_CHAN_NLIST 8
+const char text_chanNlist[] PROGMEM = "Channel not in list!";
 
 #endif
 
