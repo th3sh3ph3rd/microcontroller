@@ -528,7 +528,7 @@ implementation {
         strncpy_P(p->id, cmd_id, CMD_ID_LEN+1);
         strncpy_P(p->freq, cmd_freq, CMD_FREQ_LEN+1);
         strncpy_P(p->picode, cmd_picode, CMD_PICODE_LEN+1);
-        strncpy_P(p->qdial, cmd_add, CMD_ADD_LEN+1);
+        strncpy_P(p->qdial, cmd_qdial, CMD_QDIAL_LEN+1);
         strncpy_P(p->name, cmd_name, CMD_NAME_LEN+1);
         strncpy_P(p->note, cmd_note, CMD_NOTE_LEN+1);
     }

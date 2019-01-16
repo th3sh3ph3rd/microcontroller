@@ -74,7 +74,7 @@ bool channel_set_pi_code(channel_info_t *channel, uint16_t pi_code, bool fail) {
 bool channel_set_quick_dial(channel_info_t *channel, uint8_t qdial, bool fail) {
 	if (channel == NULL) return false;
 
-    if (fail && (qdial < 1 || qdial > 9)) {
+    if (fail && (qdial > 9)) {
         ERR("qdial '%d' out of range!\n", qdial);
         return false;
     }

@@ -14,11 +14,10 @@
 #include <string.h>
 #include <text.h>
 
-//TODO fix tune
 //TODO use BANDSEEK option from driver, just remove automatic moving
 //TODO implement RDS timeout for band seek, maybe with timer and RDS received event
-//TODO instead of updateing whole screen, write empty line
-//TODO put display timer start/stop in function and pari with enable/disable RDS and clear RDS data
+//TODO instead of updating whole screen, write empty line
+//TODO put display timer start/stop in function and pair with enable/disable RDS and clear RDS data
 //TODO move handle char state switcher to event
 //TODO implement back key for functions with input
 //TODO implement stop key for band seek
@@ -87,6 +86,8 @@ implementation {
         char name[NAME_SZ+1];
         char note[NOTE_SZ+1];
     } channel_t;
+
+    /* The internal channel list */
     #define CHANNEL_LIST_SZ 15
     static struct
     {
@@ -94,6 +95,8 @@ implementation {
         uint8_t current;
         channel_t list[CHANNEL_LIST_SZ]; 
     } channels;
+
+    /* Table of favourite channels */
     #define FAV_CNT         9
     static struct
     {
@@ -103,7 +106,6 @@ implementation {
 
     static uint8_t oldVolume;
     static uint8_t newVolume;
-
     static uint8_t errno;
 
     task void inputTuneChannel(void);
@@ -119,6 +121,7 @@ implementation {
     static void printVolume(void);
     static void clearRDSData(void);
     static void addFavourite(void);
+    static uint8_t getListId(uint16_t channel);
 
     ////////////////////////
     /* Tasks              */
@@ -144,7 +147,6 @@ implementation {
             {
                 /* Add/update current channel info */
                 case 'a':
-                    call Radio.receiveRDS(FALSE);
                     atomic { appState = ADD; }
                     post addChannel();
                     break;
@@ -316,27 +318,16 @@ implementation {
 
     task void readyScreen(void)
     {
-        channelInfo chan1 = {1, 1038, 12345, "  FM4   ", "YOLO"};
-        channelInfo chan2 = {1, 1038, 12345, "  OE3   ", ""};
-        channelInfo chan3 = {1, 1038, 12345, "  OE1   ", "yo servas habe dere"};
-        channelInfo chan4 = {1, 920, 15645, "  OE23  ", "78489hj 893zlaw8z jkhsdf "};
         call Glcd.fill(0x00);
         call Glcd.drawText("Radio initialized.", 0, 10);
-        //call DB.saveChannel(1, &chan1);
-        //call DB.saveChannel(1, &chan2);
-        //call DB.saveChannel(1, &chan3);
-        //call DB.saveChannel(1, &chan4);
-        //call DB.purgeChannelList();
-        //call DB.getChannel(0);
-        //call DB.getChannelList(FALSE);
-        //call DB.saveChannel(7, &chan4);
     }
    
-    //TODO display id if in list and qdial, if in favourites
+    //TODO only use one line buffer and alternatingly print to glcd
     task void displayChannelInfo(void)
     {
-        char freqBuf[5];
+        char freqBuf[5], idBuf[3];
         char line1[22], line2[22], line3[23];
+        uint8_t id, qdial;
         uint16_t chan;
        
         //TODO move state change somewhere else
@@ -346,12 +337,28 @@ implementation {
             appState = KBCTRL; 
         }
 
+        id = getListId(chan);
+        
         /* Display header */
         sprintf(freqBuf, "%d.%d", chan/10, chan%10);
         call Glcd.fill(0x00);
-        call Glcd.drawTextPgm(text_channel, 0, 7);
-        call Glcd.drawText(freqBuf, 54, 7);
-        call Glcd.drawTextPgm(text_MHz, 94, 7);
+        call Glcd.drawText(freqBuf, 0, 7);
+        call Glcd.drawTextPgm(text_MHz, 36, 7);
+
+        /* Display id and quick dial if channel is in list */
+        if (id < CHANNEL_LIST_SZ)
+        {
+            sprintf(idBuf, "i%d", id);
+            idBuf[2] = '\0';
+            call Glcd.drawText(idBuf, 60, 7);
+
+            if (channels.list[id].info.quickDial > 0)
+            {
+                sprintf(idBuf, "f%d", id);
+                idBuf[2] = '\0';
+                call Glcd.drawText(idBuf, 78, 7);
+            }
+        }
 
         /* Display RDS data */
         memcpy(line1, rds.RT, 21);
@@ -405,19 +412,11 @@ implementation {
      */
     task void addChannel(void)
     {
-        uint8_t i, id;
-        id = 0xff;
-        /* Check if channel already in list */
-        for (i = 0; i<channels.entries; i++)
-        {
-            uint16_t freq;
-            atomic { freq = currChan; }
-            if (channels.list[i].info.frequency == freq)
-            {
-                id = i;
-                break;
-            }
-        }
+        uint8_t id;
+        uint16_t freq;
+        atomic { freq = currChan; }
+        
+        id = getListId(freq);
 
         /* Channel already in list, update */
         if (id < CHANNEL_LIST_SZ)
@@ -451,18 +450,13 @@ implementation {
             else
             {
                 bool PSAvail;
-                uint16_t freq;
                 channelInfo newChan;
 
-                atomic 
-                { 
-                    PSAvail = rds.PSAvail;
-                    freq = currChan;
-                }
+                atomic { PSAvail = rds.PSAvail; }
                 
                 newChan.quickDial = 0;
                 newChan.frequency = freq;
-                newChan.pi_code = 0;
+                newChan.pi_code = 1;
                 newChan.name = NULL;
                 newChan.notes = NULL;
 
@@ -601,6 +595,24 @@ implementation {
             errno = E_FAVS_FULL;
             post displaySoftError();
         }
+    }
+   
+    /*
+     * @briefi          Check if the specified channel has been saved to the list.
+     * @param channel   Channel frequency to check.
+     * @return          Return the channel ID if successful or 0xff on failure.
+     */
+    static uint8_t getListId(uint16_t channel)
+    {
+        uint8_t id;
+
+        for (id = 0; id < channels.entries; id++)
+        {
+            if (channels.list[id].info.frequency == channel)
+                return id;
+        }
+    
+        return 0xff;
     }
     
     ////////////////////////
