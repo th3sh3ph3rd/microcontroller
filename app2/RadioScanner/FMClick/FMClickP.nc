@@ -626,34 +626,22 @@ implementation {
                 {
                     signal FMClick.seekComplete(currChannel);
 
-                    /* Continue seeking in band mode */
-                    if (BAND == mode)
+                    atomic { rds.RTMaxBlocks = RT_BLOCKS-1; }
+                    if (RDSen)
                     {
-                        atomic { states.seek = STARTSEEK; }
-                        post seek(); 
+                        atomic { states.driver = RDSEN; } 
+                        enableRDS(TRUE);
                     }
                     else
-                    {
-                        atomic { rds.RTMaxBlocks = RT_BLOCKS-1; }
-                        if (RDSen)
-                        {
-                            //atomic { states.driver = IDLE; } 
-                            atomic { states.driver = RDSEN; } 
-                            enableRDS(TRUE);
-                        }
-                        else
-                            atomic { states.driver = IDLE; } 
-                    }
+                        atomic { states.driver = IDLE; } 
                 }
                 /* Reached band end / no valid channel found */
-                //TODO maybe need signal here as well
                 else
                 {
                     signal FMClick.seekComplete(0xffff);
                     
                     if (RDSen)
                     {
-                        //atomic { states.driver = IDLE; } 
                         atomic { states.driver = RDSEN; } 
                         enableRDS(TRUE);
                     }

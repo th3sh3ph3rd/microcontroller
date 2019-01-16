@@ -18,6 +18,7 @@ implementation {
         components BufferedLcdC as Lcd;
         components new TimerMilliC() as VolumeTimer;
         components new TimerMilliC() as ErrorTimer;
+        components new TimerMilliC() as RDSTimer;
 
         RadioScannerP.Boot -> MainC.Boot;
         RadioScannerP.Glcd -> GlcdC.Glcd;
@@ -30,4 +31,5 @@ implementation {
         RadioScannerP.volumeKnob -> VolumeAdcC.Read;
         RadioScannerP.VolumeTimer -> VolumeTimer;
         RadioScannerP.ErrorTimer -> ErrorTimer;
+        RadioScannerP.RDSTimer -> RDSTimer;
 }

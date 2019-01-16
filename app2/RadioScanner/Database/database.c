@@ -74,6 +74,7 @@ bool db_parse_line(char *line, channel_info_t *channel, bool fail) {
     char *sp1;
     char working_buf[BUF_SIZE];
 
+    printf("saving line: %s\n", line);
     memcpy(working_buf, line, BUF_SIZE);
 
     k = strtok_r(working_buf, "=", &sp1);
@@ -104,6 +105,7 @@ bool db_parse_line(char *line, channel_info_t *channel, bool fail) {
         } else if (strcmp("qdial", k) == 0) {
             int qdial = strtol(v, NULL, 10);
             if (!channel_set_quick_dial(channel, qdial, fail)) {
+//TODO fetch channel list on init - values are not fetched correctly smh
                 return false;
             }
         } else if (strcmp("name", k) == 0) {

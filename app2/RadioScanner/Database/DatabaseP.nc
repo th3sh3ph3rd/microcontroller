@@ -440,6 +440,13 @@ implementation {
         return TRUE;    
     }
 
+    /*
+     * @brief           Parse a UDP message into a channelInfo struct.
+     * @param params    The parameters to parse.
+     * @param channel   The struct to parse into.
+     * @param id        The ID of the DB entry is stored here.
+     * @return          Return if the params were valid.
+     */
     static bool parseChannelInfo(char *params, channelInfo *channel, uint8_t *id)
     {
         char *k, *v, *sp;
@@ -447,9 +454,7 @@ implementation {
 
         k = strtok_r(params, "=", &sp);
         if (k == NULL) 
-        {
             return FALSE;
-        }
 
         while (k != NULL)
         {
@@ -460,6 +465,7 @@ implementation {
                 uint8_t _id = (uint8_t) strtoul(v, NULL, 10);
                 if (_id >= DB_MAX_ENTRIES)
                     return FALSE;
+
                 *id = _id;
             } 
             else if (strncmp_P(k, cmd_freq, CMD_FREQ_LEN) == 0)
@@ -467,6 +473,7 @@ implementation {
                 uint16_t freq = (uint16_t) strtoul(v, NULL, 10);
                 if (freq < 875 || freq > 1080)
                     return FALSE;
+
                 channel->frequency = freq;
             } 
             else if (strncmp_P(k, cmd_picode, CMD_PICODE_LEN) == 0) 
@@ -477,41 +484,44 @@ implementation {
             else if (strncmp_P(k, cmd_qdial, CMD_QDIAL_LEN) == 0) 
             {
                 uint8_t qdial = (uint8_t) strtoul(v, NULL, 10);
-                if (qdial < 1 || qdial > 9)
+                if (qdial > 9)
                     return FALSE;
+
                 channel->quickDial = qdial;
             } 
             else if (strncmp_P(k, cmd_name, CMD_NAME_LEN) == 0) 
             {
-                snprintf(channel->name, NAME_MAX_LEN, "%-8s", v);
-                channel->name[NAME_MAX_LEN+1] = '\0';
+                memcpy(channel->name, v, NAME_MAX_LEN);
+                channel->name[NAME_MAX_LEN] = '\0';
                 
-                sp += 8;
                 /* Name is either too long or delimiter is missing */
+                sp += 8;
                 if (*sp != ',')
-                    return FALSE; 
+                    return FALSE;
+
                 sp++;
                 gotName = TRUE;
             } 
             else if (strncmp_P(k, cmd_note, CMD_NOTE_LEN) == 0) 
             {
-                strncpy(channel->notes, v, NOTE_MAX_LEN);
-                channel->name[NOTE_MAX_LEN+1] = '\0';
+                memcpy(channel->notes, v, NOTE_MAX_LEN);
+                channel->name[NOTE_MAX_LEN] = '\0';
                  
                 /* According to specification, note is the last parameter */
                 return TRUE;
             }
 
-            if (gotName)
+            if (!gotName)
             {
                 v = strchr(sp, ',');
                 if (v == NULL) 
                     return FALSE;
+
                 sp = v + 1;
-                gotName = FALSE;
             }
 
             k = strtok_r(NULL, "=", &sp);
+            gotName = FALSE;
         }
 
         /* This should never be reached */
