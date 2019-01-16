@@ -16,7 +16,7 @@
 #include <commands.h>
 
 //TODO find bug in get/list
-//TODO put strings from commands in PROGMEM
+//TODO init error handling
 //TODO implement functionality in network stack
 
 module DatabaseP {
@@ -46,6 +46,7 @@ implementation {
     enum db_state {IDLE, INIT, ADD, LIST, GET, PURGE};
     static enum db_state dbState;
     static bool getList;
+    static bool favOnly;
 
     static struct
     {
@@ -60,6 +61,18 @@ implementation {
         uint8_t ids[DB_MAX_ENTRIES];
     } list;
 
+    typedef struct
+    {
+        char add[CMD_ADD_LEN+1];
+        char update[CMD_UPDATE_LEN+1];
+        char id[CMD_ID_LEN+1];
+        char freq[CMD_FREQ_LEN+1];
+        char qdial[CMD_QDIAL_LEN+1];
+        char picode[CMD_PICODE_LEN+1];
+        char name[CMD_NAME_LEN+1];
+        char note[CMD_NOTE_LEN+1];
+    } params_t;
+
     /* Task prototypes */
     task void sendTask(void);
     task void recvTask(void);
@@ -72,6 +85,7 @@ implementation {
     static void decodeGet(udp_msg_t *msg);
     static bool prepareMessage(udp_msg_t *msg, uint8_t **paramStart);
     static bool parseChannelInfo(char *params, channelInfo *channel, uint8_t *id);
+    static void getParamsPgm(params_t *p);
 
     ////////////////////////
     /* Interface commands */
@@ -116,6 +130,7 @@ implementation {
     command void Database.saveChannel(uint8_t id, channelInfo *channel)
     {
         enum db_state state;
+        params_t params;
         atomic { state = dbState; }
 
         if (IDLE != state)
@@ -123,15 +138,24 @@ implementation {
 
         atomic { dbState = ADD; }
 
+        getParamsPgm(&params);
         memset(msgBuf.send.data, 0, MAX_MSG_LEN);
 
         /* Compose udp message */
         if (id == 0xff)
-            sprintf((char *) msgBuf.send.data, "add\rid=%d,name=%s,qdial=%d,freq=%d,picode=%d,note=%s\n",
-                    0, channel->name, channel->quickDial, channel->frequency, channel->pi_code, channel->notes);
-        else if (id >= 0 && id <= 15)
-            sprintf((char *) msgBuf.send.data, "update\rid=%d,name=%s,qdial=%d,freq=%d,picode=%d,note=%s\n",
-                    id, channel->name, channel->quickDial, channel->frequency, channel->pi_code, channel->notes);
+        {
+            sprintf((char *) msgBuf.send.data, "%s\r%s=%d,%s=%s,%s=%d,%s=%d,%s=%d,%s=%s\n",
+                    params.add, params.id, 0, params.name, channel->name, params.qdial,
+                    channel->quickDial, params.freq, channel->frequency, params.picode,
+                    channel->pi_code, params.note, channel->notes);
+        }
+        else if (id < DB_MAX_ENTRIES)
+        {
+            sprintf((char *) msgBuf.send.data, "%s\r%s=%d,%s=%s,%s=%d,%s=%d,%s=%d,%s=%s\n",
+                    params.update, params.id, id, params.name, channel->name, params.qdial,
+                    channel->quickDial, params.freq, channel->frequency, params.picode,
+                    channel->pi_code, params.note, channel->notes);
+        }
 
         msgBuf.send.data[MAX_MSG_LEN-1] = '\0';
         msgBuf.send.len = strlen((char *) msgBuf.send.data);
@@ -145,21 +169,23 @@ implementation {
      * @param onlyFavorites tells server to send only the channels with a
      *        registered quickDial number, if not zero
      */
-    //TODO implement onlyFavourites
     command void Database.getChannelList(uint8_t onlyFavorites)
     {
         enum db_state state;
+        char listp[CMD_LIST_LEN+1];
         atomic { state = dbState; }
 
         if (IDLE != state)
             return;
         
         atomic { dbState = LIST; }
-        
+       
+        favOnly = onlyFavorites;
+        strncpy_P(listp, cmd_list, CMD_LIST_LEN+1);
         memset(msgBuf.send.data, 0, MAX_MSG_LEN);
 
         /* Compose udp message */
-        sprintf((char *) msgBuf.send.data, "list\r\n");
+        sprintf((char *) msgBuf.send.data, "%s\r\n", listp);
         msgBuf.send.len = strlen((char *) msgBuf.send.data);
 
         post sendTask();
@@ -172,6 +198,7 @@ implementation {
     command void Database.getChannel(uint8_t id)
     {
         enum db_state state;
+        char get[CMD_GET_LEN+1], idp[CMD_ID_LEN+1];
         atomic { state = dbState; }
 
         if (IDLE != state)
@@ -179,10 +206,12 @@ implementation {
         
         atomic { dbState = GET; }
         
+        strncpy_P(get, cmd_get, CMD_GET_LEN+1);
+        strncpy_P(idp, cmd_id, CMD_ID_LEN+1);
         memset(msgBuf.send.data, 0, MAX_MSG_LEN);
 
         /* Compose udp message */
-        sprintf((char *) msgBuf.send.data, "get\rid=%d\n", id);
+        sprintf((char *) msgBuf.send.data, "%s\r%s=%d\n", get, idp, id);
         msgBuf.send.len = strlen((char *) msgBuf.send.data);
 
         post sendTask();
@@ -195,6 +224,7 @@ implementation {
     command void Database.purgeChannelList()
     {
         enum db_state state;
+        char purge[CMD_PURGEALL_LEN+1];
         atomic { state = dbState; }
 
         if (IDLE != state)
@@ -202,10 +232,11 @@ implementation {
         
         atomic { dbState = PURGE; }
         
+        strncpy_P(purge, cmd_purgeall, CMD_PURGEALL_LEN+1);
         memset(msgBuf.send.data, 0, MAX_MSG_LEN);
 
         /* Compose udp message */
-        sprintf((char *) msgBuf.send.data, "purgeall\r\n");
+        sprintf((char *) msgBuf.send.data, "%s\r\n", purge);
         msgBuf.send.len = strlen((char *) msgBuf.send.data);
         
         post sendTask();
@@ -231,7 +262,6 @@ implementation {
 
     task void fetchList(void)
     {
-        call Glcd.drawText("fetchabcd", 0, 60);
         if (list.entries - list.currId > 0)
             call Database.getChannel(list.ids[list.currId++]);
         else /* Already received last entry */
@@ -266,7 +296,6 @@ implementation {
 
             case GET:
                 decodeGet(msg);
-                call Glcd.drawText("get fin", 0, 60);
                 if (getList)
                     post fetchList();
                 break;
@@ -277,110 +306,6 @@ implementation {
             default:
                 return;
         }
-
-//        if (strncmp((char *) msg->data, "ok\0", 3) == 0)
-//        {
-//            //add: ok\rid=...\n signal savedChannel
-//            //get: ok\rid=...,freq=...,name=...,qdial=...,picode=...,note=...\n signal receivedChannelEntry
-//            //purgeall: ok\r\n
-//            //list: ok\rid,id,id,id,...\n
-//           
-//            char *k, *sp;
-//            char workBuf[msg->len-2];
-//            memcpy(workBuf, paramStart, msg->len-3);
-//            workBuf[msg->len-2] = '\0'; //TODO is this needed?
-//
-//            k = strtok_r(workBuf, "=", &sp);
-//
-//            /* Need to signal only certain events with return params */
-//            if (k != NULL && strcmp("id", k) == 0)
-//            {
-//                uint8_t id = (uint8_t) strtol(sp, NULL, 10);
-//
-//                if (id >= 0 && id < 16)
-//                {
-//                    /* add or get respond with just the id */
-//                    if (strchr(sp, ',') == NULL)
-//                        signal Database.savedChannel(id, 0);
-//                    /* We got some channel response */ 
-//                    else
-//                    {
-//                        char name[8];
-//                        char notes[40];
-//                        channelInfo channel;
-//                        channel.name = name;
-//                        channel.notes = notes;
-//                        if (parseChannelInfo(k, &channel))
-//                            signal Database.receivedChannelEntry(id, channel);
-//                    }   
-//                }
-//            }
-//            else
-//            {
-//                uint8_t id;
-//                sp = NULL;
-//                memcpy(workBuf, paramStart, msg->len-3);
-//                workBuf[msg->len-2] = '\0'; 
-//
-//                k = strtok_r(workBuf, ",", &sp);
-//
-//                while (k != NULL)
-//                {
-//                    id = (uint8_t) strtol(k, NULL, 10);
-//                    if (id >= 0 && id <= 15)
-//                        call Database.getChannel(id);
-//
-//                    k = strtok_r(NULL, ",", &sp);
-//                }
-//            }
-//        }
-//        else if (strncmp((char *) msg->data, "err\0", 4) == 0)
-//        {
-//            //add: err\rcmd=add,msg=...\n signal savedChannel
-//            //update: err\rcmd=update,msg=...\n signal savedChannel
-//            //get: err\rcmd=update,msg=...\n
-//            //purgeall: err\rcmd=update,msg=...\n
-//            
-//            char *k, *v, *sp;
-//            char workBuf[msg->len-3];
-//            uint8_t cmd = 0;
-//            uint8_t res = 0;
-//            memcpy(workBuf, paramStart, msg->len-4);
-//            workBuf[msg->len-3] = '\0'; 
-//            
-//            k = strtok_r(workBuf, "=", &sp);
-//            if (k == NULL) 
-//                return;
-//
-//            while (k != NULL)
-//            {
-//                v = sp;
-//
-//                if (strcmp("cmd", k) == 0) 
-//                {
-//                    if (strcmp("add", v) == 0 || strcmp("update", v) == 0)
-//                        cmd = 1;
-//                    /* Not interested in other responses */
-//                    else
-//                        return;
-//                }
-//                else if (strcmp("msg", k) == 0) 
-//                {
-//                    if (strcmp("Channel DB Full", v) == 0)
-//                        res = 1;
-//                    else //TODO maybe differentiate more between errors
-//                        res = 2;
-//                }
-//
-//                v = strchr(sp, ',');
-//                sp = v + 1;
-//
-//                k = strtok_r(NULL, "=", &sp);
-//            }
-//
-//            if (cmd != 0)
-//                signal Database.savedChannel(0xff, res); //TODO which ID to signal?
-//        }
     }
 
     static void decodeAdd(udp_msg_t *msg)
@@ -476,9 +401,17 @@ implementation {
         channel.name = name;
         channel.notes = notes;
 
-        call Glcd.drawText("get", 0, 60);
         if (parseChannelInfo((char *) paramStart, &channel, &id))
-            signal Database.receivedChannelEntry(id, channel);
+        {
+            /* Filter favourites */
+            if (favOnly)
+            {
+                if (channel.quickDial > 0)
+                    signal Database.receivedChannelEntry(id, channel);
+            }
+            else
+                signal Database.receivedChannelEntry(id, channel);
+        }
         else
         {
             channelInfo dummy;
@@ -583,6 +516,21 @@ implementation {
 
         /* This should never be reached */
         return FALSE;
+    }
+
+    /*
+     * @brief Load the UDP message parameters from PROGMEM.
+     */
+    static void getParamsPgm(params_t *p)
+    {
+        strncpy_P(p->add, cmd_add, CMD_ADD_LEN+1);
+        strncpy_P(p->update, cmd_update, CMD_UPDATE_LEN+1);
+        strncpy_P(p->id, cmd_id, CMD_ID_LEN+1);
+        strncpy_P(p->freq, cmd_freq, CMD_FREQ_LEN+1);
+        strncpy_P(p->picode, cmd_picode, CMD_PICODE_LEN+1);
+        strncpy_P(p->qdial, cmd_add, CMD_ADD_LEN+1);
+        strncpy_P(p->name, cmd_name, CMD_NAME_LEN+1);
+        strncpy_P(p->note, cmd_note, CMD_NOTE_LEN+1);
     }
 
     ////////////////////////

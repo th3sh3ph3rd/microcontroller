@@ -772,12 +772,18 @@ implementation {
     {
         if (id == 0xff)
         {
-            call Glcd.drawText("list end", 0, 50);
+            call Glcd.drawText("list end", 0, 60);
         }
         else
         {
-            char buf[128];
-            sprintf(buf, "q=%d,f=%d,p=%d,n=%s,n=%s\n", channel.quickDial, channel.frequency, channel.pi_code, channel.name, channel.notes);
+            char buf[128], nm[9], nt[41];
+            channelInfo chan;
+            memcpy(&chan, &channel, sizeof(channelInfo));
+            memcpy(nm, channel.name, 8);
+            nm[8] = '\0';
+            memcpy(nt, channel.name, 40);
+            nt[40] = '\0';
+            sprintf(buf, "q=%d,f=%d,p=%d,n=%s,n=%s\n", chan.quickDial, chan.frequency, chan.pi_code, nm, nt);
             call Glcd.drawText(buf, 0, 40);
         }
     }
