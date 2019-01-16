@@ -17,6 +17,7 @@
 //TODO fix tune
 //TODO use BANDSEEK option from driver, just remove automatic moving
 //TODO implement RDS timeout for band seek, maybe with timer and RDS received event
+//TODO instead of updateing whole screen, write empty line
 //TODO put display timer start/stop in function and pari with enable/disable RDS and clear RDS data
 //TODO move handle char state switcher to event
 //TODO implement back key for functions with input

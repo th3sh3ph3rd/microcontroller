@@ -478,6 +478,7 @@ implementation {
             atomic
             {
                 shadowRegisters[CHANNEL_REG] = TUNE_MASK | (CHAN_MASK & (nextChannel - BAND_LOW_END)); 
+                shadowRegisters[SYSCONF1_REG] |= STCIEN_MASK;
                 shadowRegisters[SYSCONF1_REG] &= ~(RDS_MASK | RDSIEN_MASK); 
                 writeAddr = SYSCONF1_REG; 
                 states.tune = WAITTUNE;
@@ -487,7 +488,6 @@ implementation {
         else if (WAITTUNE == state)
         {
             /* Enable STC interrupt */
-            //TODO timeout for interrupt
             atomic { states.tune = TUNECHAN; }
             call Int.clear();
             call Int.enable();
@@ -504,7 +504,8 @@ implementation {
             {
                 currChannel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + BAND_LOW_END;
                 shadowRegisters[CHANNEL_REG] &= ~TUNE_MASK;
-                writeAddr = CHANNEL_REG;
+                shadowRegisters[SYSCONF1_REG] &= ~STCIEN_MASK;
+                writeAddr = SYSCONF1_REG;
                 states.tune = READTUNE;
             }
             post writeRegisters();
@@ -601,7 +602,6 @@ implementation {
                 currChannel = (shadowRegisters[READCHAN_REG] & READCHAN_MASK) + BAND_LOW_END;
                 shadowRegisters[POWERCONF_REG] &= ~SEEK_MASK;
                 shadowRegisters[SYSCONF1_REG] &= ~STCIEN_MASK;
-                //writeAddr = POWERCONF_REG;
                 writeAddr = SYSCONF1_REG;
                 states.seek = READSEEK;
             }
