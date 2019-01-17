@@ -14,10 +14,24 @@
 #include <string.h>
 #include <text.h>
 
-//TODO somehow synchronize favourite state between dbs on init fetch
-//TODO set volume initially
-//TODO RDS probably doesnt get turned back on reliably
-//TODO app fsm sometimes hangs
+//TODO note and name pointer problem
+//-> sometimes we send utter bs instead of empty name/note
+//-> only a part of the note gets sent
+
+//TODO RDS probably doesnt get turned back on reliably 
+//-> maybe bc. of decodeRDS in FMClick 
+
+//TODO PSAvail not correct
+//-> on update we send the wrong name sometimes
+
+//TODO favourites synchronized inconsistently
+//-> dont add fav to next index, but to next free slot
+
+//TODO set volume initially 
+//-> 15 is displayed inititally?
+
+
+
 //TODO automatically update RDS info to DB if available
 //TODO implement back key for functions with input
 //TODO implement stop key for band seek
@@ -344,7 +358,9 @@ implementation {
             }
 
             id = getListId(channel);
-            memcpy(channels.list[id].note, noteInput.buf, NOTE_SZ+1);
+            noteInput.buf[noteInput.idx] = '\0';
+            memset(channels.list[id].note, 0, NOTE_SZ+1);
+            strncpy(channels.list[id].note, noteInput.buf, NOTE_SZ);
             call DB.saveChannel(id, &channels.list[id].info);            
         }
     }
@@ -415,10 +431,14 @@ implementation {
         call Glcd.drawTextPgm(text_emptyLine, 122, 39);
         call Glcd.drawText(line, 122, 39);
 
-        call Radio.receiveRDS(TRUE);
+        //call Radio.receiveRDS(TRUE);
 
         if (BANDSEEK == state)
             call RDSTimer.startOneShot(RDS_TIMEOUT);
+        
+        //TODO only for debugging
+        //call Glcd.drawText(channels.list[id].name, 0, 40);
+        //call Glcd.drawText(channels.list[id].note, 0, 40);
     }
 
     /*
@@ -542,12 +562,13 @@ implementation {
             //if (channels.list[id].info.name == NULL && PSAvail)
             if (PSAvail)
             {
+                memcpy(channels.list[id].name, rds.PS, NAME_SZ);
                 atomic 
                 { 
                     channels.list[id].info.pi_code = rds.piCode; 
                     channels.list[id].info.name = channels.list[id].name;
+                    channels.list[id].name[NAME_SZ] = '\0';
                 }
-                memcpy(channels.list[id].name, rds.PS, PS_BUF_SZ);
                 call DB.saveChannel(id, &channels.list[id].info);
             }
             /* Nothing to update */
@@ -583,9 +604,9 @@ implementation {
                 {
                     channels.list[channels.entries].info.name = channels.list[channels.entries].name;
                     channels.list[channels.entries].info.notes = channels.list[channels.entries].note;
-                    *channels.list[channels.entries].name = '\0';
-                    *channels.list[channels.entries].note = '\0';
                 }
+                memset(channels.list[channels.entries].info.name, 0, NAME_SZ+1);
+                memset(channels.list[channels.entries].info.notes, 0, NOTE_SZ+1);
                 
                 if (PSAvail)
                 {
@@ -594,12 +615,9 @@ implementation {
                     { 
                         piCode = rds.piCode;
                         channels.list[channels.entries].info.pi_code = piCode;
-                        channels.list[channels.entries].info.name = channels.list[channels.entries].name;
                     }
-                    memcpy(channels.list[channels.entries].name, rds.PS, PS_BUF_SZ);
+                    snprintf(channels.list[channels.entries].name, NAME_SZ, "%-8s", rds.PS);
                 }
-                else
-                    memcpy_P(channels.list[channels.entries].name, text_emptyName, 8);
             
                 call DB.saveChannel(0xff, &channels.list[channels.entries].info);
                 
@@ -766,12 +784,14 @@ implementation {
                     call DB.saveChannel(id, &channels.list[id].info);
                 }
             }
+            /* Channel not in list */
             else
             {
                 atomic { errno = E_CHAN_NLIST; }
                 post displaySoftError();
             }
         }
+        /* Favourites full */
         else
         {
             atomic { errno = E_FAVS_FULL; }
@@ -885,6 +905,17 @@ implementation {
     event void Boot.booted()
     {
         char textBuf[8];
+        uint8_t id;
+
+        /* Initialize list datastructure */
+        for (id = 0; id < CHANNEL_LIST_SZ; id++)
+        {
+            memset(channels.list[id].name, 0, NAME_SZ+1);
+            memset(channels.list[id].note, 0, NOTE_SZ+1);
+            channels.list[id].info.name = channels.list[id].name;
+            channels.list[id].info.notes = channels.list[id].note;
+        }
+
         atomic 
         { 
             appState = INIT; 
@@ -970,12 +1001,12 @@ implementation {
                 break;
 
             case TUNE:
-                atomic {appState = KBCTRL; }
+                atomic { appState = KBCTRL; }
                 post displayChannelInfo();
                 break;
 
             default:
-                atomic {appState = KBCTRL; }
+                atomic { appState = KBCTRL; }
                 post displayChannelInfo();
                 break;
         }
@@ -999,6 +1030,7 @@ implementation {
                 {
                     if (channels.entries > 0)
                     {
+                        clearRDSData();
                         atomic
                         {
                             nextChan = channels.list[0].info.frequency;
@@ -1015,12 +1047,12 @@ implementation {
                 break;
 
             case SEEK:
-                atomic {appState = KBCTRL; }
+                atomic { appState = KBCTRL; }
                 post displayChannelInfo();
                 break;
 
             default:
-                atomic {appState = KBCTRL; }
+                atomic { appState = KBCTRL; }
                 post displayChannelInfo();
                 break;
         }
@@ -1101,6 +1133,7 @@ implementation {
                 /* Tune to first channel in list */
                 if (channels.entries > 0)
                 {
+                    clearRDSData();
                     atomic
                     {
                         nextChan = channels.list[0].info.frequency;
@@ -1114,6 +1147,7 @@ implementation {
                     clearRDSData();
                     call DB.purgeChannelList();
                     favourites.entries = 0;
+                    memset(favourites.table, 0xff, FAV_CNT);
                     atomic 
                     { 
                         channels.entries = 0;
@@ -1125,9 +1159,9 @@ implementation {
             }
             else
             {
-                memcpy(&channels.list[channels.entries].info, &channel, sizeof(channelInfo));
-                memcpy(channels.list[channels.entries].name, channel.name, NAME_SZ);
-                memcpy(channels.list[channels.entries].note, channel.notes, NOTE_SZ);
+                memcpy(&channels.list[channels.entries].info, &channel, sizeof(channelInfo)); 
+                snprintf(channels.list[channels.entries].name, NAME_SZ, "%-8s", channel.name);
+                strncpy(channels.list[channels.entries].note, channel.notes, NOTE_SZ);
 
                 if (channel.quickDial > 0)
                 {
@@ -1135,12 +1169,7 @@ implementation {
                     favourites.table[favourites.entries++] = channels.entries;
                 }
  
-                atomic 
-                {
-                    channels.list[channels.entries].name[NAME_SZ] = '\0';
-                    channels.list[channels.entries].note[NOTE_SZ] = '\0';
-                    channels.entries++;
-                }
+                atomic { channels.entries++; }
             }
         }
     }
@@ -1155,22 +1184,23 @@ implementation {
             switch (state)
             {
                 case ADD:
-                    atomic { state = KBCTRL; }
+                    atomic { appState = KBCTRL; }
                     post displayChannelInfo();
                     break;
 
                 case FAV:
-                    atomic { state = KBCTRL; }
+                    atomic { appState = KBCTRL; }
                     post displayChannelInfo();
                     break;
 
+                //TODO change this to seek band!
                 case BANDSEEK:
                     clearRDSData();
-                    post startSeekUp();
+                    post startSeekBand();
                     break;
 
                 default:
-                    atomic { state = KBCTRL; }
+                    atomic { appState = KBCTRL; }
                     post displayChannelInfo();
                     break;
             }

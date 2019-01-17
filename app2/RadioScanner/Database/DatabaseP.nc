@@ -144,14 +144,14 @@ implementation {
         /* Compose udp message */
         if (id == 0xff)
         {
-            sprintf((char *) msgBuf.send.data, "%s\r%s=%d,%s=%s,%s=%d,%s=%d,%s=%d,%s=%s\n",
+            sprintf((char *) msgBuf.send.data, "%s\r%s=%d,%s=%-8s,%s=%d,%s=%d,%s=%d,%s=%s\n",
                     params.add, params.id, 0, params.name, channel->name, params.qdial,
                     channel->quickDial, params.freq, channel->frequency, params.picode,
                     channel->pi_code, params.note, channel->notes);
         }
         else if (id < DB_MAX_ENTRIES)
         {
-            sprintf((char *) msgBuf.send.data, "%s\r%s=%d,%s=%s,%s=%d,%s=%d,%s=%d,%s=%s\n",
+            sprintf((char *) msgBuf.send.data, "%s\r%s=%d,%s=%-8s,%s=%d,%s=%d,%s=%d,%s=%s\n",
                     params.update, params.id, id, params.name, channel->name, params.qdial,
                     channel->quickDial, params.freq, channel->frequency, params.picode,
                     channel->pi_code, params.note, channel->notes);
@@ -398,6 +398,8 @@ implementation {
         if (!prepareMessage(msg, &paramStart))
             return;
 
+        memset(name, 0, NAME_MAX_LEN+1);
+        memset(notes, 0, NOTE_MAX_LEN+1);
         channel.name = name;
         channel.notes = notes;
 
@@ -491,7 +493,7 @@ implementation {
             } 
             else if (strncmp_P(k, cmd_name, CMD_NAME_LEN) == 0) 
             {
-                memcpy(channel->name, v, NAME_MAX_LEN);
+                snprintf(channel->name, NAME_MAX_LEN, "%-8s", v);
                 channel->name[NAME_MAX_LEN] = '\0';
                 
                 /* Name is either too long or delimiter is missing */
@@ -504,7 +506,9 @@ implementation {
             } 
             else if (strncmp_P(k, cmd_note, CMD_NOTE_LEN) == 0) 
             {
-                memcpy(channel->notes, v, NOTE_MAX_LEN);
+                if (*v != '\0')
+                    strncpy(channel->notes, v, NOTE_MAX_LEN);
+                
                 channel->name[NOTE_MAX_LEN] = '\0';
                  
                 /* According to specification, note is the last parameter */

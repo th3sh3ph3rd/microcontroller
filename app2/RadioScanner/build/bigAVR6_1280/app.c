@@ -207,25 +207,37 @@ typedef struct { unsigned char nxdata[2]; } __attribute__((packed)) nxle_uint16_
 typedef struct { unsigned char nxdata[4]; } __attribute__((packed)) nxle_uint32_t;typedef uint32_t __nesc_nxbase_nxle_uint32_t  ;
 typedef struct { unsigned char nxdata[8]; } __attribute__((packed)) nxle_uint64_t;typedef uint64_t __nesc_nxbase_nxle_uint64_t  ;
 # 117 "/usr/lib/gcc/avr/4.9.1/../../../../avr/include/string.h" 3
-extern void *memcpy(void *arg_0x7f9ed0394020, const void *arg_0x7f9ed0394320, size_t arg_0x7f9ed03945e0);
+extern void *memcpy(void *arg_0x7fb14d80c020, const void *arg_0x7fb14d80c320, size_t arg_0x7fb14d80c5e0);
 
 
 
-extern void *memset(void *arg_0x7f9ed038f150, int arg_0x7f9ed038f3d0, size_t arg_0x7f9ed038f690);
+extern void *memset(void *arg_0x7fb14d807150, int arg_0x7fb14d8073d0, size_t arg_0x7fb14d807690);
 
-extern char *strchr(const char *arg_0x7f9ed038dc40, int arg_0x7f9ed038c020) __attribute((__pure__)) ;
-
-
-
-
+extern char *strchr(const char *arg_0x7fb14d805c40, int arg_0x7fb14d804020) __attribute((__pure__)) ;
 
 
 
 
 
-extern size_t strlen(const char *arg_0x7f9ed0381210) __attribute((__pure__)) ;
-#line 147
-extern char *strtok_r(char *arg_0x7f9ed0371790, const char *arg_0x7f9ed0371a90, char **arg_0x7f9ed0371d90);
+
+
+
+
+extern size_t strlen(const char *arg_0x7fb14d7f9210) __attribute((__pure__)) ;
+
+
+
+extern char *strncpy(char *arg_0x7fb14d7f53d0, const char *arg_0x7fb14d7f56d0, size_t arg_0x7fb14d7f5990);
+
+
+
+
+
+
+
+
+
+extern char *strtok_r(char *arg_0x7fb14d7e9790, const char *arg_0x7fb14d7e9a90, char **arg_0x7fb14d7e9d90);
 # 71 "/usr/lib/gcc/avr/4.9.1/../../../../avr/include/stdlib.h" 3
 #line 68
 typedef struct __nesc_unnamed4242 {
@@ -244,7 +256,7 @@ typedef struct __nesc_unnamed4243 {
 } ldiv_t;
 
 
-typedef int (*__compar_fn_t)(const void *arg_0x7f9ed036d970, const void *arg_0x7f9ed036dc70);
+typedef int (*__compar_fn_t)(const void *arg_0x7fb14d7e5970, const void *arg_0x7fb14d7e5c70);
 #line 208
 extern long strtol(const char *__nptr, char **__endptr, int __base);
 #line 242
@@ -301,15 +313,8 @@ typedef struct __nesc_unnamed4246 {
   unsigned char high;
   unsigned char extended;
 } __fuse_t;
-# 1113 "/usr/lib/gcc/avr/4.9.1/../../../../avr/include/avr/pgmspace.h" 3
-extern void *memcpy_P(void *arg_0x7f9ed02c89f0, const void *arg_0x7f9ed02c8cf0, size_t arg_0x7f9ed02c7020);
-
-
-
-
-
-
-extern char *strcpy_P(char *arg_0x7f9ed02be380, const char *arg_0x7f9ed02be680);
+# 1120 "/usr/lib/gcc/avr/4.9.1/../../../../avr/include/avr/pgmspace.h" 3
+extern char *strcpy_P(char *arg_0x7fb14d736380, const char *arg_0x7fb14d736680);
 
 
 
@@ -317,15 +322,15 @@ extern char *strcpy_P(char *arg_0x7f9ed02be380, const char *arg_0x7f9ed02be680);
 
 
 
-extern int strncmp_P(const char *arg_0x7f9ed02b50d0, const char *arg_0x7f9ed02b53d0, size_t arg_0x7f9ed02b5690) __attribute((__pure__)) ;
+extern int strncmp_P(const char *arg_0x7fb14d72d0d0, const char *arg_0x7fb14d72d3d0, size_t arg_0x7fb14d72d690) __attribute((__pure__)) ;
 
 
-extern char *strncpy_P(char *arg_0x7f9ed02b1020, const char *arg_0x7f9ed02b1320, size_t arg_0x7f9ed02b15e0);
+extern char *strncpy_P(char *arg_0x7fb14d729020, const char *arg_0x7fb14d729320, size_t arg_0x7fb14d7295e0);
 
 
 
 
-extern char *strstr_P(const char *arg_0x7f9ed02ab7b0, const char *arg_0x7f9ed02abab0) __attribute((__pure__)) ;
+extern char *strstr_P(const char *arg_0x7fb14d7237b0, const char *arg_0x7fb14d723ab0) __attribute((__pure__)) ;
 # 90 "../tinyos_ws18/tos/chips/atm1281/atm128hardware.h"
 static __inline void __nesc_enable_interrupt()  ;
 
@@ -1039,8 +1044,8 @@ struct __file {
 #line 261
   int size;
   int len;
-  int (*put)(char arg_0x7f9ed01c4640, struct __file *arg_0x7f9ed01c49a0);
-  int (*get)(struct __file *arg_0x7f9ed01c3110);
+  int (*put)(char arg_0x7fb14d63c640, struct __file *arg_0x7fb14d63c9a0);
+  int (*get)(struct __file *arg_0x7fb14d63b110);
   void *udata;
 };
 #line 405
@@ -1049,6 +1054,8 @@ struct __file;
 struct __file;
 #line 669
 extern int sprintf(char *__s, const char *__fmt, ...);
+#line 685
+extern int snprintf(char *__s, size_t __n, const char *__fmt, ...);
 # 9 "../tinyos_ws18/tos/lib_ecs/stdo/stdo.h"
 enum __nesc_unnamed4313 {
   OUTPUT_BUFFER_SIZE = 128
@@ -2139,11 +2146,11 @@ static uint8_t MeasureClockC__Atm128Calibrate__adcPrescaler(void );
 # 67 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
 static error_t SchedulerBasicP__TaskBasic__postTask(
 # 56 "../tinyos_ws18/tos/system/SchedulerBasicP.nc"
-uint8_t arg_0x7f9ed0205830);
+uint8_t arg_0x7fb14d67d830);
 # 75 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
 static void SchedulerBasicP__TaskBasic__default__runTask(
 # 56 "../tinyos_ws18/tos/system/SchedulerBasicP.nc"
-uint8_t arg_0x7f9ed0205830);
+uint8_t arg_0x7fb14d67d830);
 # 57 "../tinyos_ws18/tos/interfaces/Scheduler.nc"
 static void SchedulerBasicP__Scheduler__init(void );
 #line 72
@@ -2262,7 +2269,7 @@ static error_t IpTransceiverP__Init__init(void );
 # 9 "../tinyos_ws18/tos/lib_ecs/ip/IpReceive.nc"
 static void IpTransceiverP__IpReceive__default__received(
 # 13 "../tinyos_ws18/tos/lib_ecs/ip/IpTransceiverP.nc"
-uint8_t arg_0x7f9ecfe31170, 
+uint8_t arg_0x7fb14d3268d0, 
 # 9 "../tinyos_ws18/tos/lib_ecs/ip/IpReceive.nc"
 in_addr_t *srcIp, uint8_t *data, uint16_t len);
 # 9 "../tinyos_ws18/tos/lib_ecs/packet_queue/PacketSender.nc"
@@ -2270,7 +2277,7 @@ static error_t LlcTransceiverP__PacketSender__send(LlcTransceiverP__PacketSender
 # 9 "../tinyos_ws18/tos/lib_ecs/llc/LlcReceive.nc"
 static void LlcTransceiverP__LlcReceive__default__received(
 # 12 "../tinyos_ws18/tos/lib_ecs/llc/LlcTransceiverP.nc"
-uint16_t arg_0x7f9ecfdd31b0, 
+uint16_t arg_0x7fb14d2c88f0, 
 # 9 "../tinyos_ws18/tos/lib_ecs/llc/LlcReceive.nc"
 mac_addr_t *srcMac, uint8_t *data);
 # 11 "../tinyos_ws18/tos/lib_ecs/llc/MacControl.nc"
@@ -2296,12 +2303,12 @@ static void LlcQueueP__PacketQueue__sendDone(uint8_t index, error_t error);
 # 9 "../tinyos_ws18/tos/lib_ecs/llc/LlcQueue.nc"
 static error_t LlcQueueP__LlcQueue__send(
 # 12 "../tinyos_ws18/tos/lib_ecs/llc/LlcQueueP.nc"
-uint8_t arg_0x7f9ecfd7d850, 
+uint8_t arg_0x7fb14d26f060, 
 # 9 "../tinyos_ws18/tos/lib_ecs/llc/LlcQueue.nc"
 mac_addr_t *dstMac, uint16_t etherType, uint8_t *data, uint16_t len);
 static void LlcQueueP__LlcQueue__default__sendDone(
 # 12 "../tinyos_ws18/tos/lib_ecs/llc/LlcQueueP.nc"
-uint8_t arg_0x7f9ecfd7d850, 
+uint8_t arg_0x7fb14d26f060, 
 # 10 "../tinyos_ws18/tos/lib_ecs/llc/LlcQueue.nc"
 error_t error);
 # 9 "../tinyos_ws18/tos/lib_ecs/packet_queue/PacketSender.nc"
@@ -2374,11 +2381,11 @@ static void /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0__TimerFrom__f
 #line 83
 static void /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0__Timer__default__fired(
 # 48 "../tinyos_ws18/tos/lib/timer/VirtualizeTimerC.nc"
-uint8_t arg_0x7f9ecfbbf3f0);
+uint8_t arg_0x7fb14d0b33f0);
 # 64 "../tinyos_ws18/tos/lib/timer/Timer.nc"
 static void /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0__Timer__startPeriodic(
 # 48 "../tinyos_ws18/tos/lib/timer/VirtualizeTimerC.nc"
-uint8_t arg_0x7f9ecfbbf3f0, 
+uint8_t arg_0x7fb14d0b33f0, 
 # 64 "../tinyos_ws18/tos/lib/timer/Timer.nc"
 uint32_t dt);
 
@@ -2391,7 +2398,7 @@ uint32_t dt);
 
 static void /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0__Timer__startOneShot(
 # 48 "../tinyos_ws18/tos/lib/timer/VirtualizeTimerC.nc"
-uint8_t arg_0x7f9ecfbbf3f0, 
+uint8_t arg_0x7fb14d0b33f0, 
 # 73 "../tinyos_ws18/tos/lib/timer/Timer.nc"
 uint32_t dt);
 
@@ -2400,7 +2407,7 @@ uint32_t dt);
 
 static void /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0__Timer__stop(
 # 48 "../tinyos_ws18/tos/lib/timer/VirtualizeTimerC.nc"
-uint8_t arg_0x7f9ecfbbf3f0);
+uint8_t arg_0x7fb14d0b33f0);
 # 82 "../tinyos_ws18/tos/lib/timer/Counter.nc"
 static void /*HilTimerMilliC.CounterToLocalTimeC*/CounterToLocalTimeC__0__Counter__overflow(void );
 # 11 "../tinyos_ws18/tos/lib_ecs/llc/LlcSend.nc"
@@ -2430,12 +2437,12 @@ static void /*IpQueueC.PacketQueueC.PacketQueueP*/PacketQueueP__2__sendNext__run
 # 9 "../tinyos_ws18/tos/lib_ecs/ip/IpQueue.nc"
 static error_t IpQueueP__IpQueue__send(
 # 12 "../tinyos_ws18/tos/lib_ecs/ip/IpQueueP.nc"
-uint8_t arg_0x7f9ecfb0f840, 
+uint8_t arg_0x7fb14d004840, 
 # 9 "../tinyos_ws18/tos/lib_ecs/ip/IpQueue.nc"
 in_addr_t *dstIp, uint8_t protocol, uint8_t *data, uint16_t len);
 static void IpQueueP__IpQueue__default__sendDone(
 # 12 "../tinyos_ws18/tos/lib_ecs/ip/IpQueueP.nc"
-uint8_t arg_0x7f9ecfb0f840, 
+uint8_t arg_0x7fb14d004840, 
 # 10 "../tinyos_ws18/tos/lib_ecs/ip/IpQueue.nc"
 error_t error);
 # 11 "../tinyos_ws18/tos/lib_ecs/packet_queue/PacketQueue.nc"
@@ -2447,7 +2454,7 @@ static void IcmpTransceiverP__IpSend__sendDone(error_t error);
 # 9 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpReceive.nc"
 static void IcmpTransceiverP__IcmpReceive__default__received(
 # 12 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpTransceiverP.nc"
-uint8_t arg_0x7f9ecfaf9c40, 
+uint8_t arg_0x7fb14cfeec40, 
 # 9 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpReceive.nc"
 in_addr_t *srcIp, uint8_t code, uint8_t *data, uint16_t len);
 # 9 "../tinyos_ws18/tos/lib_ecs/ip/IpReceive.nc"
@@ -2461,7 +2468,7 @@ static void /*IcmpQueueC.PacketQueueC.PacketQueueP*/PacketQueueP__3__sendNext__r
 # 10 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpQueue.nc"
 static void IcmpQueueP__IcmpQueue__default__sendDone(
 # 12 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpQueueP.nc"
-uint8_t arg_0x7f9ecfac42a0, 
+uint8_t arg_0x7fb14cfb82a0, 
 # 10 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpQueue.nc"
 error_t error);
 # 11 "../tinyos_ws18/tos/lib_ecs/packet_queue/PacketQueue.nc"
@@ -2666,7 +2673,7 @@ error_t error);
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static void Atm1280SpiP__ResourceArbiter__granted(
 # 103 "../tinyos_ws18/tos/chips_ecs/atm1280/spi/Atm1280SpiP.nc"
-uint8_t arg_0x7f9ecf6f3590);
+uint8_t arg_0x7fb14cbe8590);
 # 45 "../tinyos_ws18/tos/interfaces/SpiByte.nc"
 static uint8_t Atm1280SpiP__SpiByte__write(uint8_t tx);
 # 109 "../tinyos_ws18/tos/chips/atm128/spi/Atm128Spi.nc"
@@ -2674,15 +2681,15 @@ static void Atm1280SpiP__Spi__dataReady(uint8_t data);
 # 120 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t Atm1280SpiP__Resource__release(
 # 99 "../tinyos_ws18/tos/chips_ecs/atm1280/spi/Atm1280SpiP.nc"
-uint8_t arg_0x7f9ecf710170);
+uint8_t arg_0x7fb14cc05170);
 # 88 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t Atm1280SpiP__Resource__request(
 # 99 "../tinyos_ws18/tos/chips_ecs/atm1280/spi/Atm1280SpiP.nc"
-uint8_t arg_0x7f9ecf710170);
+uint8_t arg_0x7fb14cc05170);
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static void Atm1280SpiP__Resource__default__granted(
 # 99 "../tinyos_ws18/tos/chips_ecs/atm1280/spi/Atm1280SpiP.nc"
-uint8_t arg_0x7f9ecf710170);
+uint8_t arg_0x7fb14cc05170);
 # 89 "../tinyos_ws18/tos/chips/atm128/spi/Atm128Spi.nc"
 static void HplAtm128SpiP__SPI__sleep(void );
 #line 83
@@ -2736,23 +2743,23 @@ static resource_client_id_t /*Atm1280SpiC.Arbiter.Queue*/FcfsResourceQueueC__0__
 # 53 "../tinyos_ws18/tos/interfaces/ResourceRequested.nc"
 static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceRequested__default__requested(
 # 52 "../tinyos_ws18/tos/system/SimpleArbiterP.nc"
-uint8_t arg_0x7f9ecf619360);
+uint8_t arg_0x7fb14cb0e360);
 # 65 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
 static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceConfigure__default__unconfigure(
 # 56 "../tinyos_ws18/tos/system/SimpleArbiterP.nc"
-uint8_t arg_0x7f9ecf618940);
+uint8_t arg_0x7fb14cb0c940);
 # 59 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
 static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceConfigure__default__configure(
 # 56 "../tinyos_ws18/tos/system/SimpleArbiterP.nc"
-uint8_t arg_0x7f9ecf618940);
+uint8_t arg_0x7fb14cb0c940);
 # 120 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__Resource__release(
 # 51 "../tinyos_ws18/tos/system/SimpleArbiterP.nc"
-uint8_t arg_0x7f9ecf61a110);
+uint8_t arg_0x7fb14cb0f110);
 # 88 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__Resource__request(
 # 51 "../tinyos_ws18/tos/system/SimpleArbiterP.nc"
-uint8_t arg_0x7f9ecf61a110);
+uint8_t arg_0x7fb14cb0f110);
 # 90 "../tinyos_ws18/tos/interfaces/ArbiterInfo.nc"
 static bool /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ArbiterInfo__inUse(void );
 # 75 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
@@ -2810,7 +2817,7 @@ static void UdpTransceiverP__IpSend__sendDone(error_t error);
 # 11 "../tinyos_ws18/tos/lib_ecs/udp/UdpReceive.nc"
 static void UdpTransceiverP__UdpReceive__default__received(
 # 12 "UdpTransceiverP.nc"
-uint16_t arg_0x7f9ecf55b580, 
+uint16_t arg_0x7fb14ca50580, 
 # 11 "../tinyos_ws18/tos/lib_ecs/udp/UdpReceive.nc"
 in_addr_t *srcIp, uint16_t srcPort, uint8_t *data, uint16_t len);
 # 10 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpSend.nc"
@@ -2836,12 +2843,12 @@ static void UdpQueueP__PacketQueue__sendDone(uint8_t index, error_t error);
 # 9 "../tinyos_ws18/tos/lib_ecs/udp/UdpQueue.nc"
 static error_t UdpQueueP__UdpQueue__send(
 # 12 "../tinyos_ws18/tos/lib_ecs/udp/UdpQueueP.nc"
-uint8_t arg_0x7f9ecf528020, 
+uint8_t arg_0x7fb14ca1d020, 
 # 9 "../tinyos_ws18/tos/lib_ecs/udp/UdpQueue.nc"
 in_addr_t *dstIp, uint16_t srcPort, uint16_t dstPort, uint8_t *data, uint16_t len);
 static void UdpQueueP__UdpQueue__default__sendDone(
 # 12 "../tinyos_ws18/tos/lib_ecs/udp/UdpQueueP.nc"
-uint8_t arg_0x7f9ecf528020, 
+uint8_t arg_0x7fb14ca1d020, 
 # 10 "../tinyos_ws18/tos/lib_ecs/udp/UdpQueue.nc"
 error_t error);
 # 75 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
@@ -2879,7 +2886,7 @@ static error_t FMClickP__FMClick__tune(uint16_t channel);
 
 
 
-static error_t FMClickP__FMClick__setVolume(uint8_t arg_0x7f9ed0103c00);
+static error_t FMClickP__FMClick__setVolume(uint8_t arg_0x7fb14d57bc00);
 
 static error_t FMClickP__FMClick__receiveRDS(bool enable);
 #line 22
@@ -2916,25 +2923,25 @@ static resource_client_id_t /*Atm128I2CMasterP.Arbiter.Queue*/FcfsResourceQueueC
 # 53 "../tinyos_ws18/tos/interfaces/ResourceRequested.nc"
 static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceRequested__default__requested(
 # 55 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d39d0);
+uint8_t arg_0x7fb14c8c89d0);
 # 65 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
 static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConfigure__default__unconfigure(
 # 60 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d0020);
+uint8_t arg_0x7fb14c8c5020);
 # 59 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
 static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConfigure__default__configure(
 # 60 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d0020);
+uint8_t arg_0x7fb14c8c5020);
 # 56 "../tinyos_ws18/tos/interfaces/ResourceDefaultOwner.nc"
 static error_t /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceDefaultOwner__release(void );
 # 120 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__Resource__release(
 # 54 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d56a0);
+uint8_t arg_0x7fb14c8c96a0);
 # 88 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__Resource__request(
 # 54 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d56a0);
+uint8_t arg_0x7fb14c8c96a0);
 # 75 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
 static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__grantedTask__runTask(void );
 # 62 "../tinyos_ws18/tos/lib/power/PowerDownCleanup.nc"
@@ -2954,19 +2961,19 @@ uint8_t * data);
 # 120 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__Resource__release(
 # 41 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2CMasterImplP.nc"
-uint8_t arg_0x7f9ecf3670d0);
+uint8_t arg_0x7fb14c85c0d0);
 # 88 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__Resource__request(
 # 41 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2CMasterImplP.nc"
-uint8_t arg_0x7f9ecf3670d0);
+uint8_t arg_0x7fb14c85c0d0);
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__Resource__default__granted(
 # 41 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2CMasterImplP.nc"
-uint8_t arg_0x7f9ecf3670d0);
+uint8_t arg_0x7fb14c85c0d0);
 # 76 "../tinyos_ws18/tos/interfaces/I2CPacket.nc"
 static error_t /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__read(
 # 42 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2CMasterImplP.nc"
-uint8_t arg_0x7f9ecf3664c0, 
+uint8_t arg_0x7fb14c85b4c0, 
 # 76 "../tinyos_ws18/tos/interfaces/I2CPacket.nc"
 i2c_flags_t flags, uint16_t addr, uint8_t length, 
 #line 72
@@ -2974,7 +2981,7 @@ uint8_t * data);
 #line 112
 static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__default__writeDone(
 # 42 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2CMasterImplP.nc"
-uint8_t arg_0x7f9ecf3664c0, 
+uint8_t arg_0x7fb14c85b4c0, 
 # 112 "../tinyos_ws18/tos/interfaces/I2CPacket.nc"
 error_t error, uint16_t addr, uint8_t length, 
 #line 109
@@ -2982,7 +2989,7 @@ uint8_t * data);
 #line 92
 static error_t /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__write(
 # 42 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2CMasterImplP.nc"
-uint8_t arg_0x7f9ecf3664c0, 
+uint8_t arg_0x7fb14c85b4c0, 
 # 92 "../tinyos_ws18/tos/interfaces/I2CPacket.nc"
 i2c_flags_t flags, uint16_t addr, uint8_t length, 
 #line 88
@@ -2990,7 +2997,7 @@ uint8_t * data);
 #line 102
 static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__default__readDone(
 # 42 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2CMasterImplP.nc"
-uint8_t arg_0x7f9ecf3664c0, 
+uint8_t arg_0x7fb14c85b4c0, 
 # 102 "../tinyos_ws18/tos/interfaces/I2CPacket.nc"
 error_t error, uint16_t addr, uint8_t length, 
 #line 99
@@ -2998,7 +3005,7 @@ uint8_t * data);
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__SubResource__granted(
 # 43 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2CMasterImplP.nc"
-uint8_t arg_0x7f9ecf361880);
+uint8_t arg_0x7fb14c856880);
 # 46 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2C.nc"
 static void /*Atm128I2CMasterP.Master*/Atm128I2CMasterPacketP__0__Atm128I2C__stop(void );
 # 56 "../tinyos_ws18/tos/chips/atm128/i2c/HplAtm128I2CBus.nc"
@@ -3200,29 +3207,29 @@ static resource_client_id_t /*Atm1280AdcC.AdcArbiter.Queue*/RoundRobinResourceQu
 # 53 "../tinyos_ws18/tos/interfaces/ResourceRequested.nc"
 static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceRequested__default__requested(
 # 55 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d39d0);
+uint8_t arg_0x7fb14c8c89d0);
 # 65 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
 static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfigure__default__unconfigure(
 # 60 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d0020);
+uint8_t arg_0x7fb14c8c5020);
 # 59 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
 static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfigure__default__configure(
 # 60 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d0020);
+uint8_t arg_0x7fb14c8c5020);
 # 56 "../tinyos_ws18/tos/interfaces/ResourceDefaultOwner.nc"
 static error_t /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceDefaultOwner__release(void );
 # 120 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__Resource__release(
 # 54 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d56a0);
+uint8_t arg_0x7fb14c8c96a0);
 # 88 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__Resource__request(
 # 54 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d56a0);
+uint8_t arg_0x7fb14c8c96a0);
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__Resource__default__granted(
 # 54 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d56a0);
+uint8_t arg_0x7fb14c8c96a0);
 # 75 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
 static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__grantedTask__runTask(void );
 # 62 "../tinyos_ws18/tos/lib/power/PowerDownCleanup.nc"
@@ -3236,55 +3243,55 @@ static void AdcP__Atm1280AdcSingle__dataReady(uint16_t data, bool precise);
 # 55 "../tinyos_ws18/tos/interfaces/Read.nc"
 static error_t AdcP__Read__read(
 # 48 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/AdcP.nc"
-uint8_t arg_0x7f9ecee78260);
+uint8_t arg_0x7fb14c36d260);
 # 66 "../tinyos_ws18/tos/interfaces/ReadNow.nc"
 static void AdcP__ReadNow__default__readDone(
 # 49 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/AdcP.nc"
-uint8_t arg_0x7f9ecee75020, 
+uint8_t arg_0x7fb14c36a020, 
 # 66 "../tinyos_ws18/tos/interfaces/ReadNow.nc"
 error_t result, AdcP__ReadNow__val_t val);
 # 32 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/Atm1280AdcConfig.nc"
 static uint8_t AdcP__Atm1280AdcConfig__default__getRefVoltage(
 # 53 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/AdcP.nc"
-uint8_t arg_0x7f9ecee73860);
+uint8_t arg_0x7fb14c368860);
 # 25 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/Atm1280AdcConfig.nc"
 static uint8_t AdcP__Atm1280AdcConfig__default__getChannel(
 # 53 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/AdcP.nc"
-uint8_t arg_0x7f9ecee73860);
+uint8_t arg_0x7fb14c368860);
 # 39 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/Atm1280AdcConfig.nc"
 static uint8_t AdcP__Atm1280AdcConfig__default__getPrescaler(
 # 53 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/AdcP.nc"
-uint8_t arg_0x7f9ecee73860);
+uint8_t arg_0x7fb14c368860);
 # 75 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
 static void AdcP__acquiredData__runTask(void );
 # 55 "../tinyos_ws18/tos/interfaces/Read.nc"
 static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Read__read(
 # 24 "../tinyos_ws18/tos/system/ArbitratedReadC.nc"
-uint8_t arg_0x7f9ecee49020);
+uint8_t arg_0x7fb14c33e020);
 # 63 "../tinyos_ws18/tos/interfaces/Read.nc"
 static void /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Read__default__readDone(
 # 24 "../tinyos_ws18/tos/system/ArbitratedReadC.nc"
-uint8_t arg_0x7f9ecee49020, 
+uint8_t arg_0x7fb14c33e020, 
 # 63 "../tinyos_ws18/tos/interfaces/Read.nc"
 error_t result, /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Read__val_t val);
 #line 63
 static void /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Service__readDone(
 # 26 "../tinyos_ws18/tos/system/ArbitratedReadC.nc"
-uint8_t arg_0x7f9ecee48e60, 
+uint8_t arg_0x7fb14c33ce60, 
 # 63 "../tinyos_ws18/tos/interfaces/Read.nc"
 error_t result, /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Service__val_t val);
 # 120 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__default__release(
 # 27 "../tinyos_ws18/tos/system/ArbitratedReadC.nc"
-uint8_t arg_0x7f9ecee45a60);
+uint8_t arg_0x7fb14c33aa60);
 # 88 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__default__request(
 # 27 "../tinyos_ws18/tos/system/ArbitratedReadC.nc"
-uint8_t arg_0x7f9ecee45a60);
+uint8_t arg_0x7fb14c33aa60);
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static void /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__granted(
 # 27 "../tinyos_ws18/tos/system/ArbitratedReadC.nc"
-uint8_t arg_0x7f9ecee45a60);
+uint8_t arg_0x7fb14c33aa60);
 # 13 "../tinyos_ws18/tos/lib_ecs/lcd/BufferedLcd.nc"
 static void /*BufferedLcdC.BufferedLcdP*/BufferedLcdP__0__BufferedLcd__clear(void );
 
@@ -3354,7 +3361,7 @@ int main(void )   ;
 # 75 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
 static void SchedulerBasicP__TaskBasic__runTask(
 # 56 "../tinyos_ws18/tos/system/SchedulerBasicP.nc"
-uint8_t arg_0x7f9ed0205830);
+uint8_t arg_0x7fb14d67d830);
 # 76 "../tinyos_ws18/tos/interfaces/McuSleep.nc"
 static void SchedulerBasicP__McuSleep__sleep(void );
 # 61 "../tinyos_ws18/tos/system/SchedulerBasicP.nc"
@@ -3467,7 +3474,7 @@ static error_t RadioScannerP__Radio__tune(uint16_t channel);
 
 
 
-static error_t RadioScannerP__Radio__setVolume(uint8_t arg_0x7f9ed0103c00);
+static error_t RadioScannerP__Radio__setVolume(uint8_t arg_0x7fb14d57bc00);
 
 static error_t RadioScannerP__Radio__receiveRDS(bool enable);
 #line 22
@@ -3490,92 +3497,92 @@ static void RadioScannerP__Glcd__drawTextPgm(const char *text, const uint8_t x, 
 static void RadioScannerP__Glcd__drawText(const char *text, const uint8_t x, const uint8_t y);
 # 67 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
 static error_t RadioScannerP__startSeekBand__postTask(void );
-# 121 "RadioScannerP.nc"
+# 136 "RadioScannerP.nc"
 enum RadioScannerP____nesc_unnamed4366 {
-#line 121
+#line 136
   RadioScannerP__inputTuneChannel = 0U
 };
-#line 121
+#line 136
 typedef int RadioScannerP____nesc_sillytask_inputTuneChannel[RadioScannerP__inputTuneChannel];
 enum RadioScannerP____nesc_unnamed4367 {
-#line 122
+#line 137
   RadioScannerP__inputNote = 1U
 };
-#line 122
+#line 137
 typedef int RadioScannerP____nesc_sillytask_inputNote[RadioScannerP__inputNote];
 enum RadioScannerP____nesc_unnamed4368 {
-#line 123
+#line 138
   RadioScannerP__displayChannelInfo = 2U
 };
-#line 123
+#line 138
 typedef int RadioScannerP____nesc_sillytask_displayChannelInfo[RadioScannerP__displayChannelInfo];
 enum RadioScannerP____nesc_unnamed4369 {
-#line 124
+#line 139
   RadioScannerP__displayRDS = 3U
 };
-#line 124
+#line 139
 typedef int RadioScannerP____nesc_sillytask_displayRDS[RadioScannerP__displayRDS];
 enum RadioScannerP____nesc_unnamed4370 {
-#line 125
+#line 140
   RadioScannerP__setVolume = 4U
 };
-#line 125
+#line 140
 typedef int RadioScannerP____nesc_sillytask_setVolume[RadioScannerP__setVolume];
 enum RadioScannerP____nesc_unnamed4371 {
-#line 126
+#line 141
   RadioScannerP__startSeekUp = 5U
 };
-#line 126
+#line 141
 typedef int RadioScannerP____nesc_sillytask_startSeekUp[RadioScannerP__startSeekUp];
 enum RadioScannerP____nesc_unnamed4372 {
-#line 127
+#line 142
   RadioScannerP__startSeekDown = 6U
 };
-#line 127
+#line 142
 typedef int RadioScannerP____nesc_sillytask_startSeekDown[RadioScannerP__startSeekDown];
 enum RadioScannerP____nesc_unnamed4373 {
-#line 128
+#line 143
   RadioScannerP__startSeekBand = 7U
 };
-#line 128
+#line 143
 typedef int RadioScannerP____nesc_sillytask_startSeekBand[RadioScannerP__startSeekBand];
 enum RadioScannerP____nesc_unnamed4374 {
-#line 129
+#line 144
   RadioScannerP__startTune = 8U
 };
-#line 129
+#line 144
 typedef int RadioScannerP____nesc_sillytask_startTune[RadioScannerP__startTune];
 enum RadioScannerP____nesc_unnamed4375 {
-#line 130
+#line 145
   RadioScannerP__addChannel = 9U
 };
-#line 130
+#line 145
 typedef int RadioScannerP____nesc_sillytask_addChannel[RadioScannerP__addChannel];
 enum RadioScannerP____nesc_unnamed4376 {
-#line 131
+#line 146
   RadioScannerP__displayHardError = 10U
 };
-#line 131
+#line 146
 typedef int RadioScannerP____nesc_sillytask_displayHardError[RadioScannerP__displayHardError];
 enum RadioScannerP____nesc_unnamed4377 {
-#line 132
+#line 147
   RadioScannerP__displaySoftError = 11U
 };
-#line 132
+#line 147
 typedef int RadioScannerP____nesc_sillytask_displaySoftError[RadioScannerP__displaySoftError];
-#line 146
+#line 161
 enum RadioScannerP____nesc_unnamed4378 {
-#line 146
+#line 161
   RadioScannerP__handleChar = 12U
 };
-#line 146
+#line 161
 typedef int RadioScannerP____nesc_sillytask_handleChar[RadioScannerP__handleChar];
-#line 54
+#line 69
 enum RadioScannerP__app_state {
-#line 54
+#line 69
   RadioScannerP__INIT, RadioScannerP__KBCTRL, RadioScannerP__TUNEINP, RadioScannerP__TUNE, RadioScannerP__SEEK, RadioScannerP__BANDSEEK, RadioScannerP__ADD, RadioScannerP__FAV, RadioScannerP__NOTE
 };
-#line 55
+#line 70
 static enum RadioScannerP__app_state RadioScannerP__appState;
 
 static char RadioScannerP__kbChar;
@@ -3587,14 +3594,14 @@ static uint16_t RadioScannerP__nextChan;
 
 
 
-#line 62
+#line 77
 static struct RadioScannerP____nesc_unnamed4379 {
 
   uint8_t idx;
   char buf[5];
 } RadioScannerP__tuneInput;
-#line 83
-#line 72
+#line 98
+#line 87
 static struct RadioScannerP____nesc_unnamed4380 {
 
   bool PSAvail;
@@ -3616,7 +3623,7 @@ static struct RadioScannerP____nesc_unnamed4380 {
 
 
 
-#line 88
+#line 103
 typedef struct RadioScannerP____nesc_unnamed4381 {
 
   channelInfo info;
@@ -3628,7 +3635,7 @@ typedef struct RadioScannerP____nesc_unnamed4381 {
 
 
 
-#line 95
+#line 110
 static struct RadioScannerP____nesc_unnamed4382 {
 
   uint8_t idx;
@@ -3641,7 +3648,7 @@ static struct RadioScannerP____nesc_unnamed4382 {
 
 
 
-#line 103
+#line 118
 static struct RadioScannerP____nesc_unnamed4383 {
 
   uint8_t entries;
@@ -3654,7 +3661,7 @@ static struct RadioScannerP____nesc_unnamed4383 {
 
 
 
-#line 111
+#line 126
 static struct RadioScannerP____nesc_unnamed4384 {
 
   uint8_t entries;
@@ -3664,7 +3671,7 @@ static struct RadioScannerP____nesc_unnamed4384 {
 static uint8_t RadioScannerP__oldVolume;
 static uint8_t RadioScannerP__newVolume;
 static uint8_t RadioScannerP__errno;
-#line 134
+#line 149
 static void RadioScannerP__printVolume(void );
 static void RadioScannerP__clearRDSData(void );
 inline static void RadioScannerP__addFavourite(void );
@@ -3678,17 +3685,17 @@ inline static void RadioScannerP__addNote(void );
 
 
 static inline void RadioScannerP__handleChar__runTask(void );
-#line 269
+#line 284
 static inline void RadioScannerP__inputTuneChannel__runTask(void );
-#line 306
+#line 321
 static inline void RadioScannerP__inputNote__runTask(void );
-#line 353
+#line 368
 static inline void RadioScannerP__displayChannelInfo__runTask(void );
-#line 427
+#line 446
 static inline void RadioScannerP__displayRDS__runTask(void );
-#line 476
+#line 495
 static inline void RadioScannerP__setVolume__runTask(void );
-#line 489
+#line 508
 static inline void RadioScannerP__startSeekUp__runTask(void );
 
 
@@ -3728,37 +3735,37 @@ static inline void RadioScannerP__startTune__runTask(void );
 
 
 static inline void RadioScannerP__addChannel__runTask(void );
-#line 614
+#line 631
 static inline void RadioScannerP__displayHardError__runTask(void );
-#line 638
+#line 655
 static inline void RadioScannerP__displaySoftError__runTask(void );
-#line 700
+#line 717
 static void RadioScannerP__printVolume(void );
-#line 715
-static void RadioScannerP__clearRDSData(void );
 #line 732
+static void RadioScannerP__clearRDSData(void );
+#line 749
 inline static void RadioScannerP__addFavourite(void );
-#line 787
-static uint8_t RadioScannerP__getListId(uint16_t channel);
 #line 806
+static uint8_t RadioScannerP__getListId(uint16_t channel);
+#line 825
 inline static uint8_t RadioScannerP__getNextId(uint16_t channel);
-#line 829
+#line 848
 inline static void RadioScannerP__tuneNextHighest(void );
-#line 856
+#line 875
 inline static void RadioScannerP__addNote(void );
-#line 885
+#line 904
 static inline void RadioScannerP__Boot__booted(void );
-#line 912
+#line 942
 static void RadioScannerP__Radio__initDone(error_t res);
-#line 927
+#line 957
 static void RadioScannerP__Keyboard__receivedChar(uint8_t c);
-#line 956
+#line 986
 static inline void RadioScannerP__Radio__tuneComplete(uint16_t channel);
-#line 984
+#line 1014
 static void RadioScannerP__Radio__seekComplete(uint16_t channel);
-#line 1029
+#line 1060
 static void RadioScannerP__Radio__rdsReceived(RDSType type, char *buf);
-#line 1069
+#line 1100
 static inline void RadioScannerP__VolumeTimer__fired(void );
 
 
@@ -3782,7 +3789,7 @@ static inline void RadioScannerP__volumeKnob__readDone(error_t res, uint16_t val
 
 
 static void RadioScannerP__DB__receivedChannelEntry(uint8_t id, channelInfo channel);
-#line 1148
+#line 1176
 static void RadioScannerP__DB__savedChannel(uint8_t id, uint8_t result);
 # 67 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
 static error_t DatabaseP__fetchList__postTask(void );
@@ -3930,13 +3937,13 @@ inline static void DatabaseP__decodeAdd(udp_msg_t *msg);
 inline static void DatabaseP__decodeList(udp_msg_t *msg);
 #line 388
 inline static void DatabaseP__decodeGet(udp_msg_t *msg);
-#line 422
+#line 424
 static bool DatabaseP__prepareMessage(udp_msg_t *msg, uint8_t **paramStart);
-#line 450
+#line 452
 inline static bool DatabaseP__parseChannelInfo(char *params, channelInfo *channel, uint8_t *id);
-#line 534
+#line 538
 inline static void DatabaseP__getParamsPgm(DatabaseP__params_t *p);
-#line 550
+#line 554
 static inline void DatabaseP__UdpSend__sendDone(error_t error);
 
 
@@ -3944,7 +3951,7 @@ static inline void DatabaseP__UdpSend__sendDone(error_t error);
 
 
 static inline void DatabaseP__UdpReceive__received(in_addr_t *srcIp, uint16_t srcPort, uint8_t *data, uint16_t len);
-#line 568
+#line 572
 static inline void DatabaseP__Control__startDone(error_t error);
 # 10 "../tinyos_ws18/tos/lib_ecs/packet_queue/PacketSender.nc"
 static void IpTransceiverP__PacketSender__sendDone(error_t error);
@@ -3955,7 +3962,7 @@ static error_t IpTransceiverP__Arp__resolve(in_addr_t *ip);
 # 9 "../tinyos_ws18/tos/lib_ecs/ip/IpReceive.nc"
 static void IpTransceiverP__IpReceive__received(
 # 13 "../tinyos_ws18/tos/lib_ecs/ip/IpTransceiverP.nc"
-uint8_t arg_0x7f9ecfe31170, 
+uint8_t arg_0x7fb14d3268d0, 
 # 9 "../tinyos_ws18/tos/lib_ecs/ip/IpReceive.nc"
 in_addr_t *srcIp, uint8_t *data, uint16_t len);
 # 23 "../tinyos_ws18/tos/lib_ecs/ip/IpTransceiverP.nc"
@@ -4015,7 +4022,7 @@ static void LlcTransceiverP__PacketSender__sendDone(error_t error);
 # 9 "../tinyos_ws18/tos/lib_ecs/llc/LlcReceive.nc"
 static void LlcTransceiverP__LlcReceive__received(
 # 12 "../tinyos_ws18/tos/lib_ecs/llc/LlcTransceiverP.nc"
-uint16_t arg_0x7f9ecfdd31b0, 
+uint16_t arg_0x7fb14d2c88f0, 
 # 9 "../tinyos_ws18/tos/lib_ecs/llc/LlcReceive.nc"
 mac_addr_t *srcMac, uint8_t *data);
 # 11 "../tinyos_ws18/tos/lib_ecs/llc/Mac.nc"
@@ -4108,7 +4115,7 @@ static LlcQueueP__PacketQueue__item_type *LlcQueueP__PacketQueue__getBuffer(uint
 # 10 "../tinyos_ws18/tos/lib_ecs/llc/LlcQueue.nc"
 static void LlcQueueP__LlcQueue__sendDone(
 # 12 "../tinyos_ws18/tos/lib_ecs/llc/LlcQueueP.nc"
-uint8_t arg_0x7f9ecfd7d850, 
+uint8_t arg_0x7fb14d26f060, 
 # 10 "../tinyos_ws18/tos/lib_ecs/llc/LlcQueue.nc"
 error_t error);
 # 17 "../tinyos_ws18/tos/lib_ecs/llc/LlcQueueP.nc"
@@ -4351,7 +4358,7 @@ static void /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0__TimerFrom__s
 
 static void /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0__Timer__fired(
 # 48 "../tinyos_ws18/tos/lib/timer/VirtualizeTimerC.nc"
-uint8_t arg_0x7f9ecfbbf3f0);
+uint8_t arg_0x7fb14d0b33f0);
 #line 71
 enum /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0____nesc_unnamed4394 {
 #line 71
@@ -4521,7 +4528,7 @@ static void /*IpQueueC.PacketQueueC.PacketQueueP*/PacketQueueP__2__PacketSender_
 # 10 "../tinyos_ws18/tos/lib_ecs/ip/IpQueue.nc"
 static void IpQueueP__IpQueue__sendDone(
 # 12 "../tinyos_ws18/tos/lib_ecs/ip/IpQueueP.nc"
-uint8_t arg_0x7f9ecfb0f840, 
+uint8_t arg_0x7fb14d004840, 
 # 10 "../tinyos_ws18/tos/lib_ecs/ip/IpQueue.nc"
 error_t error);
 # 10 "../tinyos_ws18/tos/lib_ecs/packet_queue/PacketQueue.nc"
@@ -4543,7 +4550,7 @@ static error_t IcmpTransceiverP__IpSend__send(in_addr_t *dstIp, uint8_t *data, u
 # 9 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpReceive.nc"
 static void IcmpTransceiverP__IcmpReceive__received(
 # 12 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpTransceiverP.nc"
-uint8_t arg_0x7f9ecfaf9c40, 
+uint8_t arg_0x7fb14cfeec40, 
 # 9 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpReceive.nc"
 in_addr_t *srcIp, uint8_t code, uint8_t *data, uint16_t len);
 # 18 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpTransceiverP.nc"
@@ -4598,7 +4605,7 @@ static void /*IcmpQueueC.PacketQueueC.PacketQueueP*/PacketQueueP__3__PacketSende
 # 10 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpQueue.nc"
 static void IcmpQueueP__IcmpQueue__sendDone(
 # 12 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpQueueP.nc"
-uint8_t arg_0x7f9ecfac42a0, 
+uint8_t arg_0x7fb14cfb82a0, 
 # 10 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpQueue.nc"
 error_t error);
 # 17 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpQueueP.nc"
@@ -5048,11 +5055,11 @@ error_t error);
 # 120 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t Atm1280SpiP__ResourceArbiter__release(
 # 103 "../tinyos_ws18/tos/chips_ecs/atm1280/spi/Atm1280SpiP.nc"
-uint8_t arg_0x7f9ecf6f3590);
+uint8_t arg_0x7fb14cbe8590);
 # 88 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t Atm1280SpiP__ResourceArbiter__request(
 # 103 "../tinyos_ws18/tos/chips_ecs/atm1280/spi/Atm1280SpiP.nc"
-uint8_t arg_0x7f9ecf6f3590);
+uint8_t arg_0x7fb14cbe8590);
 # 89 "../tinyos_ws18/tos/chips/atm128/spi/Atm128Spi.nc"
 static void Atm1280SpiP__Spi__sleep(void );
 #line 83
@@ -5081,7 +5088,7 @@ static void Atm1280SpiP__Spi__setClockPhase(bool sampleOnTrailing);
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static void Atm1280SpiP__Resource__granted(
 # 99 "../tinyos_ws18/tos/chips_ecs/atm1280/spi/Atm1280SpiP.nc"
-uint8_t arg_0x7f9ecf710170);
+uint8_t arg_0x7fb14cc05170);
 # 90 "../tinyos_ws18/tos/interfaces/ArbiterInfo.nc"
 static bool Atm1280SpiP__ArbiterInfo__inUse(void );
 # 277 "../tinyos_ws18/tos/chips_ecs/atm1280/spi/Atm1280SpiP.nc"
@@ -5217,15 +5224,15 @@ static inline error_t /*Atm1280SpiC.Arbiter.Queue*/FcfsResourceQueueC__0__FcfsQu
 # 53 "../tinyos_ws18/tos/interfaces/ResourceRequested.nc"
 static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceRequested__requested(
 # 52 "../tinyos_ws18/tos/system/SimpleArbiterP.nc"
-uint8_t arg_0x7f9ecf619360);
+uint8_t arg_0x7fb14cb0e360);
 # 65 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
 static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceConfigure__unconfigure(
 # 56 "../tinyos_ws18/tos/system/SimpleArbiterP.nc"
-uint8_t arg_0x7f9ecf618940);
+uint8_t arg_0x7fb14cb0c940);
 # 59 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
 static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceConfigure__configure(
 # 56 "../tinyos_ws18/tos/system/SimpleArbiterP.nc"
-uint8_t arg_0x7f9ecf618940);
+uint8_t arg_0x7fb14cb0c940);
 # 79 "../tinyos_ws18/tos/interfaces/ResourceQueue.nc"
 static error_t /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__Queue__enqueue(resource_client_id_t id);
 #line 53
@@ -5235,7 +5242,7 @@ static resource_client_id_t /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__Qu
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__Resource__granted(
 # 51 "../tinyos_ws18/tos/system/SimpleArbiterP.nc"
-uint8_t arg_0x7f9ecf61a110);
+uint8_t arg_0x7fb14cb0f110);
 # 67 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
 static error_t /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__grantedTask__postTask(void );
 # 68 "../tinyos_ws18/tos/system/SimpleArbiterP.nc"
@@ -5414,7 +5421,7 @@ static error_t UdpTransceiverP__IpSend__send(in_addr_t *dstIp, uint8_t *data, ui
 # 11 "../tinyos_ws18/tos/lib_ecs/udp/UdpReceive.nc"
 static void UdpTransceiverP__UdpReceive__received(
 # 12 "UdpTransceiverP.nc"
-uint16_t arg_0x7f9ecf55b580, 
+uint16_t arg_0x7fb14ca50580, 
 # 11 "../tinyos_ws18/tos/lib_ecs/udp/UdpReceive.nc"
 in_addr_t *srcIp, uint16_t srcPort, uint8_t *data, uint16_t len);
 # 21 "UdpTransceiverP.nc"
@@ -5506,7 +5513,7 @@ static UdpQueueP__PacketQueue__item_type *UdpQueueP__PacketQueue__getBuffer(uint
 # 10 "../tinyos_ws18/tos/lib_ecs/udp/UdpQueue.nc"
 static void UdpQueueP__UdpQueue__sendDone(
 # 12 "../tinyos_ws18/tos/lib_ecs/udp/UdpQueueP.nc"
-uint8_t arg_0x7f9ecf528020, 
+uint8_t arg_0x7fb14ca1d020, 
 # 10 "../tinyos_ws18/tos/lib_ecs/udp/UdpQueue.nc"
 error_t error);
 # 17 "../tinyos_ws18/tos/lib_ecs/udp/UdpQueueP.nc"
@@ -5786,15 +5793,15 @@ static inline error_t /*Atm128I2CMasterP.Arbiter.Queue*/FcfsResourceQueueC__1__F
 # 53 "../tinyos_ws18/tos/interfaces/ResourceRequested.nc"
 static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceRequested__requested(
 # 55 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d39d0);
+uint8_t arg_0x7fb14c8c89d0);
 # 65 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
 static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConfigure__unconfigure(
 # 60 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d0020);
+uint8_t arg_0x7fb14c8c5020);
 # 59 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
 static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConfigure__configure(
 # 60 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d0020);
+uint8_t arg_0x7fb14c8c5020);
 # 79 "../tinyos_ws18/tos/interfaces/ResourceQueue.nc"
 static error_t /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__Queue__enqueue(resource_client_id_t id);
 #line 53
@@ -5808,7 +5815,7 @@ static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceDefaultOwne
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__Resource__granted(
 # 54 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d56a0);
+uint8_t arg_0x7fb14c8c96a0);
 # 67 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
 static error_t /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__grantedTask__postTask(void );
 # 75 "../tinyos_ws18/tos/system/ArbiterP.nc"
@@ -5898,11 +5905,11 @@ uint8_t * data);
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__Resource__granted(
 # 41 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2CMasterImplP.nc"
-uint8_t arg_0x7f9ecf3670d0);
+uint8_t arg_0x7fb14c85c0d0);
 # 112 "../tinyos_ws18/tos/interfaces/I2CPacket.nc"
 static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__writeDone(
 # 42 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2CMasterImplP.nc"
-uint8_t arg_0x7f9ecf3664c0, 
+uint8_t arg_0x7fb14c85b4c0, 
 # 112 "../tinyos_ws18/tos/interfaces/I2CPacket.nc"
 error_t error, uint16_t addr, uint8_t length, 
 #line 109
@@ -5910,7 +5917,7 @@ uint8_t * data);
 #line 102
 static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__readDone(
 # 42 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2CMasterImplP.nc"
-uint8_t arg_0x7f9ecf3664c0, 
+uint8_t arg_0x7fb14c85b4c0, 
 # 102 "../tinyos_ws18/tos/interfaces/I2CPacket.nc"
 error_t error, uint16_t addr, uint8_t length, 
 #line 99
@@ -5918,11 +5925,11 @@ uint8_t * data);
 # 120 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__SubResource__release(
 # 43 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2CMasterImplP.nc"
-uint8_t arg_0x7f9ecf361880);
+uint8_t arg_0x7fb14c856880);
 # 88 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__SubResource__request(
 # 43 "../tinyos_ws18/tos/chips/atm128/i2c/Atm128I2CMasterImplP.nc"
-uint8_t arg_0x7f9ecf361880);
+uint8_t arg_0x7fb14c856880);
 
 
 
@@ -6444,15 +6451,15 @@ static inline error_t /*Atm1280AdcC.AdcArbiter.Queue*/RoundRobinResourceQueueC__
 # 53 "../tinyos_ws18/tos/interfaces/ResourceRequested.nc"
 static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceRequested__requested(
 # 55 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d39d0);
+uint8_t arg_0x7fb14c8c89d0);
 # 65 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
 static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfigure__unconfigure(
 # 60 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d0020);
+uint8_t arg_0x7fb14c8c5020);
 # 59 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
 static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfigure__configure(
 # 60 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d0020);
+uint8_t arg_0x7fb14c8c5020);
 # 79 "../tinyos_ws18/tos/interfaces/ResourceQueue.nc"
 static error_t /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__Queue__enqueue(resource_client_id_t id);
 #line 53
@@ -6466,7 +6473,7 @@ static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceDefaultOwner_
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__Resource__granted(
 # 54 "../tinyos_ws18/tos/system/ArbiterP.nc"
-uint8_t arg_0x7f9ecf3d56a0);
+uint8_t arg_0x7fb14c8c96a0);
 # 67 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
 static error_t /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__grantedTask__postTask(void );
 # 75 "../tinyos_ws18/tos/system/ArbiterP.nc"
@@ -6553,27 +6560,27 @@ bool leftJustify, uint8_t prescaler);
 # 63 "../tinyos_ws18/tos/interfaces/Read.nc"
 static void AdcP__Read__readDone(
 # 48 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/AdcP.nc"
-uint8_t arg_0x7f9ecee78260, 
+uint8_t arg_0x7fb14c36d260, 
 # 63 "../tinyos_ws18/tos/interfaces/Read.nc"
 error_t result, AdcP__Read__val_t val);
 # 66 "../tinyos_ws18/tos/interfaces/ReadNow.nc"
 static void AdcP__ReadNow__readDone(
 # 49 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/AdcP.nc"
-uint8_t arg_0x7f9ecee75020, 
+uint8_t arg_0x7fb14c36a020, 
 # 66 "../tinyos_ws18/tos/interfaces/ReadNow.nc"
 error_t result, AdcP__ReadNow__val_t val);
 # 32 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/Atm1280AdcConfig.nc"
 static uint8_t AdcP__Atm1280AdcConfig__getRefVoltage(
 # 53 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/AdcP.nc"
-uint8_t arg_0x7f9ecee73860);
+uint8_t arg_0x7fb14c368860);
 # 25 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/Atm1280AdcConfig.nc"
 static uint8_t AdcP__Atm1280AdcConfig__getChannel(
 # 53 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/AdcP.nc"
-uint8_t arg_0x7f9ecee73860);
+uint8_t arg_0x7fb14c368860);
 # 39 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/Atm1280AdcConfig.nc"
 static uint8_t AdcP__Atm1280AdcConfig__getPrescaler(
 # 53 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/AdcP.nc"
-uint8_t arg_0x7f9ecee73860);
+uint8_t arg_0x7fb14c368860);
 # 67 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
 static error_t AdcP__acquiredData__postTask(void );
 # 104 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/AdcP.nc"
@@ -6654,21 +6661,21 @@ static inline void AdcP__ReadNow__default__readDone(uint8_t c, error_t e, uint16
 # 63 "../tinyos_ws18/tos/interfaces/Read.nc"
 static void /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Read__readDone(
 # 24 "../tinyos_ws18/tos/system/ArbitratedReadC.nc"
-uint8_t arg_0x7f9ecee49020, 
+uint8_t arg_0x7fb14c33e020, 
 # 63 "../tinyos_ws18/tos/interfaces/Read.nc"
 error_t result, /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Read__val_t val);
 #line 55
 static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Service__read(
 # 26 "../tinyos_ws18/tos/system/ArbitratedReadC.nc"
-uint8_t arg_0x7f9ecee48e60);
+uint8_t arg_0x7fb14c33ce60);
 # 120 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__release(
 # 27 "../tinyos_ws18/tos/system/ArbitratedReadC.nc"
-uint8_t arg_0x7f9ecee45a60);
+uint8_t arg_0x7fb14c33aa60);
 # 88 "../tinyos_ws18/tos/interfaces/Resource.nc"
 static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__request(
 # 27 "../tinyos_ws18/tos/system/ArbitratedReadC.nc"
-uint8_t arg_0x7f9ecee45a60);
+uint8_t arg_0x7fb14c33aa60);
 
 
 
@@ -7281,7 +7288,7 @@ inline static error_t RadioScannerP__setVolume__postTask(void ){
 #line 67
 }
 #line 67
-# 1085 "RadioScannerP.nc"
+# 1116 "RadioScannerP.nc"
 static inline void RadioScannerP__volumeKnob__readDone(error_t res, uint16_t val)
 {
   RadioScannerP__newVolume = (uint8_t )(val >> 6);
@@ -7295,9 +7302,9 @@ static inline void /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Read__default__
 }
 
 # 63 "../tinyos_ws18/tos/interfaces/Read.nc"
-inline static void /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Read__readDone(uint8_t arg_0x7f9ecee49020, error_t result, /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Read__val_t val){
+inline static void /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Read__readDone(uint8_t arg_0x7fb14c33e020, error_t result, /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Read__val_t val){
 #line 63
-  switch (arg_0x7f9ecee49020) {
+  switch (arg_0x7fb14c33e020) {
 #line 63
     case /*VolumeAdcC.Adc*/AdcReadClientC__0__ID:
 #line 63
@@ -7307,7 +7314,7 @@ inline static void /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Read__readDone(
 #line 63
     default:
 #line 63
-      /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Read__default__readDone(arg_0x7f9ecee49020, result, val);
+      /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Read__default__readDone(arg_0x7fb14c33e020, result, val);
 #line 63
       break;
 #line 63
@@ -7409,9 +7416,9 @@ static inline void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfig
 }
 
 # 65 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
-inline static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfigure__unconfigure(uint8_t arg_0x7f9ecf3d0020){
+inline static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfigure__unconfigure(uint8_t arg_0x7fb14c8c5020){
 #line 65
-  switch (arg_0x7f9ecf3d0020) {
+  switch (arg_0x7fb14c8c5020) {
 #line 65
     case /*VolumeAdcC.Adc*/AdcReadClientC__0__HAL_ID:
 #line 65
@@ -7421,7 +7428,7 @@ inline static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfig
 #line 65
     default:
 #line 65
-      /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfigure__default__unconfigure(arg_0x7f9ecf3d0020);
+      /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfigure__default__unconfigure(arg_0x7fb14c8c5020);
 #line 65
       break;
 #line 65
@@ -7604,13 +7611,13 @@ static inline error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__de
 }
 
 # 120 "../tinyos_ws18/tos/interfaces/Resource.nc"
-inline static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__release(uint8_t arg_0x7f9ecee45a60){
+inline static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__release(uint8_t arg_0x7fb14c33aa60){
 #line 120
   unsigned char __nesc_result;
 #line 120
 
 #line 120
-  switch (arg_0x7f9ecee45a60) {
+  switch (arg_0x7fb14c33aa60) {
 #line 120
     case /*VolumeAdcC.Adc*/AdcReadClientC__0__ID:
 #line 120
@@ -7620,7 +7627,7 @@ inline static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__re
 #line 120
     default:
 #line 120
-      __nesc_result = /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__default__release(arg_0x7f9ecee45a60);
+      __nesc_result = /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__default__release(arg_0x7fb14c33aa60);
 #line 120
       break;
 #line 120
@@ -7641,9 +7648,9 @@ static inline void /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Service__readDo
 }
 
 # 63 "../tinyos_ws18/tos/interfaces/Read.nc"
-inline static void AdcP__Read__readDone(uint8_t arg_0x7f9ecee78260, error_t result, AdcP__Read__val_t val){
+inline static void AdcP__Read__readDone(uint8_t arg_0x7fb14c36d260, error_t result, AdcP__Read__val_t val){
 #line 63
-  /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Service__readDone(arg_0x7f9ecee78260, result, val);
+  /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Service__readDone(arg_0x7fb14c36d260, result, val);
 #line 63
 }
 #line 63
@@ -7702,13 +7709,13 @@ static inline error_t AdcP__Read__read(uint8_t c)
 }
 
 # 55 "../tinyos_ws18/tos/interfaces/Read.nc"
-inline static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Service__read(uint8_t arg_0x7f9ecee48e60){
+inline static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Service__read(uint8_t arg_0x7fb14c33ce60){
 #line 55
   unsigned char __nesc_result;
 #line 55
 
 #line 55
-  __nesc_result = AdcP__Read__read(arg_0x7f9ecee48e60);
+  __nesc_result = AdcP__Read__read(arg_0x7fb14c33ce60);
 #line 55
 
 #line 55
@@ -7730,9 +7737,9 @@ static inline void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__Resource__defa
 }
 
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
-inline static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__Resource__granted(uint8_t arg_0x7f9ecf3d56a0){
+inline static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__Resource__granted(uint8_t arg_0x7fb14c8c96a0){
 #line 102
-  switch (arg_0x7f9ecf3d56a0) {
+  switch (arg_0x7fb14c8c96a0) {
 #line 102
     case /*VolumeAdcC.Adc*/AdcReadClientC__0__HAL_ID:
 #line 102
@@ -7742,7 +7749,7 @@ inline static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__Resource__gran
 #line 102
     default:
 #line 102
-      /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__Resource__default__granted(arg_0x7f9ecf3d56a0);
+      /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__Resource__default__granted(arg_0x7fb14c8c96a0);
 #line 102
       break;
 #line 102
@@ -7778,9 +7785,9 @@ static inline void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfig
 }
 
 # 59 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
-inline static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfigure__configure(uint8_t arg_0x7f9ecf3d0020){
+inline static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfigure__configure(uint8_t arg_0x7fb14c8c5020){
 #line 59
-  switch (arg_0x7f9ecf3d0020) {
+  switch (arg_0x7fb14c8c5020) {
 #line 59
     case /*VolumeAdcC.Adc*/AdcReadClientC__0__HAL_ID:
 #line 59
@@ -7790,7 +7797,7 @@ inline static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfig
 #line 59
     default:
 #line 59
-      /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfigure__default__configure(arg_0x7f9ecf3d0020);
+      /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceConfigure__default__configure(arg_0x7fb14c8c5020);
 #line 59
       break;
 #line 59
@@ -7974,13 +7981,13 @@ static inline uint8_t AdcP__Atm1280AdcConfig__default__getChannel(uint8_t c)
 }
 
 # 25 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/Atm1280AdcConfig.nc"
-inline static uint8_t AdcP__Atm1280AdcConfig__getChannel(uint8_t arg_0x7f9ecee73860){
+inline static uint8_t AdcP__Atm1280AdcConfig__getChannel(uint8_t arg_0x7fb14c368860){
 #line 25
   unsigned char __nesc_result;
 #line 25
 
 #line 25
-  switch (arg_0x7f9ecee73860) {
+  switch (arg_0x7fb14c368860) {
 #line 25
     case /*VolumeAdcC.Adc*/AdcReadClientC__0__ID:
 #line 25
@@ -7990,7 +7997,7 @@ inline static uint8_t AdcP__Atm1280AdcConfig__getChannel(uint8_t arg_0x7f9ecee73
 #line 25
     default:
 #line 25
-      __nesc_result = AdcP__Atm1280AdcConfig__default__getChannel(arg_0x7f9ecee73860);
+      __nesc_result = AdcP__Atm1280AdcConfig__default__getChannel(arg_0x7fb14c368860);
 #line 25
       break;
 #line 25
@@ -8023,13 +8030,13 @@ static inline uint8_t AdcP__Atm1280AdcConfig__default__getRefVoltage(uint8_t c)
 }
 
 # 32 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/Atm1280AdcConfig.nc"
-inline static uint8_t AdcP__Atm1280AdcConfig__getRefVoltage(uint8_t arg_0x7f9ecee73860){
+inline static uint8_t AdcP__Atm1280AdcConfig__getRefVoltage(uint8_t arg_0x7fb14c368860){
 #line 32
   unsigned char __nesc_result;
 #line 32
 
 #line 32
-  switch (arg_0x7f9ecee73860) {
+  switch (arg_0x7fb14c368860) {
 #line 32
     case /*VolumeAdcC.Adc*/AdcReadClientC__0__ID:
 #line 32
@@ -8039,7 +8046,7 @@ inline static uint8_t AdcP__Atm1280AdcConfig__getRefVoltage(uint8_t arg_0x7f9ece
 #line 32
     default:
 #line 32
-      __nesc_result = AdcP__Atm1280AdcConfig__default__getRefVoltage(arg_0x7f9ecee73860);
+      __nesc_result = AdcP__Atm1280AdcConfig__default__getRefVoltage(arg_0x7fb14c368860);
 #line 32
       break;
 #line 32
@@ -8072,13 +8079,13 @@ static inline uint8_t AdcP__Atm1280AdcConfig__default__getPrescaler(uint8_t c)
 }
 
 # 39 "../tinyos_ws18/tos/chips_ecs/atm1280/adc/Atm1280AdcConfig.nc"
-inline static uint8_t AdcP__Atm1280AdcConfig__getPrescaler(uint8_t arg_0x7f9ecee73860){
+inline static uint8_t AdcP__Atm1280AdcConfig__getPrescaler(uint8_t arg_0x7fb14c368860){
 #line 39
   unsigned char __nesc_result;
 #line 39
 
 #line 39
-  switch (arg_0x7f9ecee73860) {
+  switch (arg_0x7fb14c368860) {
 #line 39
     case /*VolumeAdcC.Adc*/AdcReadClientC__0__ID:
 #line 39
@@ -8088,7 +8095,7 @@ inline static uint8_t AdcP__Atm1280AdcConfig__getPrescaler(uint8_t arg_0x7f9ecee
 #line 39
     default:
 #line 39
-      __nesc_result = AdcP__Atm1280AdcConfig__default__getPrescaler(arg_0x7f9ecee73860);
+      __nesc_result = AdcP__Atm1280AdcConfig__default__getPrescaler(arg_0x7fb14c368860);
 #line 39
       break;
 #line 39
@@ -8114,9 +8121,9 @@ static inline void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__d
 }
 
 # 112 "../tinyos_ws18/tos/interfaces/I2CPacket.nc"
-inline static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__writeDone(uint8_t arg_0x7f9ecf3664c0, error_t error, uint16_t addr, uint8_t length, uint8_t * data){
+inline static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__writeDone(uint8_t arg_0x7fb14c85b4c0, error_t error, uint16_t addr, uint8_t length, uint8_t * data){
 #line 112
-  switch (arg_0x7f9ecf3664c0) {
+  switch (arg_0x7fb14c85b4c0) {
 #line 112
     case /*FMClickC.I2C*/Atm128I2CMasterC__0__CLIENT_ID:
 #line 112
@@ -8126,7 +8133,7 @@ inline static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__w
 #line 112
     default:
 #line 112
-      /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__default__writeDone(arg_0x7f9ecf3664c0, error, addr, length, data);
+      /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__default__writeDone(arg_0x7fb14c85b4c0, error, addr, length, data);
 #line 112
       break;
 #line 112
@@ -8306,9 +8313,9 @@ static inline void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__d
 }
 
 # 102 "../tinyos_ws18/tos/interfaces/I2CPacket.nc"
-inline static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__readDone(uint8_t arg_0x7f9ecf3664c0, error_t error, uint16_t addr, uint8_t length, uint8_t * data){
+inline static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__readDone(uint8_t arg_0x7fb14c85b4c0, error_t error, uint16_t addr, uint8_t length, uint8_t * data){
 #line 102
-  switch (arg_0x7f9ecf3664c0) {
+  switch (arg_0x7fb14c85b4c0) {
 #line 102
     case /*FMClickC.I2C*/Atm128I2CMasterC__0__CLIENT_ID:
 #line 102
@@ -8318,7 +8325,7 @@ inline static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__r
 #line 102
     default:
 #line 102
-      /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__default__readDone(arg_0x7f9ecf3664c0, error, addr, length, data);
+      /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__I2CPacket__default__readDone(arg_0x7fb14c85b4c0, error, addr, length, data);
 #line 102
       break;
 #line 102
@@ -8550,9 +8557,9 @@ static inline void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConf
 }
 
 # 65 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
-inline static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConfigure__unconfigure(uint8_t arg_0x7f9ecf3d0020){
+inline static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConfigure__unconfigure(uint8_t arg_0x7fb14c8c5020){
 #line 65
-    /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConfigure__default__unconfigure(arg_0x7f9ecf3d0020);
+    /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConfigure__default__unconfigure(arg_0x7fb14c8c5020);
 #line 65
 }
 #line 65
@@ -8730,13 +8737,13 @@ inline static error_t FMClickP__registerWriteback__postTask(void ){
 }
 #line 67
 # 120 "../tinyos_ws18/tos/interfaces/Resource.nc"
-inline static error_t /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__SubResource__release(uint8_t arg_0x7f9ecf361880){
+inline static error_t /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__SubResource__release(uint8_t arg_0x7fb14c856880){
 #line 120
   unsigned char __nesc_result;
 #line 120
 
 #line 120
-  __nesc_result = /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__Resource__release(arg_0x7f9ecf361880);
+  __nesc_result = /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__Resource__release(arg_0x7fb14c856880);
 #line 120
 
 #line 120
@@ -8840,9 +8847,9 @@ static inline void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__Resource__de
 }
 
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
-inline static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__Resource__granted(uint8_t arg_0x7f9ecf3670d0){
+inline static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__Resource__granted(uint8_t arg_0x7fb14c85c0d0){
 #line 102
-  switch (arg_0x7f9ecf3670d0) {
+  switch (arg_0x7fb14c85c0d0) {
 #line 102
     case /*FMClickC.I2C*/Atm128I2CMasterC__0__CLIENT_ID:
 #line 102
@@ -8852,7 +8859,7 @@ inline static void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__Resource__gr
 #line 102
     default:
 #line 102
-      /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__Resource__default__granted(arg_0x7f9ecf3670d0);
+      /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__Resource__default__granted(arg_0x7fb14c85c0d0);
 #line 102
       break;
 #line 102
@@ -8873,9 +8880,9 @@ static inline void /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__SubResource_
 }
 
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
-inline static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__Resource__granted(uint8_t arg_0x7f9ecf3d56a0){
+inline static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__Resource__granted(uint8_t arg_0x7fb14c8c96a0){
 #line 102
-  /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__SubResource__granted(arg_0x7f9ecf3d56a0);
+  /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__SubResource__granted(arg_0x7fb14c8c96a0);
 #line 102
 }
 #line 102
@@ -8886,9 +8893,9 @@ static inline void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConf
 }
 
 # 59 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
-inline static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConfigure__configure(uint8_t arg_0x7f9ecf3d0020){
+inline static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConfigure__configure(uint8_t arg_0x7fb14c8c5020){
 #line 59
-    /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConfigure__default__configure(arg_0x7f9ecf3d0020);
+    /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceConfigure__default__configure(arg_0x7fb14c8c5020);
 #line 59
 }
 #line 59
@@ -9182,13 +9189,13 @@ static inline void FMClickP__writeI2C__runTask(void )
 }
 
 # 88 "../tinyos_ws18/tos/interfaces/Resource.nc"
-inline static error_t /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__SubResource__request(uint8_t arg_0x7f9ecf361880){
+inline static error_t /*Atm128I2CMasterP.I2C*/Atm128I2CMasterImplP__0__SubResource__request(uint8_t arg_0x7fb14c856880){
 #line 88
   unsigned char __nesc_result;
 #line 88
 
 #line 88
-  __nesc_result = /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__Resource__request(arg_0x7f9ecf361880);
+  __nesc_result = /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__Resource__request(arg_0x7fb14c856880);
 #line 88
 
 #line 88
@@ -9289,9 +9296,9 @@ static inline void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceRequ
 }
 
 # 53 "../tinyos_ws18/tos/interfaces/ResourceRequested.nc"
-inline static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceRequested__requested(uint8_t arg_0x7f9ecf3d39d0){
+inline static void /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceRequested__requested(uint8_t arg_0x7fb14c8c89d0){
 #line 53
-    /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceRequested__default__requested(arg_0x7f9ecf3d39d0);
+    /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__ResourceRequested__default__requested(arg_0x7fb14c8c89d0);
 #line 53
 }
 #line 53
@@ -10415,7 +10422,7 @@ inline static error_t RadioScannerP__startSeekBand__postTask(void ){
 #line 67
 }
 #line 67
-# 956 "RadioScannerP.nc"
+# 986 "RadioScannerP.nc"
 static inline void RadioScannerP__Radio__tuneComplete(uint16_t channel)
 {
   enum RadioScannerP__app_state state;
@@ -10425,7 +10432,7 @@ static inline void RadioScannerP__Radio__tuneComplete(uint16_t channel)
       RadioScannerP__currChan = channel;
       state = RadioScannerP__appState;
     }
-#line 964
+#line 994
     __nesc_atomic_end(__nesc_atomic); }
 
   switch (state) 
@@ -10436,27 +10443,27 @@ static inline void RadioScannerP__Radio__tuneComplete(uint16_t channel)
 
       case RadioScannerP__TUNE: 
         { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 973
+#line 1003
           {
-#line 973
+#line 1003
             RadioScannerP__appState = RadioScannerP__KBCTRL;
           }
-#line 974
+#line 1004
           __nesc_atomic_end(__nesc_atomic); }
-#line 974
+#line 1004
       RadioScannerP__displayChannelInfo__postTask();
       break;
 
       default: 
         { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 978
+#line 1008
           {
-#line 978
+#line 1008
             RadioScannerP__appState = RadioScannerP__KBCTRL;
           }
-#line 979
+#line 1009
           __nesc_atomic_end(__nesc_atomic); }
-#line 979
+#line 1009
       RadioScannerP__displayChannelInfo__postTask();
       break;
     }
@@ -10960,7 +10967,7 @@ inline static error_t DatabaseP__sendTask__postTask(void ){
 #line 67
 }
 #line 67
-# 550 "Database/DatabaseP.nc"
+# 554 "Database/DatabaseP.nc"
 static inline void DatabaseP__UdpSend__sendDone(error_t error)
 {
   if (error != SUCCESS) {
@@ -10989,9 +10996,9 @@ static inline void UdpQueueP__UdpQueue__default__sendDone(uint8_t client, error_
 }
 
 # 10 "../tinyos_ws18/tos/lib_ecs/udp/UdpQueue.nc"
-inline static void UdpQueueP__UdpQueue__sendDone(uint8_t arg_0x7f9ecf528020, error_t error){
+inline static void UdpQueueP__UdpQueue__sendDone(uint8_t arg_0x7fb14ca1d020, error_t error){
 #line 10
-  switch (arg_0x7f9ecf528020) {
+  switch (arg_0x7fb14ca1d020) {
 #line 10
     case 0U:
 #line 10
@@ -11001,7 +11008,7 @@ inline static void UdpQueueP__UdpQueue__sendDone(uint8_t arg_0x7f9ecf528020, err
 #line 10
     default:
 #line 10
-      UdpQueueP__UdpQueue__default__sendDone(arg_0x7f9ecf528020, error);
+      UdpQueueP__UdpQueue__default__sendDone(arg_0x7fb14ca1d020, error);
 #line 10
       break;
 #line 10
@@ -11297,9 +11304,9 @@ static inline void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceCon
 }
 
 # 65 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
-inline static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceConfigure__unconfigure(uint8_t arg_0x7f9ecf618940){
+inline static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceConfigure__unconfigure(uint8_t arg_0x7fb14cb0c940){
 #line 65
-    /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceConfigure__default__unconfigure(arg_0x7f9ecf618940);
+    /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceConfigure__default__unconfigure(arg_0x7fb14cb0c940);
 #line 65
 }
 #line 65
@@ -11441,13 +11448,13 @@ static inline error_t /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__Resource
 }
 
 # 120 "../tinyos_ws18/tos/interfaces/Resource.nc"
-inline static error_t Atm1280SpiP__ResourceArbiter__release(uint8_t arg_0x7f9ecf6f3590){
+inline static error_t Atm1280SpiP__ResourceArbiter__release(uint8_t arg_0x7fb14cbe8590){
 #line 120
   unsigned char __nesc_result;
 #line 120
 
 #line 120
-  __nesc_result = /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__Resource__release(arg_0x7f9ecf6f3590);
+  __nesc_result = /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__Resource__release(arg_0x7fb14cbe8590);
 #line 120
 
 #line 120
@@ -11512,9 +11519,9 @@ static inline void IcmpTransceiverP__IcmpReceive__default__received(uint8_t type
 }
 
 # 9 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpReceive.nc"
-inline static void IcmpTransceiverP__IcmpReceive__received(uint8_t arg_0x7f9ecfaf9c40, in_addr_t *srcIp, uint8_t code, uint8_t *data, uint16_t len){
+inline static void IcmpTransceiverP__IcmpReceive__received(uint8_t arg_0x7fb14cfeec40, in_addr_t *srcIp, uint8_t code, uint8_t *data, uint16_t len){
 #line 9
-  switch (arg_0x7f9ecfaf9c40) {
+  switch (arg_0x7fb14cfeec40) {
 #line 9
     case 8U:
 #line 9
@@ -11524,7 +11531,7 @@ inline static void IcmpTransceiverP__IcmpReceive__received(uint8_t arg_0x7f9ecfa
 #line 9
     default:
 #line 9
-      IcmpTransceiverP__IcmpReceive__default__received(arg_0x7f9ecfaf9c40, srcIp, code, data, len);
+      IcmpTransceiverP__IcmpReceive__default__received(arg_0x7fb14cfeec40, srcIp, code, data, len);
 #line 9
       break;
 #line 9
@@ -11556,7 +11563,7 @@ inline static error_t DatabaseP__recvTask__postTask(void ){
 #line 67
 }
 #line 67
-# 556 "Database/DatabaseP.nc"
+# 560 "Database/DatabaseP.nc"
 static inline void DatabaseP__UdpReceive__received(in_addr_t *srcIp, uint16_t srcPort, uint8_t *data, uint16_t len)
 {
 
@@ -11576,9 +11583,9 @@ static inline void UdpTransceiverP__UdpReceive__default__received(uint16_t port,
 }
 
 # 11 "../tinyos_ws18/tos/lib_ecs/udp/UdpReceive.nc"
-inline static void UdpTransceiverP__UdpReceive__received(uint16_t arg_0x7f9ecf55b580, in_addr_t *srcIp, uint16_t srcPort, uint8_t *data, uint16_t len){
+inline static void UdpTransceiverP__UdpReceive__received(uint16_t arg_0x7fb14ca50580, in_addr_t *srcIp, uint16_t srcPort, uint8_t *data, uint16_t len){
 #line 11
-  switch (arg_0x7f9ecf55b580) {
+  switch (arg_0x7fb14ca50580) {
 #line 11
     case 50000UL:
 #line 11
@@ -11588,7 +11595,7 @@ inline static void UdpTransceiverP__UdpReceive__received(uint16_t arg_0x7f9ecf55
 #line 11
     default:
 #line 11
-      UdpTransceiverP__UdpReceive__default__received(arg_0x7f9ecf55b580, srcIp, srcPort, data, len);
+      UdpTransceiverP__UdpReceive__default__received(arg_0x7fb14ca50580, srcIp, srcPort, data, len);
 #line 11
       break;
 #line 11
@@ -11612,9 +11619,9 @@ static inline void IpTransceiverP__IpReceive__default__received(uint8_t protocol
 }
 
 # 9 "../tinyos_ws18/tos/lib_ecs/ip/IpReceive.nc"
-inline static void IpTransceiverP__IpReceive__received(uint8_t arg_0x7f9ecfe31170, in_addr_t *srcIp, uint8_t *data, uint16_t len){
+inline static void IpTransceiverP__IpReceive__received(uint8_t arg_0x7fb14d3268d0, in_addr_t *srcIp, uint8_t *data, uint16_t len){
 #line 9
-  switch (arg_0x7f9ecfe31170) {
+  switch (arg_0x7fb14d3268d0) {
 #line 9
     case 1U:
 #line 9
@@ -11630,7 +11637,7 @@ inline static void IpTransceiverP__IpReceive__received(uint8_t arg_0x7f9ecfe3117
 #line 9
     default:
 #line 9
-      IpTransceiverP__IpReceive__default__received(arg_0x7f9ecfe31170, srcIp, data, len);
+      IpTransceiverP__IpReceive__default__received(arg_0x7fb14d3268d0, srcIp, data, len);
 #line 9
       break;
 #line 9
@@ -11736,9 +11743,9 @@ static inline void LlcTransceiverP__LlcReceive__default__received(uint16_t ether
 }
 
 # 9 "../tinyos_ws18/tos/lib_ecs/llc/LlcReceive.nc"
-inline static void LlcTransceiverP__LlcReceive__received(uint16_t arg_0x7f9ecfdd31b0, mac_addr_t *srcMac, uint8_t *data){
+inline static void LlcTransceiverP__LlcReceive__received(uint16_t arg_0x7fb14d2c88f0, mac_addr_t *srcMac, uint8_t *data){
 #line 9
-  switch (arg_0x7f9ecfdd31b0) {
+  switch (arg_0x7fb14d2c88f0) {
 #line 9
     case 2048U:
 #line 9
@@ -11754,7 +11761,7 @@ inline static void LlcTransceiverP__LlcReceive__received(uint16_t arg_0x7f9ecfdd
 #line 9
     default:
 #line 9
-      LlcTransceiverP__LlcReceive__default__received(arg_0x7f9ecfdd31b0, srcMac, data);
+      LlcTransceiverP__LlcReceive__default__received(arg_0x7fb14d2c88f0, srcMac, data);
 #line 9
       break;
 #line 9
@@ -11956,9 +11963,9 @@ static inline void LlcQueueP__LlcQueue__default__sendDone(uint8_t client, error_
 }
 
 # 10 "../tinyos_ws18/tos/lib_ecs/llc/LlcQueue.nc"
-inline static void LlcQueueP__LlcQueue__sendDone(uint8_t arg_0x7f9ecfd7d850, error_t error){
+inline static void LlcQueueP__LlcQueue__sendDone(uint8_t arg_0x7fb14d26f060, error_t error){
 #line 10
-  switch (arg_0x7f9ecfd7d850) {
+  switch (arg_0x7fb14d26f060) {
 #line 10
     case 0U:
 #line 10
@@ -11974,7 +11981,7 @@ inline static void LlcQueueP__LlcQueue__sendDone(uint8_t arg_0x7f9ecfd7d850, err
 #line 10
     default:
 #line 10
-      LlcQueueP__LlcQueue__default__sendDone(arg_0x7f9ecfd7d850, error);
+      LlcQueueP__LlcQueue__default__sendDone(arg_0x7fb14d26f060, error);
 #line 10
       break;
 #line 10
@@ -12076,7 +12083,7 @@ static inline uint16_t Enc28j60P__readPhy(uint8_t addr)
   return data;
 }
 
-# 568 "Database/DatabaseP.nc"
+# 572 "Database/DatabaseP.nc"
 static inline void DatabaseP__Control__startDone(error_t error)
 {
 }
@@ -12269,9 +12276,9 @@ static inline void Atm1280SpiP__Resource__default__granted(uint8_t id)
 }
 
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
-inline static void Atm1280SpiP__Resource__granted(uint8_t arg_0x7f9ecf710170){
+inline static void Atm1280SpiP__Resource__granted(uint8_t arg_0x7fb14cc05170){
 #line 102
-  switch (arg_0x7f9ecf710170) {
+  switch (arg_0x7fb14cc05170) {
 #line 102
     case 0U:
 #line 102
@@ -12281,7 +12288,7 @@ inline static void Atm1280SpiP__Resource__granted(uint8_t arg_0x7f9ecf710170){
 #line 102
     default:
 #line 102
-      Atm1280SpiP__Resource__default__granted(arg_0x7f9ecf710170);
+      Atm1280SpiP__Resource__default__granted(arg_0x7fb14cc05170);
 #line 102
       break;
 #line 102
@@ -12297,9 +12304,9 @@ static inline void Atm1280SpiP__ResourceArbiter__granted(uint8_t id)
 }
 
 # 102 "../tinyos_ws18/tos/interfaces/Resource.nc"
-inline static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__Resource__granted(uint8_t arg_0x7f9ecf61a110){
+inline static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__Resource__granted(uint8_t arg_0x7fb14cb0f110){
 #line 102
-  Atm1280SpiP__ResourceArbiter__granted(arg_0x7f9ecf61a110);
+  Atm1280SpiP__ResourceArbiter__granted(arg_0x7fb14cb0f110);
 #line 102
 }
 #line 102
@@ -12310,9 +12317,9 @@ static inline void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceCon
 }
 
 # 59 "../tinyos_ws18/tos/interfaces/ResourceConfigure.nc"
-inline static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceConfigure__configure(uint8_t arg_0x7f9ecf618940){
+inline static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceConfigure__configure(uint8_t arg_0x7fb14cb0c940){
 #line 59
-    /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceConfigure__default__configure(arg_0x7f9ecf618940);
+    /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceConfigure__default__configure(arg_0x7fb14cb0c940);
 #line 59
 }
 #line 59
@@ -12881,9 +12888,9 @@ static inline void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceReq
 }
 
 # 53 "../tinyos_ws18/tos/interfaces/ResourceRequested.nc"
-inline static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceRequested__requested(uint8_t arg_0x7f9ecf619360){
+inline static void /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceRequested__requested(uint8_t arg_0x7fb14cb0e360){
 #line 53
-    /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceRequested__default__requested(arg_0x7f9ecf619360);
+    /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__ResourceRequested__default__requested(arg_0x7fb14cb0e360);
 #line 53
 }
 #line 53
@@ -12931,13 +12938,13 @@ static inline error_t /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__Resource
 }
 
 # 88 "../tinyos_ws18/tos/interfaces/Resource.nc"
-inline static error_t Atm1280SpiP__ResourceArbiter__request(uint8_t arg_0x7f9ecf6f3590){
+inline static error_t Atm1280SpiP__ResourceArbiter__request(uint8_t arg_0x7fb14cbe8590){
 #line 88
   unsigned char __nesc_result;
 #line 88
 
 #line 88
-  __nesc_result = /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__Resource__request(arg_0x7f9ecf6f3590);
+  __nesc_result = /*Atm1280SpiC.Arbiter.Arbiter*/SimpleArbiterP__0__Resource__request(arg_0x7fb14cbe8590);
 #line 88
 
 #line 88
@@ -12992,9 +12999,9 @@ static inline void IcmpQueueP__IcmpQueue__default__sendDone(uint8_t client, erro
 }
 
 # 10 "../tinyos_ws18/tos/lib_ecs/icmp/IcmpQueue.nc"
-inline static void IcmpQueueP__IcmpQueue__sendDone(uint8_t arg_0x7f9ecfac42a0, error_t error){
+inline static void IcmpQueueP__IcmpQueue__sendDone(uint8_t arg_0x7fb14cfb82a0, error_t error){
 #line 10
-  switch (arg_0x7f9ecfac42a0) {
+  switch (arg_0x7fb14cfb82a0) {
 #line 10
     case 0U:
 #line 10
@@ -13010,7 +13017,7 @@ inline static void IcmpQueueP__IcmpQueue__sendDone(uint8_t arg_0x7f9ecfac42a0, e
 #line 10
     default:
 #line 10
-      IcmpQueueP__IcmpQueue__default__sendDone(arg_0x7f9ecfac42a0, error);
+      IcmpQueueP__IcmpQueue__default__sendDone(arg_0x7fb14cfb82a0, error);
 #line 10
       break;
 #line 10
@@ -13236,9 +13243,9 @@ static inline void IpQueueP__IpQueue__default__sendDone(uint8_t client, error_t 
 }
 
 # 10 "../tinyos_ws18/tos/lib_ecs/ip/IpQueue.nc"
-inline static void IpQueueP__IpQueue__sendDone(uint8_t arg_0x7f9ecfb0f840, error_t error){
+inline static void IpQueueP__IpQueue__sendDone(uint8_t arg_0x7fb14d004840, error_t error){
 #line 10
-  switch (arg_0x7f9ecfb0f840) {
+  switch (arg_0x7fb14d004840) {
 #line 10
     case 0U:
 #line 10
@@ -13254,7 +13261,7 @@ inline static void IpQueueP__IpQueue__sendDone(uint8_t arg_0x7f9ecfb0f840, error
 #line 10
     default:
 #line 10
-      IpQueueP__IpQueue__default__sendDone(arg_0x7f9ecfb0f840, error);
+      IpQueueP__IpQueue__default__sendDone(arg_0x7fb14d004840, error);
 #line 10
       break;
 #line 10
@@ -13952,9 +13959,9 @@ static inline void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceReques
 }
 
 # 53 "../tinyos_ws18/tos/interfaces/ResourceRequested.nc"
-inline static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceRequested__requested(uint8_t arg_0x7f9ecf3d39d0){
+inline static void /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceRequested__requested(uint8_t arg_0x7fb14c8c89d0){
 #line 53
-    /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceRequested__default__requested(arg_0x7f9ecf3d39d0);
+    /*Atm1280AdcC.AdcArbiter.Arbiter*/ArbiterP__1__ResourceRequested__default__requested(arg_0x7fb14c8c89d0);
 #line 53
 }
 #line 53
@@ -14017,13 +14024,13 @@ static inline error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__de
 }
 
 # 88 "../tinyos_ws18/tos/interfaces/Resource.nc"
-inline static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__request(uint8_t arg_0x7f9ecee45a60){
+inline static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__request(uint8_t arg_0x7fb14c33aa60){
 #line 88
   unsigned char __nesc_result;
 #line 88
 
 #line 88
-  switch (arg_0x7f9ecee45a60) {
+  switch (arg_0x7fb14c33aa60) {
 #line 88
     case /*VolumeAdcC.Adc*/AdcReadClientC__0__ID:
 #line 88
@@ -14033,7 +14040,7 @@ inline static error_t /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__re
 #line 88
     default:
 #line 88
-      __nesc_result = /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__default__request(arg_0x7f9ecee45a60);
+      __nesc_result = /*WireAdcP.ArbitrateRead*/ArbitratedReadC__0__Resource__default__request(arg_0x7fb14c33aa60);
 #line 88
       break;
 #line 88
@@ -14067,7 +14074,7 @@ inline static error_t RadioScannerP__volumeKnob__read(void ){
 #line 55
 }
 #line 55
-# 1069 "RadioScannerP.nc"
+# 1100 "RadioScannerP.nc"
 static inline void RadioScannerP__VolumeTimer__fired(void )
 {
   RadioScannerP__volumeKnob__read();
@@ -14076,14 +14083,14 @@ static inline void RadioScannerP__VolumeTimer__fired(void )
 static inline void RadioScannerP__ErrorTimer__fired(void )
 {
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1076
+#line 1107
     {
-#line 1076
+#line 1107
       RadioScannerP__appState = RadioScannerP__KBCTRL;
     }
-#line 1077
+#line 1108
     __nesc_atomic_end(__nesc_atomic); }
-#line 1077
+#line 1108
   RadioScannerP__displayChannelInfo__postTask();
 }
 
@@ -14102,7 +14109,7 @@ inline static error_t RadioScannerP__addChannel__postTask(void ){
 #line 67
 }
 #line 67
-# 1080 "RadioScannerP.nc"
+# 1111 "RadioScannerP.nc"
 static inline void RadioScannerP__RDSTimer__fired(void )
 {
   RadioScannerP__addChannel__postTask();
@@ -14114,9 +14121,9 @@ static inline void /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0__Timer
 }
 
 # 83 "../tinyos_ws18/tos/lib/timer/Timer.nc"
-inline static void /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0__Timer__fired(uint8_t arg_0x7f9ecfbbf3f0){
+inline static void /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0__Timer__fired(uint8_t arg_0x7fb14d0b33f0){
 #line 83
-  switch (arg_0x7f9ecfbbf3f0) {
+  switch (arg_0x7fb14d0b33f0) {
 #line 83
     case 0U:
 #line 83
@@ -14162,7 +14169,7 @@ inline static void /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0__Timer
 #line 83
     default:
 #line 83
-      /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0__Timer__default__fired(arg_0x7f9ecfbbf3f0);
+      /*HilTimerMilliC.VirtualizeTimerC*/VirtualizeTimerC__0__Timer__default__fired(arg_0x7fb14d0b33f0);
 #line 83
       break;
 #line 83
@@ -14723,13 +14730,13 @@ inline static error_t DatabaseP__fetchList__postTask(void ){
 #line 67
 }
 #line 67
-# 450 "Database/DatabaseP.nc"
+# 452 "Database/DatabaseP.nc"
 inline static bool DatabaseP__parseChannelInfo(char *params, channelInfo *channel, uint8_t *id)
 {
   char *k;
-#line 452
+#line 454
   char *v;
-#line 452
+#line 454
   char *sp;
   bool gotName = FALSE;
 
@@ -14745,50 +14752,50 @@ inline static bool DatabaseP__parseChannelInfo(char *params, channelInfo *channe
         {
           uint8_t _id = (uint8_t )strtoul(v, (void *)0, 10);
 
-#line 466
+#line 468
           if (_id >= 15) {
             return FALSE;
             }
           *id = _id;
         }
       else {
-#line 471
+#line 473
         if (strncmp_P(k, cmd_freq, 4) == 0) 
           {
             uint16_t freq = (uint16_t )strtoul(v, (void *)0, 10);
 
-#line 474
+#line 476
             if (freq < 875 || freq > 1080) {
               return FALSE;
               }
             channel->frequency = freq;
           }
         else {
-#line 479
+#line 481
           if (strncmp_P(k, cmd_picode, 6) == 0) 
             {
               uint16_t pi_code = (uint16_t )strtoul(v, (void *)0, 10);
 
-#line 482
+#line 484
               channel->pi_code = pi_code;
             }
           else {
-#line 484
+#line 486
             if (strncmp_P(k, cmd_qdial, 5) == 0) 
               {
                 uint8_t qdial = (uint8_t )strtoul(v, (void *)0, 10);
 
-#line 487
+#line 489
                 if (qdial > 9) {
                   return FALSE;
                   }
                 channel->quickDial = qdial;
               }
             else {
-#line 492
+#line 494
               if (strncmp_P(k, cmd_name, 4) == 0) 
                 {
-                  memcpy(channel->name, v, 8);
+                  snprintf(channel->name, 8, "%-8s", v);
                   channel->name[8] = '\0';
 
 
@@ -14800,10 +14807,12 @@ inline static bool DatabaseP__parseChannelInfo(char *params, channelInfo *channe
                   gotName = TRUE;
                 }
               else {
-#line 505
+#line 507
                 if (strncmp_P(k, cmd_note, 4) == 0) 
                   {
-                    memcpy(channel->notes, v, 40);
+                    if (*v != '\0') {
+                      strncpy(channel->notes, v, 40);
+                      }
                     channel->name[40] = '\0';
 
 
@@ -14814,7 +14823,7 @@ inline static bool DatabaseP__parseChannelInfo(char *params, channelInfo *channe
             }
           }
         }
-#line 514
+#line 518
       if (!gotName) 
         {
           v = strchr(sp, ',');
@@ -14846,6 +14855,8 @@ inline static void DatabaseP__decodeGet(udp_msg_t *msg)
   if (!DatabaseP__prepareMessage(msg, &paramStart)) {
     return;
     }
+  memset(name, 0, 8 + 1);
+  memset(notes, 0, 40 + 1);
   channel.name = name;
   channel.notes = notes;
 
@@ -14859,14 +14870,14 @@ inline static void DatabaseP__decodeGet(udp_msg_t *msg)
             }
         }
       else {
-#line 413
+#line 415
         DatabaseP__Database__receivedChannelEntry(id, channel);
         }
     }
   else {
       channelInfo dummy;
 
-#line 418
+#line 420
       DatabaseP__Database__receivedChannelEntry(0xfe, dummy);
     }
 }
@@ -15289,35 +15300,35 @@ inline static error_t RadioScannerP__inputNote__postTask(void ){
 #line 67
 }
 #line 67
-# 856 "RadioScannerP.nc"
+# 875 "RadioScannerP.nc"
 inline static void RadioScannerP__addNote(void )
 {
   uint8_t id;
   uint16_t channel;
 
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 861
+#line 880
     {
-#line 861
+#line 880
       channel = RadioScannerP__currChan;
     }
-#line 862
+#line 881
     __nesc_atomic_end(__nesc_atomic); }
-#line 862
+#line 881
   id = RadioScannerP__getListId(channel);
 
   if (id < 15) 
     {
       RadioScannerP__Radio__receiveRDS(FALSE);
       { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 867
+#line 886
         {
-#line 867
+#line 886
           RadioScannerP__kbChar = '\0';
         }
-#line 868
+#line 887
         __nesc_atomic_end(__nesc_atomic); }
-#line 868
+#line 887
       RadioScannerP__noteInput.idx = 0;
       memset(RadioScannerP__noteInput.buf, 0, 40 + 1);
       RadioScannerP__Glcd__fill(0x00);
@@ -15327,26 +15338,26 @@ inline static void RadioScannerP__addNote(void )
   else 
     {
       { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 876
+#line 895
         {
-#line 876
+#line 895
           RadioScannerP__errno = 8;
         }
-#line 877
+#line 896
         __nesc_atomic_end(__nesc_atomic); }
-#line 877
+#line 896
       RadioScannerP__displaySoftError__postTask();
     }
 }
 
-#line 806
+#line 825
 inline static uint8_t RadioScannerP__getNextId(uint16_t channel)
 {
   uint8_t id;
-#line 808
+#line 827
   uint8_t next;
   uint16_t currDist;
-#line 809
+#line 828
   uint16_t minDist;
 
   next = 0xff;
@@ -15375,14 +15386,14 @@ inline static void RadioScannerP__tuneNextHighest(void )
       uint16_t channel;
 
       { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 836
+#line 855
         {
-#line 836
+#line 855
           channel = RadioScannerP__currChan;
         }
-#line 837
+#line 856
         __nesc_atomic_end(__nesc_atomic); }
-#line 837
+#line 856
       nextId = RadioScannerP__getNextId(channel);
 
       if (nextId < 15) 
@@ -15394,14 +15405,14 @@ inline static void RadioScannerP__tuneNextHighest(void )
               RadioScannerP__appState = RadioScannerP__TUNE;
               RadioScannerP__nextChan = RadioScannerP__channels.list[nextId].info.frequency;
             }
-#line 847
+#line 866
             __nesc_atomic_end(__nesc_atomic); }
           RadioScannerP__startTune__postTask();
         }
     }
 }
 
-#line 732
+#line 749
 inline static void RadioScannerP__addFavourite(void )
 {
   if (RadioScannerP__favourites.entries < 9) 
@@ -15410,14 +15421,14 @@ inline static void RadioScannerP__addFavourite(void )
       uint16_t chan;
 
       { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 739
+#line 756
         {
-#line 739
+#line 756
           chan = RadioScannerP__currChan;
         }
-#line 740
+#line 757
         __nesc_atomic_end(__nesc_atomic); }
-#line 740
+#line 757
       id = RadioScannerP__getListId(chan);
 
       if (id < 15) 
@@ -15438,103 +15449,105 @@ inline static void RadioScannerP__addFavourite(void )
           if (foundId) 
             {
               { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 759
+#line 776
                 {
-#line 759
+#line 776
                   RadioScannerP__errno = 9;
                 }
-#line 760
+#line 777
                 __nesc_atomic_end(__nesc_atomic); }
-#line 760
+#line 777
               RadioScannerP__displaySoftError__postTask();
             }
           else 
             {
               RadioScannerP__favourites.table[RadioScannerP__favourites.entries] = id;
               { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 765
+#line 782
                 {
-#line 765
+#line 782
                   RadioScannerP__channels.list[id].info.quickDial = ++ RadioScannerP__favourites.entries;
                 }
-#line 766
+#line 783
                 __nesc_atomic_end(__nesc_atomic); }
-#line 766
+#line 783
               RadioScannerP__DB__saveChannel(id, & RadioScannerP__channels.list[id].info);
             }
         }
       else 
+
         {
           { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 771
+#line 789
             {
-#line 771
+#line 789
               RadioScannerP__errno = 8;
             }
-#line 772
+#line 790
             __nesc_atomic_end(__nesc_atomic); }
-#line 772
+#line 790
           RadioScannerP__displaySoftError__postTask();
         }
     }
   else 
+
     {
       { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 777
+#line 796
         {
-#line 777
+#line 796
           RadioScannerP__errno = 3;
         }
-#line 778
+#line 797
         __nesc_atomic_end(__nesc_atomic); }
-#line 778
+#line 797
       RadioScannerP__displaySoftError__postTask();
     }
 }
 
-#line 146
+#line 161
 static inline void RadioScannerP__handleChar__runTask(void )
 {
   char c;
 
   channelInfo chan = { 1, 1038, 12345, "  OE1   ", "yo servas habe dere" };
 
-#line 151
+#line 166
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 151
+#line 166
     {
-#line 151
+#line 166
       c = RadioScannerP__kbChar;
     }
-#line 152
+#line 167
     __nesc_atomic_end(__nesc_atomic); }
   switch (c) 
     {
 
       case 'a': 
         { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 157
+#line 172
           {
-#line 157
+#line 172
             RadioScannerP__appState = RadioScannerP__ADD;
           }
-#line 158
+#line 173
           __nesc_atomic_end(__nesc_atomic); }
-#line 158
+#line 173
       RadioScannerP__addChannel__postTask();
       break;
 
 
       case 'f': 
         { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 163
+#line 178
           {
-#line 163
+#line 178
             RadioScannerP__appState = RadioScannerP__FAV;
           }
-#line 164
+#line 179
           __nesc_atomic_end(__nesc_atomic); }
-#line 164
+#line 179
       RadioScannerP__addFavourite();
       break;
 
@@ -15546,14 +15559,14 @@ static inline void RadioScannerP__handleChar__runTask(void )
 
       case 'n': 
         { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 174
+#line 189
           {
-#line 174
+#line 189
             RadioScannerP__appState = RadioScannerP__NOTE;
           }
-#line 175
+#line 190
           __nesc_atomic_end(__nesc_atomic); }
-#line 175
+#line 190
       RadioScannerP__addNote();
       break;
 
@@ -15569,7 +15582,7 @@ static inline void RadioScannerP__handleChar__runTask(void )
           RadioScannerP__appState = RadioScannerP__BANDSEEK;
           RadioScannerP__nextChan = 875;
         }
-#line 189
+#line 204
         __nesc_atomic_end(__nesc_atomic); }
       RadioScannerP__startTune__postTask();
       break;
@@ -15584,7 +15597,7 @@ static inline void RadioScannerP__handleChar__runTask(void )
           memset(RadioScannerP__tuneInput.buf, 0, 5);
           RadioScannerP__appState = RadioScannerP__TUNEINP;
         }
-#line 202
+#line 217
         __nesc_atomic_end(__nesc_atomic); }
       RadioScannerP__Glcd__fill(0x00);
       RadioScannerP__Glcd__drawTextPgm(text_channelInput, 0, 10);
@@ -15596,14 +15609,14 @@ static inline void RadioScannerP__handleChar__runTask(void )
         RadioScannerP__Radio__receiveRDS(FALSE);
       RadioScannerP__clearRDSData();
       { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 212
+#line 227
         {
-#line 212
+#line 227
           RadioScannerP__appState = RadioScannerP__SEEK;
         }
-#line 213
+#line 228
         __nesc_atomic_end(__nesc_atomic); }
-#line 213
+#line 228
       RadioScannerP__startSeekUp__postTask();
       break;
 
@@ -15612,14 +15625,14 @@ static inline void RadioScannerP__handleChar__runTask(void )
         RadioScannerP__Radio__receiveRDS(FALSE);
       RadioScannerP__clearRDSData();
       { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 220
+#line 235
         {
-#line 220
+#line 235
           RadioScannerP__appState = RadioScannerP__SEEK;
         }
-#line 221
+#line 236
         __nesc_atomic_end(__nesc_atomic); }
-#line 221
+#line 236
       RadioScannerP__startSeekDown__postTask();
       break;
 
@@ -15643,7 +15656,7 @@ static inline void RadioScannerP__handleChar__runTask(void )
           {
             uint8_t fav = (uint8_t )(c - '0');
 
-#line 243
+#line 258
             if (fav > 0 && fav <= 9) 
               {
                 uint8_t favId = RadioScannerP__favourites.table[fav - 1];
@@ -15657,21 +15670,21 @@ static inline void RadioScannerP__handleChar__runTask(void )
                         RadioScannerP__appState = RadioScannerP__TUNE;
                         RadioScannerP__nextChan = RadioScannerP__channels.list[favId].info.frequency;
                       }
-#line 255
+#line 270
                       __nesc_atomic_end(__nesc_atomic); }
                     RadioScannerP__startTune__postTask();
                   }
                 else 
                   {
                     { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 260
+#line 275
                       {
-#line 260
+#line 275
                         RadioScannerP__errno = 7;
                       }
-#line 261
+#line 276
                       __nesc_atomic_end(__nesc_atomic); }
-#line 261
+#line 276
                     RadioScannerP__displaySoftError__postTask();
                   }
               }
@@ -15680,7 +15693,7 @@ static inline void RadioScannerP__handleChar__runTask(void )
     }
 }
 
-# 534 "Database/DatabaseP.nc"
+# 538 "Database/DatabaseP.nc"
 inline static void DatabaseP__getParamsPgm(DatabaseP__params_t *p)
 {
   strncpy_P(p->add, cmd_add, 3 + 1);
@@ -15700,19 +15713,19 @@ inline static void RadioScannerP__ErrorTimer__startOneShot(uint32_t dt){
 #line 73
 }
 #line 73
-# 638 "RadioScannerP.nc"
+# 655 "RadioScannerP.nc"
 static inline void RadioScannerP__displaySoftError__runTask(void )
 {
   uint8_t err;
 
-#line 641
+#line 658
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 641
+#line 658
     {
-#line 641
+#line 658
       err = RadioScannerP__errno;
     }
-#line 642
+#line 659
     __nesc_atomic_end(__nesc_atomic); }
   RadioScannerP__Radio__receiveRDS(FALSE);
   RadioScannerP__Glcd__fill(0x00);
@@ -15764,19 +15777,19 @@ static inline void RadioScannerP__displaySoftError__runTask(void )
   RadioScannerP__ErrorTimer__startOneShot(700);
 }
 
-#line 614
+#line 631
 static inline void RadioScannerP__displayHardError__runTask(void )
 {
   uint8_t err;
 
-#line 617
+#line 634
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 617
+#line 634
     {
-#line 617
+#line 634
       err = RadioScannerP__errno;
     }
-#line 618
+#line 635
     __nesc_atomic_end(__nesc_atomic); }
   RadioScannerP__Radio__receiveRDS(FALSE);
   RadioScannerP__Glcd__fill(0x00);
@@ -15794,20 +15807,20 @@ static inline void RadioScannerP__displayHardError__runTask(void )
     }
 }
 
-#line 527
+#line 546
 static inline void RadioScannerP__addChannel__runTask(void )
 {
   uint8_t id;
   uint16_t freq;
 
-#line 531
+#line 550
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 531
+#line 550
     {
-#line 531
+#line 550
       freq = RadioScannerP__currChan;
     }
-#line 532
+#line 551
     __nesc_atomic_end(__nesc_atomic); }
   RadioScannerP__Radio__receiveRDS(FALSE);
   id = RadioScannerP__getListId(freq);
@@ -15817,40 +15830,41 @@ static inline void RadioScannerP__addChannel__runTask(void )
     {
       bool PSAvail;
 
-#line 540
+#line 559
       { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 540
+#line 559
         {
-#line 540
+#line 559
           PSAvail = RadioScannerP__rds.PSAvail;
         }
-#line 541
+#line 560
         __nesc_atomic_end(__nesc_atomic); }
 
       if (PSAvail) 
         {
+          memcpy(RadioScannerP__channels.list[id].name, RadioScannerP__rds.PS, 8);
           { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
             {
               RadioScannerP__channels.list[id].info.pi_code = RadioScannerP__rds.piCode;
               RadioScannerP__channels.list[id].info.name = RadioScannerP__channels.list[id].name;
+              RadioScannerP__channels.list[id].name[8] = '\0';
             }
-#line 549
+#line 570
             __nesc_atomic_end(__nesc_atomic); }
-          memcpy(RadioScannerP__channels.list[id].name, RadioScannerP__rds.PS, 8);
           RadioScannerP__DB__saveChannel(id, & RadioScannerP__channels.list[id].info);
         }
       else 
 
         {
           { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 556
+#line 576
             {
-#line 556
+#line 576
               RadioScannerP__appState = RadioScannerP__KBCTRL;
             }
-#line 557
+#line 577
             __nesc_atomic_end(__nesc_atomic); }
-#line 557
+#line 577
           RadioScannerP__displayChannelInfo__postTask();
         }
     }
@@ -15860,14 +15874,14 @@ static inline void RadioScannerP__addChannel__runTask(void )
       if (RadioScannerP__channels.entries >= 15) 
         {
           { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 565
+#line 585
             {
-#line 565
+#line 585
               RadioScannerP__errno = 2;
             }
-#line 566
+#line 586
             __nesc_atomic_end(__nesc_atomic); }
-#line 566
+#line 586
           RadioScannerP__displaySoftError__postTask();
         }
       else 
@@ -15876,12 +15890,12 @@ static inline void RadioScannerP__addChannel__runTask(void )
           channelInfo newChan;
 
           { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 573
+#line 593
             {
-#line 573
+#line 593
               PSAvail = RadioScannerP__rds.PSAvail;
             }
-#line 574
+#line 594
             __nesc_atomic_end(__nesc_atomic); }
           newChan.quickDial = 0;
           newChan.frequency = freq;
@@ -15894,39 +15908,36 @@ static inline void RadioScannerP__addChannel__runTask(void )
             {
               RadioScannerP__channels.list[RadioScannerP__channels.entries].info.name = RadioScannerP__channels.list[RadioScannerP__channels.entries].name;
               RadioScannerP__channels.list[RadioScannerP__channels.entries].info.notes = RadioScannerP__channels.list[RadioScannerP__channels.entries].note;
-              * RadioScannerP__channels.list[RadioScannerP__channels.entries].name = '\0';
-              * RadioScannerP__channels.list[RadioScannerP__channels.entries].note = '\0';
             }
-#line 588
+#line 606
             __nesc_atomic_end(__nesc_atomic); }
+          memset(RadioScannerP__channels.list[RadioScannerP__channels.entries].info.name, 0, 8 + 1);
+          memset(RadioScannerP__channels.list[RadioScannerP__channels.entries].info.notes, 0, 40 + 1);
 
           if (PSAvail) 
             {
               uint16_t piCode;
 
-#line 593
+#line 613
               { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
                 {
                   piCode = RadioScannerP__rds.piCode;
                   RadioScannerP__channels.list[RadioScannerP__channels.entries].info.pi_code = piCode;
-                  RadioScannerP__channels.list[RadioScannerP__channels.entries].info.name = RadioScannerP__channels.list[RadioScannerP__channels.entries].name;
                 }
-#line 598
+#line 617
                 __nesc_atomic_end(__nesc_atomic); }
-              memcpy(RadioScannerP__channels.list[RadioScannerP__channels.entries].name, RadioScannerP__rds.PS, 8);
+              snprintf(RadioScannerP__channels.list[RadioScannerP__channels.entries].name, 8, "%-8s", RadioScannerP__rds.PS);
             }
-          else {
-            memcpy_P(RadioScannerP__channels.list[RadioScannerP__channels.entries].name, text_emptyName, 8);
-            }
+
           RadioScannerP__DB__saveChannel(0xff, & RadioScannerP__channels.list[RadioScannerP__channels.entries].info);
 
           { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 606
+#line 623
             {
-#line 606
+#line 623
               RadioScannerP__channels.entries++;
             }
-#line 607
+#line 624
             __nesc_atomic_end(__nesc_atomic); }
         }
     }
@@ -15980,21 +15991,21 @@ inline static error_t RadioScannerP__Radio__tune(uint16_t channel){
 #line 20
 }
 #line 20
-# 516 "RadioScannerP.nc"
+# 535 "RadioScannerP.nc"
 static inline void RadioScannerP__startTune__runTask(void )
 {
   uint16_t channel;
 
-#line 519
+#line 538
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 519
+#line 538
     {
-#line 519
+#line 538
       channel = RadioScannerP__nextChan;
     }
-#line 520
+#line 539
     __nesc_atomic_end(__nesc_atomic); }
-#line 520
+#line 539
   if (RadioScannerP__Radio__tune(channel) != SUCCESS) {
     RadioScannerP__startTune__postTask();
     }
@@ -16015,7 +16026,7 @@ inline static error_t RadioScannerP__Radio__seek(seekmode_t mode){
 #line 22
 }
 #line 22
-# 507 "RadioScannerP.nc"
+# 526 "RadioScannerP.nc"
 static inline void RadioScannerP__startSeekBand__runTask(void )
 {
   if (RadioScannerP__Radio__seek(BAND) != SUCCESS) {
@@ -16023,7 +16034,7 @@ static inline void RadioScannerP__startSeekBand__runTask(void )
     }
 }
 
-#line 498
+#line 517
 static inline void RadioScannerP__startSeekDown__runTask(void )
 {
   if (RadioScannerP__Radio__seek(DOWN) != SUCCESS) {
@@ -16031,7 +16042,7 @@ static inline void RadioScannerP__startSeekDown__runTask(void )
     }
 }
 
-#line 489
+#line 508
 static inline void RadioScannerP__startSeekUp__runTask(void )
 {
   if (RadioScannerP__Radio__seek(UP) != SUCCESS) {
@@ -16071,13 +16082,13 @@ static inline error_t FMClickP__FMClick__setVolume(uint8_t volume)
 }
 
 # 26 "FMClick/FMClick.nc"
-inline static error_t RadioScannerP__Radio__setVolume(uint8_t arg_0x7f9ed0103c00){
+inline static error_t RadioScannerP__Radio__setVolume(uint8_t arg_0x7fb14d57bc00){
 #line 26
   unsigned char __nesc_result;
 #line 26
 
 #line 26
-  __nesc_result = FMClickP__FMClick__setVolume(arg_0x7f9ed0103c00);
+  __nesc_result = FMClickP__FMClick__setVolume(arg_0x7fb14d57bc00);
 #line 26
 
 #line 26
@@ -16085,7 +16096,7 @@ inline static error_t RadioScannerP__Radio__setVolume(uint8_t arg_0x7f9ed0103c00
 #line 26
 }
 #line 26
-# 476 "RadioScannerP.nc"
+# 495 "RadioScannerP.nc"
 static inline void RadioScannerP__setVolume__runTask(void )
 {
   if (RadioScannerP__newVolume != RadioScannerP__oldVolume) 
@@ -16124,13 +16135,13 @@ inline static void RadioScannerP__Glcd__drawText(const char *text, const uint8_t
 #line 107
 }
 #line 107
-# 427 "RadioScannerP.nc"
+# 446 "RadioScannerP.nc"
 static inline void RadioScannerP__displayRDS__runTask(void )
 {
   bool newPS;
-#line 429
+#line 448
   bool newRT;
-#line 429
+#line 448
   bool newCT;
 
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
@@ -16139,7 +16150,7 @@ static inline void RadioScannerP__displayRDS__runTask(void )
       newRT = RadioScannerP__rds.newRT;
       newCT = RadioScannerP__rds.newCT;
     }
-#line 436
+#line 455
     __nesc_atomic_end(__nesc_atomic); }
 
   if (newPS) 
@@ -16147,29 +16158,29 @@ static inline void RadioScannerP__displayRDS__runTask(void )
       RadioScannerP__Glcd__drawTextPgm(text_emptyName, 0, 15);
       RadioScannerP__Glcd__drawText(RadioScannerP__rds.PS, 0, 15);
       { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 442
+#line 461
         {
-#line 442
+#line 461
           RadioScannerP__rds.newPS = FALSE;
         }
-#line 443
+#line 462
         __nesc_atomic_end(__nesc_atomic); }
     }
-#line 444
+#line 463
   if (newCT) 
     {
       RadioScannerP__Glcd__drawTextPgm(text_emptyTime, 0, 15);
       RadioScannerP__Glcd__drawText(RadioScannerP__rds.CT, 54, 15);
       { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 448
+#line 467
         {
-#line 448
+#line 467
           RadioScannerP__rds.newCT = FALSE;
         }
-#line 449
+#line 468
         __nesc_atomic_end(__nesc_atomic); }
     }
-#line 450
+#line 469
   if (newRT) 
     {
       char line[22];
@@ -16190,12 +16201,12 @@ static inline void RadioScannerP__displayRDS__runTask(void )
       RadioScannerP__Glcd__drawText(line, 122, 39);
 
       { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 469
+#line 488
         {
-#line 469
+#line 488
           RadioScannerP__rds.newRT = FALSE;
         }
-#line 470
+#line 489
         __nesc_atomic_end(__nesc_atomic); }
     }
 }
@@ -16207,16 +16218,16 @@ inline static void RadioScannerP__RDSTimer__startOneShot(uint32_t dt){
 #line 73
 }
 #line 73
-# 353 "RadioScannerP.nc"
+# 368 "RadioScannerP.nc"
 static inline void RadioScannerP__displayChannelInfo__runTask(void )
 {
   char freqBuf[5];
-#line 355
+#line 370
   char idBuf[4];
-#line 355
+#line 370
   char line[22];
   uint8_t id;
-#line 356
+#line 371
   uint8_t qdial;
   uint16_t chan;
   enum RadioScannerP__app_state state;
@@ -16226,7 +16237,7 @@ static inline void RadioScannerP__displayChannelInfo__runTask(void )
       state = RadioScannerP__appState;
       chan = RadioScannerP__currChan;
     }
-#line 364
+#line 379
     __nesc_atomic_end(__nesc_atomic); }
 
   id = RadioScannerP__getListId(chan);
@@ -16281,27 +16292,27 @@ static inline void RadioScannerP__displayChannelInfo__runTask(void )
   RadioScannerP__Glcd__drawTextPgm(text_emptyLine, 122, 39);
   RadioScannerP__Glcd__drawText(line, 122, 39);
 
-  RadioScannerP__Radio__receiveRDS(TRUE);
+
 
   if (RadioScannerP__BANDSEEK == state) {
     RadioScannerP__RDSTimer__startOneShot(5000);
     }
 }
 
-#line 306
+#line 321
 static inline void RadioScannerP__inputNote__runTask(void )
 {
   char c;
   char line[22];
 
-#line 310
+#line 325
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 310
+#line 325
     {
-#line 310
+#line 325
       c = RadioScannerP__kbChar;
     }
-#line 311
+#line 326
     __nesc_atomic_end(__nesc_atomic); }
 
   if (c == '\b') 
@@ -16311,7 +16322,7 @@ static inline void RadioScannerP__inputNote__runTask(void )
         }
     }
   else {
-#line 318
+#line 333
     if (c != '\n' && c != '\r' && c != '\0') 
       {
         if (RadioScannerP__noteInput.idx < 40) {
@@ -16339,7 +16350,7 @@ static inline void RadioScannerP__inputNote__runTask(void )
           RadioScannerP__appState = RadioScannerP__ADD;
           channel = RadioScannerP__currChan;
         }
-#line 344
+#line 359
         __nesc_atomic_end(__nesc_atomic); }
 
       id = RadioScannerP__getListId(channel);
@@ -16348,19 +16359,19 @@ static inline void RadioScannerP__inputNote__runTask(void )
     }
 }
 
-#line 269
+#line 284
 static inline void RadioScannerP__inputTuneChannel__runTask(void )
 {
   char c;
 
-#line 272
+#line 287
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 272
+#line 287
     {
-#line 272
+#line 287
       c = RadioScannerP__kbChar;
     }
-#line 273
+#line 288
     __nesc_atomic_end(__nesc_atomic); }
   if (isdigit(c)) 
     {
@@ -16380,40 +16391,40 @@ static inline void RadioScannerP__inputTuneChannel__runTask(void )
     {
       uint16_t channel = (uint16_t )strtoul(RadioScannerP__tuneInput.buf, (void *)0, 10);
 
-#line 291
+#line 306
       { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 291
+#line 306
         {
-#line 291
+#line 306
           RadioScannerP__appState = RadioScannerP__TUNE;
         }
-#line 292
+#line 307
         __nesc_atomic_end(__nesc_atomic); }
-#line 292
+#line 307
       if (channel < 875 || channel > 1080) 
         {
           { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 294
+#line 309
             {
-#line 294
+#line 309
               RadioScannerP__errno = 1;
             }
-#line 295
+#line 310
             __nesc_atomic_end(__nesc_atomic); }
-#line 295
+#line 310
           RadioScannerP__displaySoftError__postTask();
         }
       else 
         {
           { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 299
+#line 314
             {
-#line 299
+#line 314
               RadioScannerP__nextChan = channel;
             }
-#line 300
+#line 315
             __nesc_atomic_end(__nesc_atomic); }
-#line 300
+#line 315
           RadioScannerP__startTune__postTask();
         }
     }
@@ -17531,18 +17542,27 @@ inline static void RadioScannerP__Lcd__goTo(uint8_t line, uint8_t col){
 #line 16
 }
 #line 16
-# 885 "RadioScannerP.nc"
+# 904 "RadioScannerP.nc"
 static inline void RadioScannerP__Boot__booted(void )
 {
   char textBuf[8];
+  uint8_t id;
 
-#line 888
+
+  for (id = 0; id < 15; id++) 
+    {
+      memset(RadioScannerP__channels.list[id].name, 0, 8 + 1);
+      memset(RadioScannerP__channels.list[id].note, 0, 40 + 1);
+      RadioScannerP__channels.list[id].info.name = RadioScannerP__channels.list[id].name;
+      RadioScannerP__channels.list[id].info.notes = RadioScannerP__channels.list[id].note;
+    }
+
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
     {
       RadioScannerP__appState = RadioScannerP__INIT;
       RadioScannerP__channels.entries = 0;
     }
-#line 892
+#line 922
     __nesc_atomic_end(__nesc_atomic); }
 
   RadioScannerP__favourites.entries = 0;
@@ -18691,9 +18711,9 @@ static inline void AdcP__ReadNow__default__readDone(uint8_t c, error_t e, uint16
 }
 
 # 66 "../tinyos_ws18/tos/interfaces/ReadNow.nc"
-inline static void AdcP__ReadNow__readDone(uint8_t arg_0x7f9ecee75020, error_t result, AdcP__ReadNow__val_t val){
+inline static void AdcP__ReadNow__readDone(uint8_t arg_0x7fb14c36a020, error_t result, AdcP__ReadNow__val_t val){
 #line 66
-    AdcP__ReadNow__default__readDone(arg_0x7f9ecee75020, result, val);
+    AdcP__ReadNow__default__readDone(arg_0x7fb14c36a020, result, val);
 #line 66
 }
 #line 66
@@ -18939,9 +18959,9 @@ static void SchedulerBasicP__TaskBasic__default__runTask(uint8_t id)
 }
 
 # 75 "../tinyos_ws18/tos/interfaces/TaskBasic.nc"
-static void SchedulerBasicP__TaskBasic__runTask(uint8_t arg_0x7f9ed0205830){
+static void SchedulerBasicP__TaskBasic__runTask(uint8_t arg_0x7fb14d67d830){
 #line 75
-  switch (arg_0x7f9ed0205830) {
+  switch (arg_0x7fb14d67d830) {
 #line 75
     case RadioScannerP__inputTuneChannel:
 #line 75
@@ -19185,7 +19205,7 @@ static void SchedulerBasicP__TaskBasic__runTask(uint8_t arg_0x7f9ed0205830){
 #line 75
     default:
 #line 75
-      SchedulerBasicP__TaskBasic__default__runTask(arg_0x7f9ed0205830);
+      SchedulerBasicP__TaskBasic__default__runTask(arg_0x7fb14d67d830);
 #line 75
       break;
 #line 75
@@ -19515,19 +19535,19 @@ static error_t /*Atm128I2CMasterP.Arbiter.Arbiter*/ArbiterP__0__Resource__reques
   return SUCCESS;
 }
 
-# 1029 "RadioScannerP.nc"
+# 1060 "RadioScannerP.nc"
 static void RadioScannerP__Radio__rdsReceived(RDSType type, char *buf)
 {
   enum RadioScannerP__app_state state;
 
-#line 1032
+#line 1063
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1032
+#line 1063
     {
-#line 1032
+#line 1063
       state = RadioScannerP__appState;
     }
-#line 1033
+#line 1064
     __nesc_atomic_end(__nesc_atomic); }
   switch (type) 
     {
@@ -19541,38 +19561,38 @@ static void RadioScannerP__Radio__rdsReceived(RDSType type, char *buf)
           RadioScannerP__rds.piCode = (uint16_t )buf[8 + 1] & 0x00ff;
           RadioScannerP__rds.piCode |= (uint16_t )buf[8] << 8;
         }
-#line 1045
+#line 1076
         __nesc_atomic_end(__nesc_atomic); }
       if (RadioScannerP__BANDSEEK == state) {
         RadioScannerP__addChannel__postTask();
         }
-#line 1048
+#line 1079
       break;
 
       case RT: 
         { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1051
+#line 1082
           {
-#line 1051
+#line 1082
             RadioScannerP__rds.newRT = TRUE;
           }
-#line 1052
+#line 1083
           __nesc_atomic_end(__nesc_atomic); }
-#line 1052
+#line 1083
       memset(RadioScannerP__rds.RT, 0, 64 + 1);
       memcpy(RadioScannerP__rds.RT, buf, 64);
       break;
 
       case TIME: 
         { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1057
+#line 1088
           {
-#line 1057
+#line 1088
             RadioScannerP__rds.newCT = TRUE;
           }
-#line 1058
+#line 1089
           __nesc_atomic_end(__nesc_atomic); }
-#line 1058
+#line 1089
       memset(RadioScannerP__rds.CT, 0, 6);
       memcpy(RadioScannerP__rds.CT, buf, 6);
       break;
@@ -19622,18 +19642,18 @@ static void FMClickP__enableRDS(bool enable)
   FMClickP__writeRegisters__postTask();
 }
 
-# 984 "RadioScannerP.nc"
+# 1014 "RadioScannerP.nc"
 static void RadioScannerP__Radio__seekComplete(uint16_t channel)
 {
   enum RadioScannerP__app_state state;
 
-#line 987
+#line 1017
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
     {
       RadioScannerP__currChan = channel;
       state = RadioScannerP__appState;
     }
-#line 991
+#line 1021
     __nesc_atomic_end(__nesc_atomic); }
 
   switch (state) 
@@ -19645,26 +19665,27 @@ static void RadioScannerP__Radio__seekComplete(uint16_t channel)
         else {
             if (RadioScannerP__channels.entries > 0) 
               {
+                RadioScannerP__clearRDSData();
                 { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
                   {
                     RadioScannerP__nextChan = RadioScannerP__channels.list[0].info.frequency;
                     RadioScannerP__appState = RadioScannerP__TUNE;
                   }
-#line 1006
+#line 1037
                   __nesc_atomic_end(__nesc_atomic); }
                 RadioScannerP__startTune__postTask();
               }
             else 
               {
                 { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1011
+#line 1042
                   {
-#line 1011
+#line 1042
                     RadioScannerP__appState = RadioScannerP__KBCTRL;
                   }
-#line 1012
+#line 1043
                   __nesc_atomic_end(__nesc_atomic); }
-#line 1012
+#line 1043
                 RadioScannerP__displayChannelInfo__postTask();
               }
           }
@@ -19672,30 +19693,47 @@ static void RadioScannerP__Radio__seekComplete(uint16_t channel)
 
       case RadioScannerP__SEEK: 
         { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1018
+#line 1049
           {
-#line 1018
+#line 1049
             RadioScannerP__appState = RadioScannerP__KBCTRL;
           }
-#line 1019
+#line 1050
           __nesc_atomic_end(__nesc_atomic); }
-#line 1019
+#line 1050
       RadioScannerP__displayChannelInfo__postTask();
       break;
 
       default: 
         { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1023
+#line 1054
           {
-#line 1023
+#line 1054
             RadioScannerP__appState = RadioScannerP__KBCTRL;
           }
-#line 1024
+#line 1055
           __nesc_atomic_end(__nesc_atomic); }
-#line 1024
+#line 1055
       RadioScannerP__displayChannelInfo__postTask();
       break;
     }
+}
+
+#line 732
+static void RadioScannerP__clearRDSData(void )
+{
+  { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
+    {
+      RadioScannerP__rds.PSAvail = FALSE;
+      RadioScannerP__rds.newPS = FALSE;
+      RadioScannerP__rds.newRT = FALSE;
+      RadioScannerP__rds.newCT = FALSE;
+    }
+#line 740
+    __nesc_atomic_end(__nesc_atomic); }
+  memset(RadioScannerP__rds.PS, 0, 8 + 1);
+  memset(RadioScannerP__rds.RT, 0, 64 + 1);
+  memset(RadioScannerP__rds.CT, 0, 6);
 }
 
 # 144 "../tinyos_ws18/tos/lib/timer/VirtualizeTimerC.nc"
@@ -19733,7 +19771,7 @@ static uint32_t /*AlarmCounterMilliP.Atm1280AlarmSyncC.Atm1280AlarmSyncP*/Atm128
     __nesc_atomic_end(__nesc_atomic); }
 }
 
-# 912 "RadioScannerP.nc"
+# 942 "RadioScannerP.nc"
 static void RadioScannerP__Radio__initDone(error_t res)
 {
   if (res == SUCCESS) 
@@ -19745,14 +19783,14 @@ static void RadioScannerP__Radio__initDone(error_t res)
   else 
     {
       { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 922
+#line 952
         {
-#line 922
+#line 952
           RadioScannerP__errno = 0;
         }
-#line 923
+#line 953
         __nesc_atomic_end(__nesc_atomic); }
-#line 923
+#line 953
       RadioScannerP__displayHardError__postTask();
     }
 }
@@ -20179,19 +20217,19 @@ static void /*AlarmCounterMilliP.Atm1280AlarmSyncC.Atm1280AlarmSyncP*/Atm1280Ala
   /*AlarmCounterMilliP.Atm1280AlarmSyncC.Atm1280AlarmSyncP*/Atm1280AlarmSyncP__0__Alarm__fired();
 }
 
-# 1091 "RadioScannerP.nc"
+# 1122 "RadioScannerP.nc"
 static void RadioScannerP__DB__receivedChannelEntry(uint8_t id, channelInfo channel)
 {
   enum RadioScannerP__app_state state;
 
-#line 1094
+#line 1125
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1094
+#line 1125
     {
-#line 1094
+#line 1125
       state = RadioScannerP__appState;
     }
-#line 1095
+#line 1126
     __nesc_atomic_end(__nesc_atomic); }
   if (RadioScannerP__INIT == state) 
     {
@@ -20201,12 +20239,13 @@ static void RadioScannerP__DB__receivedChannelEntry(uint8_t id, channelInfo chan
 
           if (RadioScannerP__channels.entries > 0) 
             {
+              RadioScannerP__clearRDSData();
               { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
                 {
                   RadioScannerP__nextChan = RadioScannerP__channels.list[0].info.frequency;
                   RadioScannerP__appState = RadioScannerP__TUNE;
                 }
-#line 1108
+#line 1140
                 __nesc_atomic_end(__nesc_atomic); }
               RadioScannerP__startTune__postTask();
             }
@@ -20216,13 +20255,14 @@ static void RadioScannerP__DB__receivedChannelEntry(uint8_t id, channelInfo chan
               RadioScannerP__clearRDSData();
               RadioScannerP__DB__purgeChannelList();
               RadioScannerP__favourites.entries = 0;
+              memset(RadioScannerP__favourites.table, 0xff, 9);
               { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
                 {
                   RadioScannerP__channels.entries = 0;
                   RadioScannerP__appState = RadioScannerP__BANDSEEK;
                   RadioScannerP__nextChan = 875;
                 }
-#line 1122
+#line 1155
                 __nesc_atomic_end(__nesc_atomic); }
               RadioScannerP__startTune__postTask();
             }
@@ -20230,8 +20270,8 @@ static void RadioScannerP__DB__receivedChannelEntry(uint8_t id, channelInfo chan
       else 
         {
           memcpy(& RadioScannerP__channels.list[RadioScannerP__channels.entries].info, &channel, sizeof(channelInfo ));
-          memcpy(RadioScannerP__channels.list[RadioScannerP__channels.entries].name, channel.name, 8);
-          memcpy(RadioScannerP__channels.list[RadioScannerP__channels.entries].note, channel.notes, 40);
+          snprintf(RadioScannerP__channels.list[RadioScannerP__channels.entries].name, 8, "%-8s", channel.name);
+          strncpy(RadioScannerP__channels.list[RadioScannerP__channels.entries].note, channel.notes, 40);
 
           if (channel.quickDial > 0) 
             {
@@ -20240,32 +20280,15 @@ static void RadioScannerP__DB__receivedChannelEntry(uint8_t id, channelInfo chan
             }
 
           { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
+#line 1171
             {
-              RadioScannerP__channels.list[RadioScannerP__channels.entries].name[8] = '\0';
-              RadioScannerP__channels.list[RadioScannerP__channels.entries].note[40] = '\0';
+#line 1171
               RadioScannerP__channels.entries++;
             }
-#line 1143
+#line 1172
             __nesc_atomic_end(__nesc_atomic); }
         }
     }
-}
-
-#line 715
-static void RadioScannerP__clearRDSData(void )
-{
-  { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-    {
-      RadioScannerP__rds.PSAvail = FALSE;
-      RadioScannerP__rds.newPS = FALSE;
-      RadioScannerP__rds.newRT = FALSE;
-      RadioScannerP__rds.newCT = FALSE;
-    }
-#line 723
-    __nesc_atomic_end(__nesc_atomic); }
-  memset(RadioScannerP__rds.PS, 0, 8 + 1);
-  memset(RadioScannerP__rds.RT, 0, 64 + 1);
-  memset(RadioScannerP__rds.CT, 0, 6);
 }
 
 # 224 "Database/DatabaseP.nc"
@@ -20476,7 +20499,7 @@ static error_t HplKS0108P__HplKS0108__dataWrite(const uint8_t controller, const 
   return SUCCESS;
 }
 
-# 422 "Database/DatabaseP.nc"
+# 424 "Database/DatabaseP.nc"
 static bool DatabaseP__prepareMessage(udp_msg_t *msg, uint8_t **paramStart)
 {
 
@@ -20498,19 +20521,19 @@ static bool DatabaseP__prepareMessage(udp_msg_t *msg, uint8_t **paramStart)
   return TRUE;
 }
 
-# 1148 "RadioScannerP.nc"
+# 1176 "RadioScannerP.nc"
 static void RadioScannerP__DB__savedChannel(uint8_t id, uint8_t result)
 {
   uint8_t state;
 
-#line 1151
+#line 1179
   { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1151
+#line 1179
     {
-#line 1151
+#line 1179
       state = RadioScannerP__appState;
     }
-#line 1152
+#line 1180
     __nesc_atomic_end(__nesc_atomic); }
   if (result == 0) 
     {
@@ -20518,81 +20541,82 @@ static void RadioScannerP__DB__savedChannel(uint8_t id, uint8_t result)
         {
           case RadioScannerP__ADD: 
             { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1158
+#line 1186
               {
-#line 1158
-                state = RadioScannerP__KBCTRL;
+#line 1186
+                RadioScannerP__appState = RadioScannerP__KBCTRL;
               }
-#line 1159
+#line 1187
               __nesc_atomic_end(__nesc_atomic); }
-#line 1159
+#line 1187
           RadioScannerP__displayChannelInfo__postTask();
           break;
 
           case RadioScannerP__FAV: 
             { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1163
+#line 1191
               {
-#line 1163
-                state = RadioScannerP__KBCTRL;
+#line 1191
+                RadioScannerP__appState = RadioScannerP__KBCTRL;
               }
-#line 1164
+#line 1192
               __nesc_atomic_end(__nesc_atomic); }
-#line 1164
+#line 1192
           RadioScannerP__displayChannelInfo__postTask();
           break;
 
+
           case RadioScannerP__BANDSEEK: 
             RadioScannerP__clearRDSData();
-          RadioScannerP__startSeekUp__postTask();
+          RadioScannerP__startSeekBand__postTask();
           break;
 
           default: 
             { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1173
+#line 1202
               {
-#line 1173
-                state = RadioScannerP__KBCTRL;
+#line 1202
+                RadioScannerP__appState = RadioScannerP__KBCTRL;
               }
-#line 1174
+#line 1203
               __nesc_atomic_end(__nesc_atomic); }
-#line 1174
+#line 1203
           RadioScannerP__displayChannelInfo__postTask();
           break;
         }
     }
   else {
-#line 1178
+#line 1207
     if (result == 1) 
       {
         { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1180
+#line 1209
           {
-#line 1180
+#line 1209
             RadioScannerP__errno = 4;
           }
-#line 1181
+#line 1210
           __nesc_atomic_end(__nesc_atomic); }
-#line 1181
+#line 1210
         RadioScannerP__displaySoftError__postTask();
       }
     else 
       {
         { __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();
-#line 1185
+#line 1214
           {
-#line 1185
+#line 1214
             RadioScannerP__errno = 5;
           }
-#line 1186
+#line 1215
           __nesc_atomic_end(__nesc_atomic); }
-#line 1186
+#line 1215
         RadioScannerP__displaySoftError__postTask();
       }
     }
 }
 
-#line 787
+#line 806
 static uint8_t RadioScannerP__getListId(uint16_t channel)
 {
   uint8_t id;
@@ -20638,7 +20662,7 @@ static void DatabaseP__Database__saveChannel(uint8_t id, channelInfo *channel)
 
   if (id == 0xff) 
     {
-      sprintf((char *)DatabaseP__msgBuf.send.data, "%s\r%s=%d,%s=%s,%s=%d,%s=%d,%s=%d,%s=%s\n", 
+      sprintf((char *)DatabaseP__msgBuf.send.data, "%s\r%s=%d,%s=%-8s,%s=%d,%s=%d,%s=%d,%s=%s\n", 
       params.add, params.id, 0, params.name, channel->name, params.qdial, 
       channel->quickDial, params.freq, channel->frequency, params.picode, 
       channel->pi_code, params.note, channel->notes);
@@ -20647,7 +20671,7 @@ static void DatabaseP__Database__saveChannel(uint8_t id, channelInfo *channel)
 #line 152
     if (id < 15) 
       {
-        sprintf((char *)DatabaseP__msgBuf.send.data, "%s\r%s=%d,%s=%s,%s=%d,%s=%d,%s=%d,%s=%s\n", 
+        sprintf((char *)DatabaseP__msgBuf.send.data, "%s\r%s=%d,%s=%-8s,%s=%d,%s=%d,%s=%d,%s=%s\n", 
         params.update, params.id, id, params.name, channel->name, params.qdial, 
         channel->quickDial, params.freq, channel->frequency, params.picode, 
         channel->pi_code, params.note, channel->notes);
@@ -20747,7 +20771,7 @@ static error_t FMClickP__FMClick__seek(seekmode_t mode)
   return SUCCESS;
 }
 
-# 700 "RadioScannerP.nc"
+# 717 "RadioScannerP.nc"
 static void RadioScannerP__printVolume(void )
 {
   char volBuf[3];
@@ -20889,7 +20913,7 @@ __attribute((signal))   void __vector_11(void )
   HplAtmegaPinChange2C__HplAtmegaPinChange__fired();
 }
 
-# 927 "RadioScannerP.nc"
+# 957 "RadioScannerP.nc"
 static void RadioScannerP__Keyboard__receivedChar(uint8_t c)
 {
   enum RadioScannerP__app_state state;

@@ -1,10 +1,14 @@
 id=0,freq=886,name=        ,qdial=1,picode=1,note=
-id=1,freq=899,name=RADIO-W ,qdial=0,picode=44044,note=
-id=2,freq=920,name=ÍFOE 1  ,qdial=0,picode=41473,note=
+id=1,freq=899,name=        ,qdial=3,picode=1,note=90›¤
+id=2,freq=920,name=        ,qdial=0,picode=1,note=
 id=3,freq=929,name=        ,qdial=0,picode=1,note=
 id=4,freq=960,name=        ,qdial=0,picode=1,note=
 id=5,freq=979,name=        ,qdial=0,picode=1,note=
-id=6,freq=983,name=Superfly,qdial=0,picode=44129,note=
-id=7,freq=1021,name=        ,qdial=0,picode=1,note=
-id=8,freq=1025,name=        ,qdial=0,picode=1,note=
-id=9,freq=1038,name=  FM4   ,qdial=0,picode=41491,note=
+id=6,freq=999,name=        ,qdial=0,picode=1,note=
+id=7,freq=1025,name=        ,qdial=0,picode=1,note=
+id=8,freq=1038,name=        ,qdial=0,picode=1,note=
+id=9,freq=1042,name=        ,qdial=0,picode=1,note=
+id=10,freq=1058,name=        ,qdial=0,picode=1,note=
+id=11,freq=1073,name=&
+¶àÿ,qdial=4,picode=1,note=khd lhf
+id=12,freq=1038,name=  OE1   ,qdial=1,picode=12345,note=yo servas habe dere
