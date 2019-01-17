@@ -1,11 +1,11 @@
 <tos_image>
   <ident>
-    <uidhash>F6A7CB25L</uidhash>
+    <uidhash>C5BC8211L</uidhash>
     <hostname>ti6</hostname>
     <username>m01614835</username>
     <appname>RadioScannerApp</appname>
     <userhash>8804F138L</userhash>
-    <timestamp>5C40AB01L</timestamp>
+    <timestamp>5C40B4ADL</timestamp>
     <deluge_support>no</deluge_support>
     <platform>bigAVR6_1280</platform>
   </ident>

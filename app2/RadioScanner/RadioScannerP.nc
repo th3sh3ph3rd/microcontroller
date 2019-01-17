@@ -17,7 +17,7 @@
 //TODO RDS probably doesnt get turned back on reliably 
 //-> maybe bc. of decodeRDS in FMClick 
 
-//TODO put line spacing in macros
+//TODO remove \n, \r from rds data
 
 //TODO make FMClick init more reliable
 
@@ -51,6 +51,15 @@ implementation {
     #define VOLUME_UPDATE_RATE  100
     #define ERROR_MSG_TIMEOUT   700
     #define RDS_TIMEOUT         5000
+
+    #define GLCD_CHARS_PER_LINE     21
+    #define GLCD_CHAR_WIDTH         6
+    #define GLCD_LEFT_END           0
+    #define GLCD_FIRST_LINE         10
+    #define GLCD_LINE_SPACE         10
+    #define GLCD_TRUE_LEFT_END      122
+    #define GLCD_TRUE_FIRST_LINE    7
+    #define GLCD_TRUE_LINE_SPACE    8
 
     enum app_state {INIT, KBCTRL, TUNEINP, TUNE, SEEK, BANDSEEK, ADD, FAV, NOTE};
     static enum app_state appState;
@@ -132,7 +141,7 @@ implementation {
     task void addChannel(void);
     task void displayHardError(void);
     task void displaySoftError(void);
-
+ 
     static void printVolume(void);
     static void clearRDSData(void);
     static void addFavourite(void);
@@ -202,7 +211,7 @@ implementation {
                     appState = TUNEINP;
                 }
                 call Glcd.fill(0x00);
-                call Glcd.drawTextPgm(text_channelInput, 0, 10);
+                call Glcd.drawTextPgm(text_channelInput, GLCD_LEFT_END, GLCD_FIRST_LINE);
                 post inputTuneChannel();
                 break;
 
@@ -248,8 +257,8 @@ implementation {
         if (c == '\b' && tuneInput.idx > 0)
             tuneInput.buf[--tuneInput.idx] = '\0';
         
-        call Glcd.drawTextPgm(text_emptyTime, 0, 20);
-        call Glcd.drawText(tuneInput.buf, 0, 20);
+        call Glcd.drawTextPgm(text_emptyTime, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
+        call Glcd.drawText(tuneInput.buf, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
 
         /* Complete entering channel */
         if (c == '\n')
@@ -275,7 +284,7 @@ implementation {
     task void inputNote(void)
     {
         char c;
-        char line[22];
+        char line[GLCD_CHARS_PER_LINE+1];
         atomic { c = kbChar; }
         
         /* Backspace */
@@ -291,14 +300,14 @@ implementation {
         }
       
         /* Write input to screen */
-        memcpy(line, noteInput.buf, 21);
-        line[21] = '\0';
-        call Glcd.drawTextPgm(text_emptyLine, 122, 20);
-        call Glcd.drawText(line, 122, 20);
-        memcpy(line, noteInput.buf+21, 19);
-        line[19] = '\0';
-        call Glcd.drawTextPgm(text_emptyLine, 122, 30);
-        call Glcd.drawText(line, 122, 30);
+        memcpy(line, noteInput.buf, GLCD_CHARS_PER_LINE);
+        line[GLCD_CHARS_PER_LINE] = '\0';
+        call Glcd.drawTextPgm(text_emptyLine,  GLCD_TRUE_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
+        call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
+        memcpy(line, noteInput.buf+GLCD_CHARS_PER_LINE, GLCD_CHARS_PER_LINE-2);
+        line[GLCD_CHARS_PER_LINE-2] = '\0';
+        call Glcd.drawTextPgm(text_emptyLine,  GLCD_TRUE_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE*2);
+        call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE*2);
 
         /* Complete entering note */
         if (c == '\n')
@@ -328,7 +337,7 @@ implementation {
      */
     task void displayChannelInfo(void)
     {
-        char freqBuf[5], idBuf[4], line[22];
+        char freqBuf[5], idBuf[4], line[GLCD_CHARS_PER_LINE+1];
         uint8_t id, qdial;
         uint16_t chan;
         enum app_state state;
@@ -344,52 +353,52 @@ implementation {
         /* Display header */
         sprintf(freqBuf, "%d.%d", chan/10, chan%10);
         call Glcd.fill(0x00);
-        call Glcd.drawText(freqBuf, 0, 7);
-        call Glcd.drawTextPgm(text_MHz, 36, 7);
+        call Glcd.drawText(freqBuf, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE);
+        call Glcd.drawTextPgm(text_MHz, GLCD_CHAR_WIDTH*6, GLCD_TRUE_FIRST_LINE);
 
         /* Display list id and quick dial if channel is in list */
         if (id < CHANNEL_LIST_SZ)
         {
             sprintf(idBuf, "c%02d", id);
             idBuf[3] = '\0';
-            call Glcd.drawText(idBuf, 60, 7);
+            call Glcd.drawText(idBuf, GLCD_CHAR_WIDTH*10, GLCD_TRUE_FIRST_LINE);
             
             qdial = channels.list[id].info.quickDial;
             if (qdial > 0)
             {
                 sprintf(idBuf, "f%d", qdial);
                 idBuf[2] = '\0';
-                call Glcd.drawText(idBuf, 84, 7);
+                call Glcd.drawText(idBuf, GLCD_CHAR_WIDTH*14, GLCD_TRUE_FIRST_LINE);
             }
 
             /* Display note */
-            memcpy(line, channels.list[id].note, 21);
-            line[21] = '\0';
-            call Glcd.drawTextPgm(text_emptyLine, 122, 47);
-            call Glcd.drawText(line, 122, 47);
-            memcpy(line, channels.list[id].note+21, 19);
-            line[19] = '\0';
-            call Glcd.drawTextPgm(text_emptyLine, 122, 55);
-            call Glcd.drawText(line, 122, 55);
+            memcpy(line, channels.list[id].note, GLCD_CHARS_PER_LINE);
+            line[GLCD_CHARS_PER_LINE] = '\0';
+            call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*5);
+            call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*5);
+            memcpy(line, channels.list[id].note+GLCD_CHARS_PER_LINE, GLCD_CHARS_PER_LINE-2);
+            line[GLCD_CHARS_PER_LINE-2] = '\0';
+            call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*6);
+            call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*6);
         }
 
         /* Display initial RDS data */
-        call Glcd.drawTextPgm(text_emptyName, 0, 15);
-        call Glcd.drawText(rds.PS, 0, 15);
-        call Glcd.drawTextPgm(text_emptyTime, 0, 15);
-        call Glcd.drawText(rds.CT, 54, 15);
-        memcpy(line, rds.RT, 21);
-        line[21] = '\0';
-        call Glcd.drawTextPgm(text_emptyLine, 122, 23);
-        call Glcd.drawText(line, 122, 23);
-        memcpy(line, rds.RT+21, 21);
-        line[21] = '\0';
-        call Glcd.drawTextPgm(text_emptyLine, 122, 31);
-        call Glcd.drawText(line, 122, 31);
-        memcpy(line, rds.RT+42, 21);
-        line[21] = '\0';
-        call Glcd.drawTextPgm(text_emptyLine, 122, 39);
-        call Glcd.drawText(line, 122, 39);
+        call Glcd.drawTextPgm(text_emptyName, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
+        call Glcd.drawText(rds.PS, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
+        call Glcd.drawTextPgm(text_emptyTime, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
+        call Glcd.drawText(rds.CT, GLCD_CHAR_WIDTH*9, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
+        memcpy(line, rds.RT, GLCD_CHARS_PER_LINE);
+        line[GLCD_CHARS_PER_LINE] = '\0';
+        call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*2);
+        call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*2);
+        memcpy(line, rds.RT+GLCD_CHARS_PER_LINE, GLCD_CHARS_PER_LINE);
+        line[GLCD_CHARS_PER_LINE] = '\0';
+        call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*3);
+        call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*3);
+        memcpy(line, rds.RT+GLCD_CHARS_PER_LINE*2, GLCD_CHARS_PER_LINE);
+        line[GLCD_CHARS_PER_LINE] = '\0';
+        call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*4);
+        call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*4);
 
         showRDS = TRUE;
 
@@ -415,34 +424,32 @@ implementation {
 
             if (newPS)
             {
-                call Glcd.drawTextPgm(text_emptyName, 0, 15);
-                call Glcd.drawText(rds.PS, 0, 15);
+                call Glcd.drawTextPgm(text_emptyName, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
+                call Glcd.drawText(rds.PS, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
                 atomic { rds.newPS = FALSE; }
             }
             if (newCT)
             {
-                call Glcd.drawTextPgm(text_emptyTime, 0, 15);
-                call Glcd.drawText(rds.CT, 54, 15);
+                call Glcd.drawTextPgm(text_emptyTime, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
+                call Glcd.drawText(rds.CT, GLCD_CHAR_WIDTH*9, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
                 atomic { rds.newCT = FALSE; }
             }
             if (newRT)
             {
-                char line[22];
-                
-                memcpy(line, rds.RT, 21);
-                line[21] = '\0';
-                call Glcd.drawTextPgm(text_emptyLine, 122, 23);
-                call Glcd.drawText(line, 122, 23);
+                char line[GLCD_CHARS_PER_LINE+1];
 
-                memcpy(line, rds.RT+21, 21);
-                line[21] = '\0';
-                call Glcd.drawTextPgm(text_emptyLine, 122, 31);
-                call Glcd.drawText(line, 122, 31);
-                
-                memcpy(line, rds.RT+42, 21);
-                line[21] = '\0';
-                call Glcd.drawTextPgm(text_emptyLine, 122, 39);
-                call Glcd.drawText(line, 122, 39);
+                memcpy(line, rds.RT, GLCD_CHARS_PER_LINE);
+                line[GLCD_CHARS_PER_LINE] = '\0';
+                call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*2);
+                call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*2);
+                memcpy(line, rds.RT+GLCD_CHARS_PER_LINE, GLCD_CHARS_PER_LINE);
+                line[GLCD_CHARS_PER_LINE] = '\0';
+                call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*3);
+                call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*3);
+                memcpy(line, rds.RT+GLCD_CHARS_PER_LINE*2, GLCD_CHARS_PER_LINE);
+                line[GLCD_CHARS_PER_LINE] = '\0';
+                call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*4);
+                call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*4);
                 
                 atomic { rds.newRT = FALSE; }
             }
@@ -589,16 +596,16 @@ implementation {
         
         showRDS = FALSE;
         call Glcd.fill(0x00);
-        call Glcd.drawTextPgm(text_error, 0, 10);
+        call Glcd.drawTextPgm(text_error, GLCD_LEFT_END, GLCD_FIRST_LINE);
         
         switch (err)
         {
             case E_FMCLICK_INIT:
-                call Glcd.drawTextPgm(text_FMClickInitFail, 0, 20);
+                call Glcd.drawTextPgm(text_FMClickInitFail, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
                 break;
 
             default:
-                call Glcd.drawTextPgm(text_unknownError, 0, 20);
+                call Glcd.drawTextPgm(text_unknownError, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
                 break;
         }
     }
@@ -613,48 +620,48 @@ implementation {
        
         showRDS = FALSE;
         call Glcd.fill(0x00);
-        call Glcd.drawTextPgm(text_error, 0, 10);
+        call Glcd.drawTextPgm(text_error, GLCD_LEFT_END, GLCD_FIRST_LINE);
         
         switch (err)
         {
             case E_CHAN_INVAL:
-                call Glcd.drawTextPgm(text_chanInval, 0, 20);
+                call Glcd.drawTextPgm(text_chanInval, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
                 break;
             
             case E_LIST_FULL:
-                call Glcd.drawTextPgm(text_listFull, 0, 20);
+                call Glcd.drawTextPgm(text_listFull, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
                 break;
 
             case E_FAVS_FULL:
-                call Glcd.drawTextPgm(text_favsFull, 0, 20);
+                call Glcd.drawTextPgm(text_favsFull, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
                 break;
 
             case E_DB_FULL:
-                call Glcd.drawTextPgm(text_dbFull, 0, 20);
+                call Glcd.drawTextPgm(text_dbFull, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
                 break;
 
             case E_DB_ERR:
-                call Glcd.drawTextPgm(text_dbErr, 0, 20);
+                call Glcd.drawTextPgm(text_dbErr, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
                 break;
             
             case E_BAND_LIMIT:
-                call Glcd.drawTextPgm(text_bandLimit, 0, 20);
+                call Glcd.drawTextPgm(text_bandLimit, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
                 break;
             
             case E_FAV_NSET:
-                call Glcd.drawTextPgm(text_favNset, 0, 20);
+                call Glcd.drawTextPgm(text_favNset, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
                 break;
             
             case E_CHAN_NLIST:
-                call Glcd.drawTextPgm(text_chanNlist, 0, 20);
+                call Glcd.drawTextPgm(text_chanNlist, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
                 break;
             
             case E_IS_FAV:
-                call Glcd.drawTextPgm(text_isFav, 0, 20);
+                call Glcd.drawTextPgm(text_isFav, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
                 break;
 
             default:
-                call Glcd.drawTextPgm(text_unknownError, 0, 20);
+                call Glcd.drawTextPgm(text_unknownError, GLCD_LEFT_END, GLCD_FIRST_LINE+GLCD_LINE_SPACE);
                 break;
         }
 
@@ -838,7 +845,7 @@ implementation {
             noteInput.idx = 0;
             memset(noteInput.buf, 0, NOTE_SZ+1);
             call Glcd.fill(0x00);
-            call Glcd.drawTextPgm(text_noteInput, 0, 10);
+            call Glcd.drawTextPgm(text_noteInput, GLCD_LEFT_END, GLCD_FIRST_LINE);
             post inputNote();
         }
         else
