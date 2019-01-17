@@ -8,9 +8,6 @@
  *
 **/
 
-//TODO may sometimes hang, but couldn't reproduce error
-//TODO consider endless loop as cause or LUT mismatch
-
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <scancodes.h>
@@ -37,11 +34,10 @@ implementation {
     enum kb_shift_state {UNSHIFTED, SHIFTED};
     enum kb_key_state {DOWN, UP};
 
-    uint8_t PS2BitCount;
-    enum kb_shift_state kbShiftState;
-    enum kb_key_state kbKeyState;
+    static uint8_t PS2BitCount;
+    static enum kb_shift_state kbShiftState;
+    static enum kb_key_state kbKeyState;
     
-
     /*
      * @brief Initialize the pins and pin change interrupt needed
      *        by the PS2 module.
@@ -76,8 +72,7 @@ implementation {
      *                  is also handled in this procedure.
      * @param scancode  The scancode to be decoded.
      */
-    //TODO convert to task to avoid recursion, may require ringbuffer
-    void decodeScancode(uint8_t scancode)
+    static void decodeScancode(uint8_t scancode)
     {
         if (DOWN == kbKeyState)
         {
@@ -97,7 +92,6 @@ implementation {
 
                 /* Perform a scancode-character conversion using a lookup table */
                 default:
-                    //TODO merge only use single while loop by using pointer to correct LUT
                     if (UNSHIFTED == kbShiftState)
                     {
                         uint8_t min = 0;
@@ -147,35 +141,6 @@ implementation {
                         }
                     }
 
-//                    uint8_t *scArray;
-//
-//                    if (UNSHIFTED == kbShiftstate)
-//                        scArray = unshifted;
-//                    else
-//                        scArray = shifted;
-//
-//                    uint8_t min = 0;
-//                    uint8_t max = SC_UNSHIFTED_LEN-1;
-//                    uint8_t i, sc;
-//
-//                    /* Perform table lookup with binary search */
-//                    while (min <= max)
-//                    {
-//                        i = (max + min) >> 1;
-//                        sc = pgm_read_byte(&scArray[i][0]);
-//                        
-//                        if (sc < scancode)
-//                            min = i+1;
-//                        else if (sc > scancode)
-//                            max = i-1;
-//                        else
-//                        {
-//                            /* Fire the signal if the scancode was decoded successfully */
-//                            signal PS2.receivedChar(pgm_read_byte(&scArray[i][1]));
-//                            break;
-//                        }
-//                    }
-//                    break;
             }
         }
         else
