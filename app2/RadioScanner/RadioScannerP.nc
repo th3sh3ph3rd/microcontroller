@@ -20,11 +20,11 @@
 //TODO PSAvail not correct
 //-> on update we send the wrong name sometimes
 
-//TODO set volume initially 
-//-> 15 is displayed inititally?
-
 //TODO write note if no RDS available
 
+//TODO make FMClick init more reliable
+
+//TODO take picode also form other RDS gts
 //TODO tune/seek timeout
 //TODO automatically update RDS info to DB if available
 //TODO implement back key for functions with input
@@ -428,7 +428,7 @@ implementation {
         call Glcd.drawTextPgm(text_emptyLine, 122, 39);
         call Glcd.drawText(line, 122, 39);
 
-        //call Radio.receiveRDS(TRUE);
+        call Radio.receiveRDS(TRUE);
 
         if (BANDSEEK == state)
             call RDSTimer.startOneShot(RDS_TIMEOUT);
@@ -930,6 +930,7 @@ implementation {
         if (res == SUCCESS)
         {
             call Radio.receiveRDS(FALSE);
+            call volumeKnob.read();
             call VolumeTimer.startPeriodic(VOLUME_UPDATE_RATE);
             call DB.getChannelList(FALSE);
         }

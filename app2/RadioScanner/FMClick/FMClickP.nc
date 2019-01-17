@@ -8,9 +8,6 @@
  *
 **/
 
-//TODO RDS not very reliable, have to find way to handle PS and RT group types properly
-//TODO remove uneccessary states, e.g. REQ state
-
 #include <stdio.h>
 #include <string.h>
 
@@ -90,7 +87,6 @@ implementation {
     /* System Configuration 2 */
     #define SEEKTH_MASK         0xff00
     #define SEEKTH_VAL          0x1900  /* Recommended */
-    //#define SEEKTH_VAL          0x1000  /* Recommended */
     #define BAND_MASK           0x00c0
     #define BAND_VAL            0x0000 /* European FM band */
     #define SPACE_MASK          0x0030 
@@ -101,10 +97,8 @@ implementation {
     #define VOLEXT_MASK         0x0100
     #define SKSNR_MASK          0x00f0
     #define SKSNR_VAL           0x0040  /* Good SNR threshold */ 
-    //#define SKSNR_VAL           0x0010  /* Good SNR threshold */ 
     #define SKCNT_MASK          0x000f
     #define SKCNT_VAL           0x0008  /* More stringent valid station requirements */
-    //#define SKCNT_VAL           0x0001  /* More stringent valid station requirements */
 
     /* Test 1 */
     #define XOSCEN_MASK         0x8000
@@ -133,19 +127,15 @@ implementation {
     uint8_t writeAddr;
 
     enum driver_state {IDLE, INIT, TUNE, SEEK, RDSEN, VOL, RDS};
-    enum com_state {REQ, COM};
     enum bus_state {NOOP, READ, WRITE};
     enum init_state {SETUP, INITREG, XOSCEN, WAITXOSC, ENABLE, WAITPOWERUP, READREGF, CONFIG, FINISH};
     enum tune_state {STARTTUNE, WAITTUNE, TUNECHAN, ENDTUNE, READTUNE, FINTUNE};
     enum seek_state {STARTSEEK, WAITSEEK, SEEKCHAN, ENDSEEK, READSEEK, FINSEEK};
     enum rds_state {READRDS, DECODERDS};
 
-    //TODO make bitfield
     struct
     {
         enum driver_state   driver;
-        enum com_state      read;
-        enum com_state      write;
         enum bus_state      bus;
         enum init_state     init;
         enum tune_state     tune;
@@ -173,9 +163,6 @@ implementation {
     struct
     {
         uint8_t PSBlocks;
-        uint8_t RTBlocks;
-        uint8_t CTBlocks;
-        uint8_t RTMaxBlocks;
         char PS[PS_BUF_SZ+2]; /* Two additional bytes for storing the PI code */
         char RT[RT_BUF_SZ];
         char CT[CT_BUF_SZ];
@@ -214,8 +201,6 @@ implementation {
         atomic 
         {
             states.driver = INIT;
-            states.read = REQ;
-            states.write = REQ;
             states.bus = NOOP;
             states.init = SETUP;
             RDSen = FALSE;
@@ -378,7 +363,6 @@ implementation {
             call RSTPin.set();
             call Timer.startOneShot(READ_DELAY_MS); 
             atomic { states.init = INITREG; }
-            //atomic { states.init = XOSCEN; }
         }
         if (INITREG == state)
         {
@@ -525,7 +509,6 @@ implementation {
             if (!stc)
             {
                 signal FMClick.tuneComplete(currChannel);
-                atomic { rds.RTMaxBlocks = RT_BLOCKS-1; }
                 if (RDSen)
                 {
                     atomic { states.driver = RDSEN; } 
@@ -626,7 +609,6 @@ implementation {
                 {
                     signal FMClick.seekComplete(currChannel);
 
-                    atomic { rds.RTMaxBlocks = RT_BLOCKS-1; }
                     if (RDSen)
                     {
                         atomic { states.driver = RDSEN; } 
@@ -723,54 +705,6 @@ implementation {
                         rds.RT[(offset<<2)+2] = (char)(RDSD >> 8);
                         rds.RT[(offset<<2)+3] = (char)RDSD;
                     }
-                    /* Some stations don't adhere to the standard and just terminate RDS
-                     * info with '\r' instead of sending all blocks */
-                    if (rds.RT[offset<<2] == '\r' ||
-                        rds.RT[(offset<<2)+1] == '\r' ||
-                        rds.RT[(offset<<2)+2] == '\r' ||
-                        rds.RT[(offset<<2)+3] == '\r')
-                    {
-                        rds.RTMaxBlocks = offset;
-                    }
-                    atomic
-                    {
-                        rds.RTBlocks++;
-                        blocks = rds.RTBlocks;
-                    }
-                    //if (blocks == rds.RTMaxBlocks+1)
-                    //{
-                    //    signal FMClick.rdsReceived(RT, rds.RT);
-                    //    memset(rds.RT, ' ', RT_BUF_SZ);
-                    //    rds.RTBlocks = 0;
-                    //}
-                    signal FMClick.rdsReceived(RT, rds.RT);
-                    break;
-
-                case GT_2B:
-                    offset = ((uint8_t)RDSB) & 0x0f;
-                    atomic 
-                    { 
-                        rds.RT[(offset<<1)] = (char)(RDSD >> 8);
-                        rds.RT[(offset<<1)+1] = (char)RDSD;
-                    }
-                    /* Some stations don't adhere to the standard and just terminate RDS
-                     * info with '\r' instead of sending all blocks */
-                    if (rds.RT[offset<<1] == '\r' ||
-                        rds.RT[(offset<<1)+1] == '\r')
-                    {
-                        rds.RTMaxBlocks = offset;
-                    }
-                    atomic
-                    {
-                        rds.RTBlocks++;
-                        blocks = rds.RTBlocks;
-                    }
-                    //if (blocks == rds.RTMaxBlocks+1)
-                    //{
-                    //    signal FMClick.rdsReceived(RT, rds.RT);
-                    //    memset(rds.RT, ' ', RT_BUF_SZ);
-                    //    rds.RTBlocks = 0;
-                    //}
                     signal FMClick.rdsReceived(RT, rds.RT);
                     break;
                 
@@ -934,8 +868,6 @@ implementation {
             { 
                 shadowRegisters[SYSCONF1_REG] |= (RDS_MASK | RDSIEN_MASK);
                 rds.PSBlocks = 0;
-                rds.RTBlocks = 0;
-                rds.CTBlocks = 0;
                 writeAddr = SYSCONF1_REG;
             }
 
@@ -963,6 +895,9 @@ implementation {
     /* Events */
     ////////////////////////
 
+    /*
+     * @brief Reset timer event for init function.
+     */
     event void Timer.fired()
     {
         enum driver_state state;
@@ -979,6 +914,9 @@ implementation {
         }
     }
    
+    /*
+     * @brief Continue driver operations after successful read.
+     */
     async event void I2C.readDone(error_t error, uint16_t addr, uint8_t length, uint8_t *data)
     {
         enum driver_state state;
@@ -1018,6 +956,9 @@ implementation {
         }
     }
 
+    /*
+     * @brief Continue driver operations after successful write.
+     */
     async event void I2C.writeDone(error_t error, uint16_t addr, uint8_t length, uint8_t *data)
     {
         enum driver_state state;
@@ -1057,6 +998,9 @@ implementation {
         }
     }
 
+    /*
+     * @brief Continue driver operations after RDS/STC interrupt and disable interrupt.
+     */
     async event void Int.fired()
     {
         enum driver_state state;
@@ -1088,6 +1032,9 @@ implementation {
         }
     }
 
+    /*
+     * @brief Start read/write when bus is available.
+     */
     event void I2CResource.granted()
     {
         enum driver_state state;

@@ -108,6 +108,6 @@ bool channel_set_note(channel_info_t *channel, char *note) {
 	if (channel == NULL) return false;
 
 	strncpy(channel->note, note, 40);
-	channel->name[40] = 0;
+	channel->note[40] = 0;
 	return true;
 }
