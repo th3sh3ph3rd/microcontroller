@@ -150,6 +150,7 @@ implementation {
     static void tuneNextHighest(void);
     static void addNote(void);
     static void tuneToFavourite(char c);
+    static void removeIllegalChars(char *data, uint8_t len);
 
     ////////////////////////
     /* Tasks              */
@@ -424,6 +425,7 @@ implementation {
 
             if (newPS)
             {
+                removeIllegalChars(rds.PS, PS_BUF_SZ);
                 call Glcd.drawTextPgm(text_emptyName, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
                 call Glcd.drawText(rds.PS, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
                 atomic { rds.newPS = FALSE; }
@@ -438,6 +440,7 @@ implementation {
             {
                 char line[GLCD_CHARS_PER_LINE+1];
 
+                removeIllegalChars(rds.RT, RT_BUF_SZ);
                 memcpy(line, rds.RT, GLCD_CHARS_PER_LINE);
                 line[GLCD_CHARS_PER_LINE] = '\0';
                 call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*2);
@@ -882,6 +885,20 @@ implementation {
                 post displaySoftError();
             }
         }
+    }
+    
+    /*
+     * @brief Remove '\n' and '\r' from a string.
+     */
+    static void removeIllegalChars(char *data, uint8_t len)
+    {
+        uint8_t i;
+
+        for (i = 0; i < len; i++)
+        {
+            if (data[i] == '\n' || data[i] == '\r')
+                data[i] = ' ';
+        }   
     }
     
     ////////////////////////
