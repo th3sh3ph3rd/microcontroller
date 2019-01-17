@@ -15,10 +15,6 @@
 #include <udp_config.h>
 #include <commands.h>
 
-//TODO find bug in get/list
-//TODO init error handling
-//TODO implement functionality in network stack
-
 module DatabaseP {
     provides 
     {
@@ -31,8 +27,6 @@ module DatabaseP {
         interface UdpReceive;
         interface IpControl;
         interface SplitControl as Control;
-
-        interface Glcd;
     }
 }
 
@@ -97,7 +91,6 @@ implementation {
         in_addr_t cip = { .bytes {IP}};
         in_addr_t cnm = { .bytes {NETMASK}};
         in_addr_t cgw = { .bytes {GATEWAY}};
-        char ipBuf[17];
 
         atomic { dbState = INIT; }
 
@@ -107,14 +100,10 @@ implementation {
 
         ip = call IpControl.getIp();
 
-        sprintf(ipBuf, ">%03d.%03d.%03d.%03d", ip->bytes.b1, ip->bytes.b2, ip->bytes.b3, ip->bytes.b4);
-        call Glcd.drawText(ipBuf, 0, 60);
-
         getList = FALSE;
 
         call Control.start();
 
-        //TODO maybe move to control.startDone and signal init error to app
         atomic { dbState = IDLE; }
         
         return SUCCESS;
@@ -126,7 +115,6 @@ implementation {
      *           must be between 0 and 15 if passed manually
      * @param channel The channel information, see channelInfo typedef
      */
-    //TODO make sure no \r and \n are in the values and the name is exactly 8 char and note max 40 char, make part of contract -> set last byte to 0
     command void Database.saveChannel(uint8_t id, channelInfo *channel)
     {
         enum db_state state;

@@ -8,7 +8,6 @@
  *
 **/
 
-//TODO don't forget that the typedef in this header has been tweaked
 #include <udp_config.h>
 
 configuration DatabaseC {
@@ -20,12 +19,7 @@ configuration DatabaseC {
 }
 
 implementation {
-    //TODO tweak accordingly
-    #define SEND_Q_LEN  20
-    #define RECV_Q_LEN  5
-    #define POOL_SIZE (SEND_Q_LEN+RECV_Q_LEN)
-
-    components DatabaseP, IpTransceiverC, LlcTransceiverP, GlcdC;
+    components DatabaseP, IpTransceiverC, LlcTransceiverP;
     components Enc28j60C as EthernetC;
     components new UdpC(UDP_PORT);
 
@@ -38,7 +32,5 @@ implementation {
     DatabaseP.UdpReceive -> UdpC;
     DatabaseP.IpControl -> IpTransceiverC;
     DatabaseP.Control -> EthernetC;
-
-    DatabaseP.Glcd -> GlcdC;
 }
 
