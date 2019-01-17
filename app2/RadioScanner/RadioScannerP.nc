@@ -14,10 +14,6 @@
 #include <string.h>
 #include <text.h>
 
-//TODO note and name pointer problem
-//-> sometimes we send utter bs instead of empty name/note
-//-> only a part of the note gets sent
-
 //TODO RDS probably doesnt get turned back on reliably 
 //-> maybe bc. of decodeRDS in FMClick 
 
@@ -30,8 +26,9 @@
 //TODO set volume initially 
 //-> 15 is displayed inititally?
 
+//TODO write note if no RDS available
 
-
+//TODO tune/seek timeout
 //TODO automatically update RDS info to DB if available
 //TODO implement back key for functions with input
 //TODO implement stop key for band seek
@@ -350,18 +347,21 @@ implementation {
         {
             uint8_t id;
             uint16_t channel;
+            channel_t *ce;
 
             atomic 
             {
                 appState = ADD;
-                channel = currChan; 
+                channel = currChan;
             }
 
             id = getListId(channel);
+            atomic { ce = &channels.list[id]; }
+
             noteInput.buf[noteInput.idx] = '\0';
-            memset(channels.list[id].note, 0, NOTE_SZ+1);
-            strncpy(channels.list[id].note, noteInput.buf, NOTE_SZ);
-            call DB.saveChannel(id, &channels.list[id].info);            
+            memset(ce->info.notes, 0, NOTE_SZ+1);
+            strncpy(ce->info.notes, noteInput.buf, NOTE_SZ);
+            call DB.saveChannel(id, &ce->info);            
         }
     }
    
@@ -557,19 +557,21 @@ implementation {
         if (id < CHANNEL_LIST_SZ)
         {
             bool PSAvail;
-            atomic { PSAvail = rds.PSAvail; }
+            channel_t *c;
+
+            atomic 
+            { 
+                PSAvail = rds.PSAvail; 
+                c = &channels.list[channels.entries++];
+            }
             
             //if (channels.list[id].info.name == NULL && PSAvail)
             if (PSAvail)
             {
-                memcpy(channels.list[id].name, rds.PS, NAME_SZ);
-                atomic 
-                { 
-                    channels.list[id].info.pi_code = rds.piCode; 
-                    channels.list[id].info.name = channels.list[id].name;
-                    channels.list[id].name[NAME_SZ] = '\0';
-                }
-                call DB.saveChannel(id, &channels.list[id].info);
+                memset(c->info.name, 0, NAME_SZ+1);
+                snprintf(c->info.name, NAME_SZ, "%-8s", rds.PS);
+                atomic { c->info.pi_code = rds.piCode; }
+                call DB.saveChannel(id, &c->info);
             }
             /* Nothing to update */
             else
@@ -589,39 +591,29 @@ implementation {
             else
             {
                 bool PSAvail;
-                channelInfo newChan;
+                channel_t *c;
 
-                atomic { PSAvail = rds.PSAvail; }
-                
-                newChan.quickDial = 0;
-                newChan.frequency = freq;
-                newChan.pi_code = 1;
-                newChan.name = NULL;
-                newChan.notes = NULL;
-
-                memcpy(&channels.list[channels.entries].info, &newChan, sizeof(channelInfo));
                 atomic 
-                {
-                    channels.list[channels.entries].info.name = channels.list[channels.entries].name;
-                    channels.list[channels.entries].info.notes = channels.list[channels.entries].note;
+                { 
+                    PSAvail = rds.PSAvail; 
+                    c = &channels.list[channels.entries++];
                 }
-                memset(channels.list[channels.entries].info.name, 0, NAME_SZ+1);
-                memset(channels.list[channels.entries].info.notes, 0, NOTE_SZ+1);
+                
+                c->info.quickDial = 0;
+                c->info.frequency = freq;
+                c->info.pi_code = 1;
+                c->info.name = c->name;
+                c->info.notes = c->note;
+                memset(c->info.name, 0, NAME_SZ+1);
+                memset(c->info.notes, 0, NOTE_SZ+1);
                 
                 if (PSAvail)
                 {
-                    uint16_t piCode;
-                    atomic 
-                    { 
-                        piCode = rds.piCode;
-                        channels.list[channels.entries].info.pi_code = piCode;
-                    }
-                    snprintf(channels.list[channels.entries].name, NAME_SZ, "%-8s", rds.PS);
+                    atomic { c->info.pi_code = rds.piCode; }
+                    snprintf(c->info.name, NAME_SZ, "%-8s", rds.PS);
                 }
             
-                call DB.saveChannel(0xff, &channels.list[channels.entries].info);
-                
-                atomic { channels.entries++; }
+                call DB.saveChannel(0xff, &c->info); 
             }
         }
     }
@@ -906,14 +898,16 @@ implementation {
     {
         char textBuf[8];
         uint8_t id;
+        channel_t *c;
 
         /* Initialize list datastructure */
         for (id = 0; id < CHANNEL_LIST_SZ; id++)
         {
-            memset(channels.list[id].name, 0, NAME_SZ+1);
-            memset(channels.list[id].note, 0, NOTE_SZ+1);
-            channels.list[id].info.name = channels.list[id].name;
-            channels.list[id].info.notes = channels.list[id].note;
+            atomic { c = &channels.list[id]; }
+            c->info.name = c->name;
+            c->info.notes = c->note;
+            memset(c->info.name, 0, NAME_SZ+1);
+            memset(c->info.notes, 0, NOTE_SZ+1);
         }
 
         atomic 
@@ -1159,17 +1153,20 @@ implementation {
             }
             else
             {
-                memcpy(&channels.list[channels.entries].info, &channel, sizeof(channelInfo)); 
-                snprintf(channels.list[channels.entries].name, NAME_SZ, "%-8s", channel.name);
-                strncpy(channels.list[channels.entries].note, channel.notes, NOTE_SZ);
+                channel_t *c;
+                atomic { c = &channels.list[channels.entries++]; }
+
+                memcpy(&c->info, &channel, sizeof(channelInfo));
+                c->info.name = c->name;
+                c->info.notes = c->note;
+                snprintf(c->info.name, NAME_SZ, "%-8s", channel.name);
+                strncpy(c->info.notes, channel.notes, NOTE_SZ);
 
                 if (channel.quickDial > 0)
                 {
                     call Glcd.drawText("fav", 50, 30);
                     favourites.table[favourites.entries++] = channels.entries;
                 }
- 
-                atomic { channels.entries++; }
             }
         }
     }
