@@ -20,9 +20,6 @@
 //TODO PSAvail not correct
 //-> on update we send the wrong name sometimes
 
-//TODO favourites synchronized inconsistently
-//-> dont add fav to next index, but to next free slot
-
 //TODO set volume initially 
 //-> 15 is displayed inititally?
 
@@ -435,10 +432,6 @@ implementation {
 
         if (BANDSEEK == state)
             call RDSTimer.startOneShot(RDS_TIMEOUT);
-        
-        //TODO only for debugging
-        //call Glcd.drawText(channels.list[id].name, 0, 40);
-        //call Glcd.drawText(channels.list[id].note, 0, 40);
     }
 
     /*
@@ -751,28 +744,26 @@ implementation {
 
             if (id < CHANNEL_LIST_SZ)
             {
-                uint8_t i;
-                bool foundId = FALSE;
-
-                for (i = 0; i < favourites.entries; i++)
-                {
-                    if (favourites.table[i] == id)
-                    {
-                        foundId = TRUE;
-                        break;
-                    }
-                }
-
                 /* Channel already in favourites */
-                if (foundId)
+                if (channels.list[id].info.quickDial > 0)
                 {
                     atomic { errno = E_IS_FAV; }
                     post displaySoftError();
                 }
                 else
                 {
-                    favourites.table[favourites.entries] = id;
-                    atomic { channels.list[id].info.quickDial = ++favourites.entries; }
+                    uint8_t fid;
+
+                    /* Search free quick dial slot */
+                    for (fid = 0; fid < FAV_CNT; fid++)
+                    {
+                        if (favourites.table[fid] == 0xff)
+                            break;
+                    }
+
+                    favourites.table[fid] = id;
+                    favourites.entries++;
+                    atomic { channels.list[id].info.quickDial = fid+1; }
                     call DB.saveChannel(id, &channels.list[id].info);
                 }
             }
@@ -1162,11 +1153,8 @@ implementation {
                 snprintf(c->info.name, NAME_SZ, "%-8s", channel.name);
                 strncpy(c->info.notes, channel.notes, NOTE_SZ);
 
-                if (channel.quickDial > 0)
-                {
-                    call Glcd.drawText("fav", 50, 30);
-                    favourites.table[favourites.entries++] = channels.entries;
-                }
+                if (c->info.quickDial > 0)
+                    favourites.table[c->info.quickDial-1] = channels.entries-1;
             }
         }
     }

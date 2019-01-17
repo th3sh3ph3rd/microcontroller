@@ -1,8 +1,8 @@
 <metrics>
-  <ram>214</ram>
-  <bigAVR6_1280-ram>214</bigAVR6_1280-ram>
-  <flash>24780</flash>
-  <bigAVR6_1280-flash>24780</bigAVR6_1280-flash>
+  <ram>202</ram>
+  <bigAVR6_1280-ram>202</bigAVR6_1280-ram>
+  <flash>24826</flash>
+  <bigAVR6_1280-flash>24826</bigAVR6_1280-flash>
   <stack>4210</stack>
   <bigAVR6_1280-stack>4210</bigAVR6_1280-stack>
 </metrics>
