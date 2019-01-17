@@ -1191,7 +1191,10 @@ implementation {
                 strncpy(c->info.notes, channel.notes, NOTE_SZ);
 
                 if (c->info.quickDial > 0)
+                {
                     favourites.table[c->info.quickDial-1] = channels.entries-1;
+                    favourites.entries++;
+                }
             }
         }
     }
