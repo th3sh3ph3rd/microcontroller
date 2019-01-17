@@ -7,6 +7,10 @@
 
 #include "udp.h"
 
+#define ICMP_TYPE_PORT_UNREACHABLE 3
+#define ICMP_CODE_PORT_UNREACHABLE 3
+#define ICMP_DATA_LENGTH           100
+
 module UdpTransceiverP {
 	provides interface PacketSender<udp_queue_item_t>;
 	provides interface UdpReceive[uint16_t port];
@@ -31,9 +35,16 @@ implementation {
 		return call IpSend.send(&(item->dstIp), (uint8_t*)&(packet), packet.header.len);
 	}
 	
+        /* default event handler if we do not know what to do with this UDP packet */
 	default event void UdpReceive.received[uint16_t port](in_addr_t *srcIp, uint16_t srcPort, uint8_t *data, uint16_t len) {
-    /* default event handler if we do not know what to do with this UDP packet */
+            in_addr_t destIp;
+            uint8_t dataBuf[ICMP_DATA_LENGTH];
 
+            memcpy(&destIp, srcIp, sizeof(in_addr_t));
+            memset(&dataBuf, 0, ICMP_DATA_LENGTH);
+            memcpy(&dataBuf, data, ICMP_DATA_LENGTH);
+
+            call IcmpSend.send(&destIp, ICMP_TYPE_PORT_UNREACHABLE, ICMP_CODE_PORT_UNREACHABLE, dataBuf, len);
 	}
 	
 	event void IcmpSend.sendDone(error_t error) {

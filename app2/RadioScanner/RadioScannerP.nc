@@ -23,11 +23,7 @@
 
 //TODO take picode also form other RDS gts
 //TODO tune/seek timeout
-//TODO automatically update RDS info to DB if available
-//TODO implement back key for functions with input
-//TODO implement stop key for band seek
 //TODO cleanup keyboard driver
-//TODO udp additional functionality
 
 module RadioScannerP {
     uses
