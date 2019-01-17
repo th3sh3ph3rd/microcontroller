@@ -332,7 +332,6 @@ implementation {
             RDSen = enable; 
         }
 
-        //if (IDLE != state && RDS != state)
         if (IDLE == state)
         {
             if (enable != en)
@@ -646,6 +645,10 @@ implementation {
     void task decodeRDS(void)
     {
         enum rds_state state;
+        char buf[6];
+        static uint16_t cnt = 0;
+        sprintf(buf, "%d", cnt++);
+        call Glcd.drawText(buf, 60, 60);
         
         atomic { state = states.rds; }
         

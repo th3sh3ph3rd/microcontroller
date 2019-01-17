@@ -25,6 +25,7 @@ const char text_volume[] PROGMEM = "Volume:";
 const char text_emptyName[] PROGMEM = "        ";
 const char text_emptyTime[] PROGMEM = "     ";
 const char text_emptyLine[] PROGMEM = "                     ";
+const char text_noRDS[] PROGMEM = "No RDS data!";
 
 /* Error messages */
 const char text_error[] PROGMEM = "Error:";
