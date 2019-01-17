@@ -1,13 +1,12 @@
-id=0,freq=886,name=        ,qdial=2,picode=1,note=No RDS data!
-id=1,freq=899,name=        ,qdial=3,picode=1,note=No RDS data!
-id=2,freq=920,name=        ,qdial=4,picode=1,note=No RDS data!
-id=3,freq=929,name=        ,qdial=1,picode=1,note=No RDS data!
-id=4,freq=940,name=        ,qdial=5,picode=1,note=No RDS data!
-id=5,freq=960,name=        ,qdial=6,picode=1,note=No RDS data!
-id=6,freq=979,name=        ,qdial=7,picode=1,note=No RDS data!
-id=7,freq=999,name=        ,qdial=8,picode=1,note=No RDS data!
-id=8,freq=1025,name=        ,qdial=9,picode=1,note=No RDS data!
-id=9,freq=1038,name=        ,qdial=0,picode=1,note=No RDS data!
-id=10,freq=1042,name=        ,qdial=0,picode=1,note=No RDS data!
-id=11,freq=1058,name=        ,qdial=0,picode=1,note=No RDS data!
-id=12,freq=875,name=        ,qdial=0,picode=1,note=No RDS data!
+id=0,freq=0,name=1¡88.6  ,qdial=0,picode=44103,note=
+id=1,freq=899,name=RADIO-W ,qdial=0,picode=44044,note=
+id=2,freq=920,name=  OE 1  ,qdial=0,picode=41473,note=
+id=3,freq=929,name=ARABELL ,qdial=0,picode=41950,note=
+id=4,freq=960,name=        ,qdial=0,picode=1,note=No RDS data!
+id=5,freq=979,name=        ,qdial=0,picode=1,note=No RDS data!
+id=6,freq=999,name=  OE 3  ,qdial=0,picode=41475,note=
+id=7,freq=1025,name=        ,qdial=0,picode=1,note=No RDS data!
+id=8,freq=1038,name=  FM4   ,qdial=0,picode=41491,note=
+id=9,freq=1042,name=        ,qdial=0,picode=1,note=No RDS data!
+id=10,freq=1058,name=        ,qdial=0,picode=1,note=No RDS data!
+id=11,freq=1073,name=KLADSIK ,qdial=0,picode=44114,note=

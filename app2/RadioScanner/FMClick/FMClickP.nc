@@ -157,8 +157,8 @@ implementation {
     #define GT_4A 0x08
 
     /* RDS blocks per message */
-        #define PS_BLOCKS   (PS_BUF_SZ/2)
-        #define RT_BLOCKS   (RT_BUF_SZ/4)
+    #define PS_BLOCKS   (PS_BUF_SZ/2)
+    #define RT_BLOCKS   (RT_BUF_SZ/4)
 
     struct
     {
@@ -645,11 +645,6 @@ implementation {
     void task decodeRDS(void)
     {
         enum rds_state state;
-        char buf[6];
-        static uint16_t cnt = 0;
-        sprintf(buf, "%d", cnt++);
-        call Glcd.drawText(buf, 60, 60);
-        
         atomic { state = states.rds; }
         
         if (READRDS == state)
@@ -1030,7 +1025,7 @@ implementation {
                 break;
             
             default:
-                call Int.disable();
+                //call Int.disable();
                 break;
         }
     }

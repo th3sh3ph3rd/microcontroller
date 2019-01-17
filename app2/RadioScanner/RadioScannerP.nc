@@ -17,13 +17,10 @@
 //TODO RDS probably doesnt get turned back on reliably 
 //-> maybe bc. of decodeRDS in FMClick 
 
-//TODO remove \n, \r from rds data
-
 //TODO make FMClick init more reliable
 
 //TODO take picode also form other RDS gts
 //TODO tune/seek timeout
-//TODO cleanup keyboard driver
 
 module RadioScannerP {
     uses
@@ -537,6 +534,7 @@ implementation {
             if (PSAvail)
             {
                 memset(c->info.name, 0, NAME_SZ+1);
+                removeIllegalChars(rds.PS, PS_BUF_SZ);
                 snprintf(c->info.name, NAME_SZ, "%-8s", rds.PS);
                 atomic { c->info.pi_code = rds.piCode; }
                 call DB.saveChannel(id, &c->info);
@@ -943,6 +941,8 @@ implementation {
         printVolume();
 
         call Glcd.fill(0x00);
+        call Glcd.drawTextPgm(text_init, GLCD_LEFT_END, GLCD_FIRST_LINE);
+
         call Keyboard.init();
         call RadioInit.init();
         call DBInit.init();
@@ -1078,12 +1078,7 @@ implementation {
     async event void Radio.rdsReceived(RDSType type, char *buf)
     {
         enum app_state state;
-        static uint16_t cnt = 0;
-        char b[6];
         atomic { state = appState; }
-
-        sprintf(b, "%d", cnt++);
-        call Glcd.drawText(b, 20, 60);
 
         switch (type)
         {
