@@ -1,4 +1,4 @@
-/**
+/*
  *
  * @file RadioScannerP.nc
  * @author  Jan Nausner <e01614835@student.tuwien.ac.at>
@@ -13,14 +13,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <text.h>
-
-//TODO RDS probably doesnt get turned back on reliably 
-//-> maybe bc. of decodeRDS in FMClick 
-
-//TODO make FMClick init more reliable
-
-//TODO take picode also form other RDS gts
-//TODO tune/seek timeout
 
 module RadioScannerP {
     uses
@@ -65,14 +57,15 @@ implementation {
     static uint16_t currChan;
     static uint16_t nextChan;
 
+    /* Buffer for frequency input */
     #define TUNEINPUT_BUF_SZ 5
     static struct
     {
         uint8_t idx;
         char buf[TUNEINPUT_BUF_SZ];
     } tuneInput;
-  
-    //TODO defines should actually come from interface file
+ 
+    /* RDS data storage */
     #define PS_BUF_SZ   8
     #define RT_BUF_SZ   64
     #define CT_BUF_SZ   6
@@ -88,7 +81,6 @@ implementation {
         char RT[RT_BUF_SZ+1];
         char CT[CT_BUF_SZ];
     } rds;
-    bool showRDS;
 
     /* Buffers for name and note are needed, as channelInfo struct only contains pointers */
     #define NAME_SZ 8
@@ -184,7 +176,7 @@ implementation {
                 break;
 
             case 's':
-                showRDS = FALSE;
+                call Radio.receiveRDS(FALSE);
                 clearRDSData();
                 call DB.purgeChannelList();
                 favourites.entries = 0;
@@ -200,7 +192,7 @@ implementation {
 
             /* Enter frequency and tune to channel */
             case 't':
-                showRDS = FALSE;
+                call Radio.receiveRDS(FALSE);
                 clearRDSData();
                 atomic
                 {
@@ -215,7 +207,7 @@ implementation {
 
             /* Seek next higher channel */
             case '.':
-                showRDS = FALSE;
+                call Radio.receiveRDS(FALSE);
                 clearRDSData();
                 atomic { appState = SEEK; }
                 post startSeekUp();
@@ -223,7 +215,7 @@ implementation {
 
             /* Seek next lower channel */
             case ',':
-                showRDS = FALSE;
+                call Radio.receiveRDS(FALSE);
                 clearRDSData();
                 atomic { appState = SEEK; }
                 post startSeekDown();
@@ -398,7 +390,7 @@ implementation {
         call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*4);
         call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*4);
 
-        showRDS = TRUE;
+        call Radio.receiveRDS(TRUE);
 
         if (BANDSEEK == state)
             call RDSTimer.startOneShot(RDS_TIMEOUT);
@@ -409,50 +401,47 @@ implementation {
      */
     task void displayRDS(void)
     {
-        if (showRDS)
+        bool newPS, newRT, newCT;
+
+        atomic
         {
-            bool newPS, newRT, newCT;
+            newPS = rds.newPS;
+            newRT = rds.newRT;
+            newCT = rds.newCT;
+        }
 
-            atomic
-            {
-                newPS = rds.newPS;
-                newRT = rds.newRT;
-                newCT = rds.newCT;
-            }
+        if (newPS)
+        {
+            removeIllegalChars(rds.PS, PS_BUF_SZ);
+            call Glcd.drawTextPgm(text_emptyName, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
+            call Glcd.drawText(rds.PS, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
+            atomic { rds.newPS = FALSE; }
+        }
+        if (newCT)
+        {
+            call Glcd.drawTextPgm(text_emptyTime, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
+            call Glcd.drawText(rds.CT, GLCD_CHAR_WIDTH*9, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
+            atomic { rds.newCT = FALSE; }
+        }
+        if (newRT)
+        {
+            char line[GLCD_CHARS_PER_LINE+1];
 
-            if (newPS)
-            {
-                removeIllegalChars(rds.PS, PS_BUF_SZ);
-                call Glcd.drawTextPgm(text_emptyName, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
-                call Glcd.drawText(rds.PS, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
-                atomic { rds.newPS = FALSE; }
-            }
-            if (newCT)
-            {
-                call Glcd.drawTextPgm(text_emptyTime, GLCD_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
-                call Glcd.drawText(rds.CT, GLCD_CHAR_WIDTH*9, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE);
-                atomic { rds.newCT = FALSE; }
-            }
-            if (newRT)
-            {
-                char line[GLCD_CHARS_PER_LINE+1];
-
-                removeIllegalChars(rds.RT, RT_BUF_SZ);
-                memcpy(line, rds.RT, GLCD_CHARS_PER_LINE);
-                line[GLCD_CHARS_PER_LINE] = '\0';
-                call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*2);
-                call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*2);
-                memcpy(line, rds.RT+GLCD_CHARS_PER_LINE, GLCD_CHARS_PER_LINE);
-                line[GLCD_CHARS_PER_LINE] = '\0';
-                call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*3);
-                call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*3);
-                memcpy(line, rds.RT+GLCD_CHARS_PER_LINE*2, GLCD_CHARS_PER_LINE);
-                line[GLCD_CHARS_PER_LINE] = '\0';
-                call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*4);
-                call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*4);
-                
-                atomic { rds.newRT = FALSE; }
-            }
+            removeIllegalChars(rds.RT, RT_BUF_SZ);
+            memcpy(line, rds.RT, GLCD_CHARS_PER_LINE);
+            line[GLCD_CHARS_PER_LINE] = '\0';
+            call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*2);
+            call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*2);
+            memcpy(line, rds.RT+GLCD_CHARS_PER_LINE, GLCD_CHARS_PER_LINE);
+            line[GLCD_CHARS_PER_LINE] = '\0';
+            call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*3);
+            call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*3);
+            memcpy(line, rds.RT+GLCD_CHARS_PER_LINE*2, GLCD_CHARS_PER_LINE);
+            line[GLCD_CHARS_PER_LINE] = '\0';
+            call Glcd.drawTextPgm(text_emptyLine, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*4);
+            call Glcd.drawText(line, GLCD_TRUE_LEFT_END, GLCD_TRUE_FIRST_LINE+GLCD_TRUE_LINE_SPACE*4);
+            
+            atomic { rds.newRT = FALSE; }
         }
     }
 
@@ -516,7 +505,7 @@ implementation {
         uint16_t freq;
         atomic { freq = currChan; }
        
-        showRDS = FALSE;
+        call Radio.receiveRDS(FALSE);
         id = getListId(freq);
 
         /* Channel already in list, update */
@@ -594,8 +583,8 @@ implementation {
     {
         uint8_t err;
         atomic { err = errno; }
-        
-        showRDS = FALSE;
+       
+        call Radio.receiveRDS(FALSE);
         call Glcd.fill(0x00);
         call Glcd.drawTextPgm(text_error, GLCD_LEFT_END, GLCD_FIRST_LINE);
         
@@ -619,7 +608,7 @@ implementation {
         uint8_t err;
         atomic { err = errno; }
        
-        showRDS = FALSE;
+        call Radio.receiveRDS(FALSE);
         call Glcd.fill(0x00);
         call Glcd.drawTextPgm(text_error, GLCD_LEFT_END, GLCD_FIRST_LINE);
         
@@ -816,7 +805,7 @@ implementation {
 
             if (nextId < CHANNEL_LIST_SZ)
             {
-                showRDS = FALSE;
+                call Radio.receiveRDS(FALSE);
                 clearRDSData();
                 atomic 
                 { 
@@ -841,7 +830,7 @@ implementation {
 
         if (id < CHANNEL_LIST_SZ)
         {
-            showRDS = FALSE;
+            call Radio.receiveRDS(FALSE);
             atomic { kbChar = '\0'; }
             noteInput.idx = 0;
             memset(noteInput.buf, 0, NOTE_SZ+1);
@@ -868,7 +857,7 @@ implementation {
 
             if (favId < CHANNEL_LIST_SZ)
             {
-                showRDS = FALSE;
+                call Radio.receiveRDS(FALSE);
                 clearRDSData();
                 atomic 
                 { 
@@ -956,11 +945,10 @@ implementation {
         if (res == SUCCESS)
         {
             /* Set volume and fetch database entries */
+            call Radio.receiveRDS(FALSE);
             call volumeKnob.read();
             call VolumeTimer.startPeriodic(VOLUME_UPDATE_RATE);
             call DB.getChannelList(FALSE);
-            showRDS = FALSE;
-            call Radio.receiveRDS(TRUE);
         }
         else
         {
@@ -1001,6 +989,9 @@ implementation {
         }
     }
 
+    /*
+     * @brief Select action after radio tuned to station.
+     */
     async event void Radio.tuneComplete(uint16_t channel)
     {
         enum app_state state;
@@ -1029,6 +1020,9 @@ implementation {
         }
     }
 
+    /*
+     * @brief Select action after radio seek complete.
+     */
     async event void Radio.seekComplete(uint16_t channel)
     {
         enum app_state state;
@@ -1075,6 +1069,9 @@ implementation {
         }
     }
    
+    /*
+     * @brief Grab the RDS data from the driver.
+     */
     async event void Radio.rdsReceived(RDSType type, char *buf)
     {
         enum app_state state;
@@ -1120,23 +1117,35 @@ implementation {
         call volumeKnob.read();
     }
 
+    /*
+     * @brief Timeout of soft error message.
+     */
     event void ErrorTimer.fired()
     {
         atomic { appState = KBCTRL; }
         post displayChannelInfo();
     }
     
+    /*
+     * @brief RDS timeout for band seek.
+     */
     event void RDSTimer.fired()
     {
         post addChannel();
     }
 
+    /*
+     * @brief ADC conversion finished.
+     */
     event void volumeKnob.readDone(error_t res, uint16_t val)
     {
         newVolume = (uint8_t)(val >> 6);
         post setVolume();
     }
-    
+   
+    /*
+     * @brief Process channel entry from the DB.
+     */
     event void DB.receivedChannelEntry(uint8_t id, channelInfo channel)
     {
         enum app_state state;
@@ -1174,6 +1183,7 @@ implementation {
                     post startTune();
                 }
             }
+            /* Add entry to the list */
             else
             {
                 channel_t *c;
@@ -1185,6 +1195,7 @@ implementation {
                 snprintf(c->info.name, NAME_SZ, "%-8s", channel.name);
                 strncpy(c->info.notes, channel.notes, NOTE_SZ);
 
+                /* Add entry to favourites */
                 if (c->info.quickDial > 0)
                 {
                     favourites.table[c->info.quickDial-1] = channels.entries-1;
@@ -1194,6 +1205,9 @@ implementation {
         }
     }
 
+    /*
+     * @brief Check if channel has been saved suceessfully to the DB.
+     */
     event void DB.savedChannel(uint8_t id, uint8_t result)
     {
         uint8_t state;

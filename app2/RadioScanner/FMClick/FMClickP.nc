@@ -115,7 +115,7 @@ implementation {
     #define READCHAN_MASK       0x03ff
 
     #define RESET_DELAY_MS      1
-    #define READ_DELAY_MS       1000
+    #define READ_DELAY_MS       100
     #define XOSCEN_DELAY_MS     750
     #define POWERUP_DELAY_MS    150
 
@@ -750,6 +750,9 @@ implementation {
         }
     }
   
+    /*
+     * @brief Start reading the registers.
+     */
     task void readRegisters(void)
     {
         enum bus_state state;

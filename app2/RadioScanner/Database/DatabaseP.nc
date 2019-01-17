@@ -42,6 +42,7 @@ implementation {
     static bool getList;
     static bool favOnly;
 
+    /* Buffer for UDP messages */
     static struct
     {
         udp_msg_t send;
@@ -85,6 +86,9 @@ implementation {
     /* Interface commands */
     ////////////////////////
 
+    /*
+     * @brief Initialize the ethernet board.
+     */
     command error_t Init.init(void)
     {
         in_addr_t *ip;
@@ -110,10 +114,9 @@ implementation {
     }
 
     /**
-     * Save a new channel, or change properties of an existing one.
-     * @param id The channel index from the database store, 0xFF to autoselect,
-     *           must be between 0 and 15 if passed manually
-     * @param channel The channel information, see channelInfo typedef
+     * @brief           Save/update a channel in the DB.
+     * @param id        The channel index from the database to update, 0xFF to autoselect for storing.
+     * @param channel   The channel information, see channelInfo typedef.
      */
     command void Database.saveChannel(uint8_t id, channelInfo *channel)
     {
@@ -152,10 +155,10 @@ implementation {
     }
 
     /**
-     * Request the channel list from the database server
-     * Received channels will be signaled through receivedChannelEntry
-     * @param onlyFavorites tells server to send only the channels with a
-     *        registered quickDial number, if not zero
+     * @brief               Request the channel list from the database server, received 
+     *                      channels will be signaled through receivedChannelEntry.
+     * @param onlyFavorites Tells server to send only the channels with a registered 
+     *                      quickDial number, if not zero.
      */
     command void Database.getChannelList(uint8_t onlyFavorites)
     {
@@ -180,8 +183,9 @@ implementation {
     }
 
     /**
-     * Request the channel list from the database server
-     * Received channels will be signaled through receivedChannelEntry
+     * @brief       Request the channel list from the database server, received channels 
+     *              will be signaled through receivedChannelEntry.
+     * @param id    The channel to load.
      */
     command void Database.getChannel(uint8_t id)
     {
@@ -206,8 +210,7 @@ implementation {
     }
 
     /**
-     * Request that the Database purges all channels and their state
-     * Received channels will be signaled through receivedChannelEntry
+     * @brief   Request that the Database purges all channels and their state.
      */
     command void Database.purgeChannelList()
     {
@@ -234,6 +237,9 @@ implementation {
     /* Tasks              */
     ////////////////////////
 
+    /*
+     * @brief Send a UDP message.
+     */
     task void sendTask(void)
     {
         in_addr_t destination = { .bytes {DESTINATION}};
@@ -242,12 +248,18 @@ implementation {
             post sendTask();
     }
 
+    /*
+     * @brief Process an incoming message.
+     */
     task void recvTask(void)
     {
         decodeMessage(&msgBuf.recv);
         atomic { dbState = IDLE; }
     }
 
+    /*
+     * @brief Fetch the channel list from the DB.
+     */
     task void fetchList(void)
     {
         if (list.entries - list.currId > 0)
@@ -266,7 +278,11 @@ implementation {
     ////////////////////////
     /* Internal functions */
     ////////////////////////
-    
+   
+    /*
+     * @brief       Decide how to decode an incoming message.
+     * @param msg   The message to decode.
+     */
     static void decodeMessage(udp_msg_t *msg)
     {
         enum db_state state;
@@ -296,6 +312,10 @@ implementation {
         }
     }
 
+    /*
+     * @brief       Decode add command response and signal result.
+     * @param msg   The message to decode.
+     */
     static void decodeAdd(udp_msg_t *msg)
     {
         uint8_t *paramStart;
@@ -303,7 +323,8 @@ implementation {
         /* Invalid message */
         if (!prepareMessage(msg, &paramStart))
             return;
-
+    
+        /* OK message */
         if (strncmp_P((char *) msg->data, cmd_ok, CMD_OK_LEN) == 0)
         {
             char *k, *v;
@@ -317,6 +338,7 @@ implementation {
             else
                 signal Database.savedChannel(0, 2);
         }
+        /* Error */
         else
         {
             uint8_t res = 2;
@@ -335,6 +357,10 @@ implementation {
         }
     }
     
+    /*
+     * @brief       Decode list command response.
+     * @param msg   The message to decode.
+     */
     static void decodeList(udp_msg_t *msg)
     {
         uint8_t *paramStart;
@@ -373,6 +399,10 @@ implementation {
         }
     }
     
+    /*
+     * @brief       Decode get command response and signal channel.
+     * @param msg   The message to decode.
+     */
     static void decodeGet(udp_msg_t *msg)
     {
         uint8_t *paramStart;
@@ -391,6 +421,7 @@ implementation {
         channel.name = name;
         channel.notes = notes;
 
+        /* Valid response */
         if (parseChannelInfo((char *) paramStart, &channel, &id))
         {
             /* Filter favourites */
@@ -402,13 +433,20 @@ implementation {
             else
                 signal Database.receivedChannelEntry(id, channel);
         }
+        /* Invalid response */
         else
         {
             channelInfo dummy;
             signal Database.receivedChannelEntry(0xfe, dummy);
         }
     }
-    
+   
+    /*
+     * @brief               Prepare message for further processing, replace '\r' with '\0'.
+     * @param msg           Message to prepare.
+     * @param paramStart    Pointer to the start of the parameters.
+     * @return              FALSE if messge not terminated with '\n'.
+     */
     static bool prepareMessage(udp_msg_t *msg, uint8_t **paramStart)
     {
         /* Valid message is terminated with newline */
@@ -503,6 +541,7 @@ implementation {
                 return TRUE;
             }
 
+            /* Move to next parameter */
             if (!gotName)
             {
                 v = strchr(sp, ',');
@@ -545,6 +584,9 @@ implementation {
             post sendTask();
     }
 
+    /*
+     * @brief Copy received message to buffer.
+     */
     event void UdpReceive.received(in_addr_t *srcIp, uint16_t srcPort, uint8_t *data, uint16_t len)
     {
         /* Truncate message if too long */
@@ -562,7 +604,6 @@ implementation {
 
     }
 
-    //TODO maybe do some error handling
     event void Control.stopDone(error_t error)
     {
 
