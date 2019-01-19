@@ -1028,7 +1028,6 @@ implementation {
                 break;
             
             default:
-                //call Int.disable();
                 break;
         }
     }
