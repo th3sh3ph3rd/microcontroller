@@ -1,0 +1,14 @@
+id=0,freq=886,name=        ,qdial=0,picode=1,note=No RDS data!
+id=1,freq=899,name=RADIO-W ,qdial=0,picode=44044,note=
+id=2,freq=920,name=  OE 1  ,qdial=1,picode=41473,note=
+id=3,freq=929,name=        ,qdial=0,picode=1,note=No RDS data!
+id=4,freq=947,name=ÍFDIO-B ,qdial=0,picode=41988,note=
+id=5,freq=960,name=        ,qdial=0,picode=1,note=No RDS data!
+id=6,freq=979,name=RADIO-N ,qdial=0,picode=42498,note=
+id=7,freq=983,name=Superfl ,qdial=0,picode=44129,note=
+id=8,freq=999,name=  OE 3  ,qdial=0,picode=41475,note=
+id=9,freq=1025,name=  OE24œ ,qdial=0,picode=44097,note=
+id=10,freq=1038,name=  FM7’  ,qdial=0,picode=41491,note=
+id=11,freq=1042,name=        ,qdial=0,picode=1,note=No RDS data!
+id=12,freq=1058,name=        ,qdial=0,picode=1,note=No RDS data!
+id=13,freq=1073,name=  DOHA  ,qdial=0,picode=44114,note=

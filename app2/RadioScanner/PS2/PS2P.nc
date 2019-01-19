@@ -37,6 +37,16 @@ implementation {
     static uint8_t PS2BitCount;
     static enum kb_shift_state kbShiftState;
     static enum kb_key_state kbKeyState;
+   
+    /* Ringbuffer datastructure for incoming scancodes */
+    #define BUF_SZ  8 
+    static struct
+    {
+        uint8_t first;
+        uint8_t last;
+        uint8_t size;
+        uint8_t buf[BUF_SZ]; 
+    } scancodes;
     
     /*
      * @brief Initialize the pins and pin change interrupt needed
@@ -60,20 +70,30 @@ implementation {
             PS2BitCount = PS2_BIT_NUM;
             kbShiftState = UNSHIFTED;
             kbKeyState = DOWN;
+            scancodes.first = 0;
+            scancodes.last = 0;
+            scancodes.size = 0;
         }
 
         call ClockIRQ.enable();
     }
 
     /*
-     * @brief           This procedure converts a given scancode to a characer.
+     * @brief           This task converts a given scancode to a characer.
      *                  If the scancode was converted successfully, it fires a
      *                  signal passing the character. Lower-/uppercase conversion
      *                  is also handled in this procedure.
-     * @param scancode  The scancode to be decoded.
      */
-    static void decodeScancode(uint8_t scancode)
+    task void decodeScancode(void)
     {
+        uint8_t scancode, bufSz;
+        atomic 
+        { 
+            scancode = scancodes.buf[scancodes.last];
+            scancodes.last = (scancodes.last+1) & (BUF_SZ-1);
+            bufSz = --scancodes.size;
+        }
+
         if (DOWN == kbKeyState)
         {
             switch (scancode)
@@ -163,6 +183,10 @@ implementation {
                     break;
             }
         }
+
+        /* Repost the task until the ringbuffer is empty */
+        if (bufSz > 0)
+            post decodeScancode();
     }
 
     /*
@@ -193,8 +217,25 @@ implementation {
             if (PS2BitCount == 0)
             {
                 /* Ignore start byte */
-                if (PS2Data != PS2_START_BYTE) 
-                    decodeScancode(PS2Data);
+                if (PS2Data != PS2_START_BYTE)
+                {
+                    uint8_t bufSz;
+                    atomic { bufSz = scancodes.size;  }
+
+                    if (bufSz < BUF_SZ-1)
+                    {
+                        atomic
+                        {
+                            scancodes.buf[scancodes.first] = PS2Data;
+                            scancodes.first = (scancodes.first + 1) & (BUF_SZ-1);
+                            scancodes.size++;
+                        }
+
+                        if (bufSz == 0)
+                            post decodeScancode();
+                    }   
+                    PS2Data = 0;
+                }
                 
                 PS2BitCount = PS2_BIT_NUM;
             }
