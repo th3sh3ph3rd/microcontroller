@@ -114,7 +114,7 @@ implementation {
     /* Read Channel */
     #define READCHAN_MASK       0x03ff
 
-    #define RESET_DELAY_MS      1
+    #define RESET_DELAY_MS      10
     #define READ_DELAY_MS       100
     #define XOSCEN_DELAY_MS     750
     #define POWERUP_DELAY_MS    150

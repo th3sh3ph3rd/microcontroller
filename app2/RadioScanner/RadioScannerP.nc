@@ -517,7 +517,7 @@ implementation {
             atomic 
             { 
                 PSAvail = rds.PSAvail; 
-                c = &channels.list[channels.entries++];
+                c = &channels.list[id];
             }
             
             if (PSAvail)
