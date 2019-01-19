@@ -181,6 +181,9 @@ implementation {
 
     /* Function prototypes */
     static void enableRDS(bool enable);
+    static void decodePS(void);
+    static void decodeRT(void);
+    static void decodeCT(void);
 
     ////////////////////////
     /* Interface commands */
@@ -655,17 +658,7 @@ implementation {
         else if (DECODERDS == state)
         {
             uint8_t groupType; 
-            uint16_t RDSA, RDSB, RDSC, RDSD;
-            uint8_t offset, blocks;
-            uint8_t hours, minutes, localOffset;
-
-            atomic 
-            {
-                RDSA = shadowRegisters[RDSA_REG];
-                RDSB = shadowRegisters[RDSB_REG];
-                RDSC = shadowRegisters[RDSC_REG];
-                RDSD = shadowRegisters[RDSD_REG];
-            }
+            uint16_t RDSB = shadowRegisters[RDSB_REG];
 
             groupType = (uint8_t)(RDSB >> 11);
 
@@ -674,56 +667,15 @@ implementation {
                 /* Intended fallthrough, packets get decoded in the same way */
                 case GT_0A:
                 case GT_0B:
-                    offset = ((uint8_t)RDSB) & 0x03;
-                    atomic 
-                    { 
-                        /* PI code */
-                        rds.PS[PS_BUF_SZ] = (char) (RDSA >> 8);
-                        rds.PS[PS_BUF_SZ+1] = (char) RDSA;
-                        /* Station Name */
-                        rds.PS[offset<<1] = (char)(RDSD >> 8);
-                        rds.PS[(offset<<1)+1] = (char)RDSD;
-                        rds.PSBlocks |= (1<<offset);
-                        blocks = rds.PSBlocks;
-                    }
-                    if (blocks == 0x0f)
-                    {
-                        signal FMClick.rdsReceived(PS, rds.PS);
-                        memset(rds.PS, ' ', PS_BUF_SZ);
-                        rds.PSBlocks = 0;
-                    }
+                    decodePS();
                     break;
                 
                 case GT_2A:
-                    offset = ((uint8_t)RDSB) & 0x0f;
-                    atomic 
-                    { 
-                        rds.RT[offset<<2] = (char)(RDSC >> 8);
-                        rds.RT[(offset<<2)+1] = (char)RDSC;
-                        rds.RT[(offset<<2)+2] = (char)(RDSD >> 8);
-                        rds.RT[(offset<<2)+3] = (char)RDSD;
-                    }
-                    signal FMClick.rdsReceived(RT, rds.RT);
+                    decodeRT();
                     break;
                 
                 case GT_4A:
-                    hours = (uint8_t)(RDSD >> 12) | ((uint8_t)(RDSC << 4) & 0x10);
-                    minutes = ((uint8_t)(RDSD >> 6) & 0x3f);
-                    localOffset = ((uint8_t)RDSD) & 0x1f;
-
-                    /* Determine time offset sign */
-                    if (RDSD & 0x0020)
-                        hours -= localOffset >> 1;
-                    else
-                        hours += localOffset >> 1;
-
-                    atomic
-                    {
-                        memset(rds.CT, 0, CT_BUF_SZ);
-                        sprintf(rds.CT, "%02d:%02d", hours, minutes);
-                    }
-
-                    signal FMClick.rdsReceived(TIME, rds.CT);
+                    decodeCT();
                     break;
 
                 default:
@@ -890,6 +842,92 @@ implementation {
         }
 
         post writeRegisters();
+    }
+    
+    /*
+     * @brief Decode the station name.
+     */
+    static void decodePS(void)
+    {
+        uint8_t offset, blocks;
+        uint16_t RDSA, RDSB, RDSD;
+        
+        atomic 
+        {
+            RDSA = shadowRegisters[RDSA_REG];
+            RDSB = shadowRegisters[RDSB_REG];
+            RDSD = shadowRegisters[RDSD_REG];
+        }
+
+        offset = ((uint8_t)RDSB) & 0x03;
+        /* PI code */
+        rds.PS[PS_BUF_SZ] = (char) (RDSA >> 8);
+        rds.PS[PS_BUF_SZ+1] = (char) RDSA;
+        /* Station Name */
+        rds.PS[offset<<1] = (char)(RDSD >> 8);
+        rds.PS[(offset<<1)+1] = (char)RDSD;
+        rds.PSBlocks |= (1<<offset);
+        blocks = rds.PSBlocks;
+        
+        if (blocks == 0x0f)
+        {
+            signal FMClick.rdsReceived(PS, rds.PS);
+            rds.PSBlocks = 0;
+        }
+    }
+   
+    /*
+     * @brief Decode the radio text.
+     */
+    static void decodeRT(void)
+    {
+        uint8_t offset;
+        uint16_t RDSB, RDSC, RDSD;
+        
+        atomic 
+        {
+            RDSB = shadowRegisters[RDSB_REG];
+            RDSC = shadowRegisters[RDSC_REG];
+            RDSD = shadowRegisters[RDSD_REG];
+        }
+
+        offset = ((uint8_t)RDSB) & 0x0f;
+        rds.RT[offset<<2] = (char)(RDSC >> 8);
+        rds.RT[(offset<<2)+1] = (char)RDSC;
+        rds.RT[(offset<<2)+2] = (char)(RDSD >> 8);
+        rds.RT[(offset<<2)+3] = (char)RDSD;
+        
+        signal FMClick.rdsReceived(RT, rds.RT);
+    }
+    
+    /*
+     * @brief Decode the time.
+     */
+    static void decodeCT(void)
+    {
+        uint8_t hours, minutes, localOffset;
+        uint16_t RDSC, RDSD;
+        
+        atomic 
+        {
+            RDSC = shadowRegisters[RDSC_REG];
+            RDSD = shadowRegisters[RDSD_REG];
+        }
+
+        hours = (uint8_t)(RDSD >> 12) | ((uint8_t)(RDSC << 4) & 0x10);
+        minutes = ((uint8_t)(RDSD >> 6) & 0x3f);
+        localOffset = ((uint8_t)RDSD) & 0x1f;
+
+        /* Determine time offset sign */
+        if (RDSD & 0x0020)
+            hours -= localOffset >> 1;
+        else
+            hours += localOffset >> 1;
+
+        memset(rds.CT, 0, CT_BUF_SZ);
+        sprintf(rds.CT, "%02d:%02d", hours, minutes);
+
+        signal FMClick.rdsReceived(TIME, rds.CT);
     }
 
     ////////////////////////
