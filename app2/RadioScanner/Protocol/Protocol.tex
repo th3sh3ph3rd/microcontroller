@@ -28,6 +28,62 @@
 \usepackage{fullpage}
 \usepackage{style}
 
+\usepackage{bm}
+
+\usepackage{algorithm2e}
+
+\usepackage{pmboxdraw}
+\usepackage{verbatim}
+\usepackage{multirow}
+
+\usepackage{textcomp}
+\usepackage{siunitx}
+
+\sisetup{
+  per-mode=symbol,
+  binary-units=true
+}
+\usepackage{booktabs}
+
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[normalem]{ulem}
+
+\usepackage{fullpage}
+
+\usepackage{longtable}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\usepackage{listings}
+
+\lstset{language=C,
+        frame=single,
+        keywordstyle=\color{blue},
+        commentstyle=\color{dkgreen},
+        stringstyle=\color{mauve},
+        basicstyle=\footnotesize,
+        captionpos=b,
+        morekeywords={*,command, event, interface},
+        tabsize=4,
+        columns=fullflexible
+}
+
+\usepackage{rotating}
+
+\usepackage{tikz}
+\usetikzlibrary{calc,shapes,arrows,decorations.pathreplacing, intersections}
+
+\usepackage[tikz]{bclogo}
+
+\newcommand{\pts}[2]{\textbf{[#1]} #2}
+
+\renewcommand{\ge}[0]{\geqslant}
+\renewcommand{\le}[0]{\leqslant}
+\renewcommand{\geq}[0]{\geqslant}
+\renewcommand{\leq}[0]{\leqslant}
+
 %***************************************************************************
 % note: the template is in English, but you can use German for your
 % protocol as well; in that case, remove the comment from the
@@ -38,12 +94,12 @@
 %***************************************************************************
 % enter your data into the following fields
 %***************************************************************************
-\newcommand{\Vorname}{IhrVorname/Your First Name}
-\newcommand{\Nachname}{IhrNachname/YourSurname}
-\newcommand{\MatrNr}{3333333}
-\newcommand{\Email}{e3333333@student.tuwien.ac.at}
-\newcommand{\Part}{I}
-\newcommand{\Tutor}{NameIhresTutors/NameOfYourTutor}
+\newcommand{\Vorname}{Jan}
+\newcommand{\Nachname}{Nausner}
+\newcommand{\MatrNr}{01614835   }
+\newcommand{\Email}{jan.nausner@gmail.com   }
+\newcommand{\Part}{II}
+\newcommand{\Tutor}{}
 %***************************************************************************
 
 
@@ -67,11 +123,6 @@
 %***************************************************************************
 % remove the following lines from your own protocol file!
 %***************************************************************************
-\noindent
-\textbf{Note:} This template is provided to show you how \LaTeX{} works and may
-not contain all subsections your protocol should contain.
-
-
 
 %***************************************************************************
 \section{Overview}
@@ -80,37 +131,66 @@ not contain all subsections your protocol should contain.
 %---------------------------------------------------------------------------
 \subsection{Connections,  External Pullups/Pulldowns}
 %---------------------------------------------------------------------------
-Example:
+
 \bConnections{What}{}
-PORTC & external Pulldown enabled on PC0,3-5,7 \\
 J12 & Connected to VCC \\
+J14 & EXT \\
+J15 & PF0 \\
+LEDs & Off \\
+GLCD backlight & On \\
+PORT switches & Off \\
+PORT jumpers & Pull down \\ 
 \eConnections
 
-Write down all things we need to know to get your program running on our board.
-All non-standard external connections, all switches your program needs, \dots
-If we cannot figure out how we get your program running, we can not give you
-points for it.
-
+The FMClick, Ethernet and PS2 modules need to be connected as per specification.
 
 %---------------------------------------------------------------------------
 \subsection{Design Decisions}
 %---------------------------------------------------------------------------
 
-Here comes the design decisions that you made during programming.
+On startup, the application tries to fetch the channel list from the desktop
+PC. If it is empty, it automatically performs a band seek and syncs the so obtained
+channels with the database. On band seek, the channel gets saved as soon as RDS
+information is available or after a specific timeout, in order to avoid hanging
+on invalid/weak radio stations. If no RDS information was available at this point,
+an according meessage is stored in the note. Further design decisions are explained in the
+respective module sections.
 
 %---------------------------------------------------------------------------
 \subsection{Specialities}
 %---------------------------------------------------------------------------
 
-Does you solution have something special (positive or negative)?
-
+The extended UDP functionality was implemented, which might be a source for
+some bonus points.
+Additionally, error handlers for soft and hard
+errors were implemented in the main application. Soft errors are displayed
+for a short time and the app then returns to an error free state, while hard
+errors stop the app after the message was displayed.
 
 %***************************************************************************
 \section{Main Application}
 %***************************************************************************
 
-Describe your application.
-
+Operation of the main application centers around a channel list datastructure,
+which contains the respective channelInfo struct and buffers for station name
+and a note. This list gets filled on reset either by syncing with the database
+or by performing a band seek operation. Afterwards, the app tunes to the first
+channel in the list, displays channel information and awaits user input. The app can be controlled by the 
+PS2 keyboard and with the volume potentiometer. To initiate a seek up/down
+operation, '.' or ',' have to be pressed. If 't' is pressed, a frequency can be
+entered (in hundreds of kHz) and after pressing enter, the app tunes to this
+frequency. By pressing 's', a band seek operation is performed, which purges
+the local list as well as the database and refills it with stations it found 
+by seeking the band. If 'a' is pressed, the current channel is added to the list and
+database or updated with new RDS information if already in the list. Pressing
+'f' adds the current channel as a favourite, if already added to the list.
+It is assigned the next free favourite index. A note can be entered by pressing 'n'.
+It will be stored when enter was pressed. The local list can be stepped through
+by pressing 'l', which tunes to the next highest channel in the list. After the 
+execution of these commands, the app returns to the main screen, where information
+on the current radio station is shown, If the current channel is in the list, 
+c[id] is shown in the first line and if it is in the favourites, f[quick dial]
+is displayed.
 
 %***************************************************************************
 \section{Communication}
@@ -120,35 +200,105 @@ Describe your application.
 \subsection{UDP}
 %---------------------------------------------------------------------------
 
-Explain your modules.
+The provided UDP network stack is lacking some important features, which had
+to be added manually. In order to support ICMP echo request messages, PingP
+had to be extended to reflect such requests back to the source, combined with
+the ICMP echo reply header. To provide an appropriate response to communication
+requests on non-serviced ports, UdpTransceiverP had to be extenden to reflect
+such requests as an ICMP port unreachable message.
+
+Information on the ICMP protocol was taken from: https://en.wikipedia.org/wiki/Internet\_Control\_Message\_Protocol
+
+%---------------------------------------------------------------------------
+\subsection{PS2}
+%---------------------------------------------------------------------------
+
+In order to support PS2 communication, an ISR has to be installed on the PS2
+clock line. Every time a falling edge is detected, the data line is sampled
+into a shift register. After the reception of all PS2 bits, the data byte is 
+decoded with the help of scancode tables for upper and lowercase. In order
+to achieve maximum performance, the table lookup relies on binary search.
+Upper-/lowercase tables are switched according to shift key states. After
+the succesful decoding of the scancode, the obtained character is signaled
+to the application.
 
 %***************************************************************************
 \section{FMCLick}
 %***************************************************************************
 
-%---------------------------------------------------------------------------
-\subsection{PS/2}
-%---------------------------------------------------------------------------
-
+This module handles the control of the FMClick radio module. Communication
+happens over the I2C bus. The FMClick module contains 16 configuration registers,
+which have to be read and written sequentially over the bus. In order to minimize
+communication, the module uses a local shadow register, which buffers the current
+register state of the FMClick module. In order to write to the radio module,
+the registers are modified in the shadow register, which is then copied to a 
+communication buffer in the right order (starting with the first write address).
+This buffer is then written sequentially to the bus, up until the highest write
+address. To perform a read operation, all registers are read sequentially from the
+bus into the buffer and then written to the communication buffer in the right
+order. If a driver command is called, the driver gets blocked until the command
+is completed, as the commands require many different steps which must not be
+interrupted. Init, seek and tune are implemented according to the state machines
+provided in the application note. The seek interface was extendedwit a seekmode\_t
+type, where it is possible to specify and additional BAND mode. This mode configures
+the radio in such way, that it does not wrap around band limits. Reception of
+RDS information can be en- and disbled with the respective command. If enabled, 
+the RDS interrupt routine posts a decode RDS task, which reads the RDS information
+from the radio module. These registers are then decoded according to the standard
+(http://www.interactive-radio-system.com/docs/EN50067\_RDS\_Standard.pdf). The station name
+and picode are only signalled to the application, when all blocks have been receive, while
+the radio text is signalled everytime a block has been received, in order to limit
+waiting time until information can be displayed. The time is signalled right away,
+as it only requires one RDS message. To keep things simple, the half-hour timezone
+offset is not considered. Reception of RDS information is disabled by seek and 
+tune commands in order to avoid wrong interrupts, but reenabled afterwards if
+it was enabled before.
 
 %***************************************************************************
-\section{...explain your application modules ...}
+\section{Database}
 %***************************************************************************
 
+This module handles communication with the database server on the desktop PC.
+To keep things simple, there are no message queues, thus after the sending of
+one command, the module blocks until it has received and decoded a response
+message. Therefore the module only needs to buffer one sended and one received
+message, leading to a small memory footprint. The udpi\_msg\_t type in udp\_config.h
+was extended with a len field, for more convenient message handling. If a module
+command is called, the appropriate UDP message string is composed according to
+the specified protocol from progmem and input. A send task is posted, which 
+hands the message over to the UDP module. Afterwards the module waits for response,
+and if we have onie, the message is again buffered and a decode task is started.
+The message is decoded based on which command we expect a response to. Add and update
+responses are simple to decode, we just have to check if the command has been 
+executed successfully and then signal the result to the application. A list response
+requires that all given IDs are stored. Afterwards a new fetchList task is posted,
+which issues a getChannel request for every ID in the list. After the last database
+item was received, 0xff is signalled to the application. Get responses require
+the more work, as they provide the most information. The decoder iterates over
+the parameter list, decodes and checks every item accordingly and puts it into
+a channelInfo struct, which is then signalled to the application.
+
 %***************************************************************************
-\section{...the above were only examples}
+\section{VolumeAdc}
 %***************************************************************************
 
+This module provides access to the ATMEGA1280 ADC in order to read input from
+the potentiometer. TinyOS provides the necessary driver modules, so it just
+required to configure the ADC with the desired settings and make configure
+the potentiometer pin as an input.
 
 %***************************************************************************
 \section{Problems}
 %***************************************************************************
 
-Put all problems you encountered into this section.
-This is important information, which allows us to determine where there are
-problems.
-(Don't worry, we don't take points.)
-
+The main problem was the handling of the FMClick module. It 
+requires a lot of effort to understand exactly how it works and how it needs
+to be configured in order to work in a desired manner. Also in the beginning
+it was very hard to debug the driver, as the module seemed to not work properly.
+This led to confusion whether the problems came from the software or the hardware.
+After finding out that the module is very sensitive and requires stable connections,
+this got a bit easier. In the rest of the application no major problems were
+encountered.
 
 %***************************************************************************
 \section{Work}
@@ -160,20 +310,19 @@ Estimate the work you put into solving the Application.
 	Task & Time spent \\ \hline
 
 	reading manuals, datasheets &  5 h\\
-	program design              &  5 h\\
-	programming                 & 10 h\\
+	program design              &  2 h\\
+	programming                 & 30 h\\
 	debugging                   & 45 h\\
-	questions, protocol         &  5 h\\ \hline
+	questions, protocol         &  2 h\\ \hline
 
 	\textbf{Total}              & 75 h\\ \hline
 \end{tabular}
 
-
-
 %***************************************************************************
 \section{Theory Tasks}
 %***************************************************************************
-Copy the theory task specification from the app 2 specification!
+
+\input{theorie2}
 
 % Your answers should be brief but complete
 
