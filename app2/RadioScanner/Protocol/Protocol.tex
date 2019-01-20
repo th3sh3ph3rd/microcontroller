@@ -215,7 +215,9 @@ Information on the ICMP protocol was taken from: https://en.wikipedia.org/wiki/I
 
 In order to support PS2 communication, an ISR has to be installed on the PS2
 clock line. Every time a falling edge is detected, the data line is sampled
-into a shift register. After the reception of all PS2 bits, the data byte is 
+into a shift register. After the reception of all PS2 bits, the data byte is
+put into a ringbuffer and the decode task gets posted. This task reads scancodes
+from the buffer until it is empty again. The scancode bytes get
 decoded with the help of scancode tables for upper and lowercase. In order
 to achieve maximum performance, the table lookup relies on binary search.
 Upper-/lowercase tables are switched according to shift key states. After
@@ -312,7 +314,7 @@ Estimate the work you put into solving the Application.
 	reading manuals, datasheets &  5 h\\
 	program design              &  2 h\\
 	programming                 & 30 h\\
-	debugging                   & 45 h\\
+	debugging                   & 48 h\\
 	questions, protocol         &  2 h\\ \hline
 
 	\textbf{Total}              & 75 h\\ \hline
