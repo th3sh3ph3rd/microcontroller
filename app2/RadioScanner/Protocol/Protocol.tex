@@ -328,8 +328,34 @@ Estimate the work you put into solving the Application.
 
 % Your answers should be brief but complete
 
+\subsection{Task 1 solution}
 
+\textbf{Property to prove}: After $n$ rounds of communication, sample 1 is part of 
+every set $S_i$, given the fact that the communication graph is strongly 
+connected after every round.\\
+\textbf{Base case ($n=1$)}: The property holds for $n=1$, because the only set $S_1$
+already contains sample 1.\\
+\textbf{Hypothesis}: The property holds for $n$ motes.\\
+\textbf{Induction step:} Using the hypothesis, it can be assumed that after $n$ rounds,
+$n$ out of $n+1$ motes contain the sample 1. Due to the strongly connected property it
+is known, that in round $n+1$ the remaining mote receives at least one message from a
+mote where 1 is in the sample. Thus after $n+1$ rounds all $n+1$ motes have received
+sample 1. q.e.d.
 
+\subsection{Task 2 solution}
+
+\textbf{Property to prove}: After $n^2$ rounds of communication, there exists a sample
+$i$ which is part of every set $S_i$, given the fact that the communication graph is a 
+rooted tree after every round.\\
+\textbf{Base case ($n=1$)}: The property holds for $n=1$, because the only set $S_1$
+already contains sample 1.\\
+\textbf{Hypothesis}: The property holds for $n$ motes.\\
+\textbf{Induction step:} Using the hypothesis, it can be assumed that after $n^2$ rounds,
+there is a sample which is part of $n$ out of $n+1$ motes. In the worst case, the remaining
+mote is always the root of a tree degenerated to a list, and thus it would take another
+$n$ rounds until every mote receives the sample $n+1$. In all other cases, mote $n+1$ is
+the child of another mote containing sample $i$ and thus receives it after one additional
+step. $n^2+n \leq (n+1)^2 = n^2 + 2n + 1$. q.e.d.
 
 %***************************************************************************
 \newpage
